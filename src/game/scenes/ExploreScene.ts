@@ -10,7 +10,9 @@ import {
 } from '../systems/MapGenerator';
 import { getBookCatalogSync } from '@/data/books';
 import { getNPCCatalogSync } from '@/data/npcs';
-import { getRandomFragmentsForMapSync, getRandomJournalEntriesSync } from '@/utils/contentLoaderSync';
+import { getRandomUncollectedArtifact } from '@/data/artifacts';
+import { getRandomFragmentsForMapSync, getRandomJournalEntriesSync, getJournalCacheSync } from '@/utils/contentLoaderSync';
+import type { JournalEntryDef } from '@/data/journalEntries';
 import { computeVisibleTiles } from '../systems/FOVSystem';
 import { getFovRadiusFromBattery } from '@/utils/flashlight';
 import { useGameStore } from '@/store/gameStore';
@@ -43,6 +45,8 @@ export default class ExploreScene extends Scene {
   private journalContainers = new Map<string, Phaser.GameObjects.Container>();
   private batteryContainers = new Map<string, Phaser.GameObjects.Container>();
   private mapContainer: Phaser.GameObjects.Container | null = null;
+  private vaultContainer: Phaser.GameObjects.Container | null = null;
+  private vaultRoomName: string | null = null;
   private npcBlockedTiles = new Set<string>();
   private moveCount = 0;
   private bookToRoomMap = new Map<string, string>(); // fragmentId → roomName
@@ -236,6 +240,20 @@ export default class ExploreScene extends Scene {
     };
     EventBridge.on('interactive-consumed', onInteractiveConsumed);
     this.events.once('shutdown', () => EventBridge.off('interactive-consumed', onInteractiveConsumed));
+
+    // Debug: despawn all books on current map
+    const onDebugDespawnAllBooks = () => {
+      this.bookContainers.forEach((container, id) => {
+        container.destroy();
+        this.interactionSystem.unregister(id);
+      });
+      this.bookContainers.clear();
+      this.bookToRoomMap.clear();
+      useGameStore.getState().actions.setBooksRemainingOnThisMap(0);
+      useGameStore.getState().actions.setRoomsWithBooksOnMap([]);
+    };
+    EventBridge.on('debug-despawn-all-books', onDebugDespawnAllBooks);
+    this.events.once('shutdown', () => EventBridge.off('debug-despawn-all-books', onDebugDespawnAllBooks));
 
     // Map scene: M key opens the MapScene (sleep this scene)
     const onOpenMapScene = () => {
@@ -631,11 +649,39 @@ export default class ExploreScene extends Scene {
     useGameStore.getState().actions.setNpcPositionsOnMap(npcPositions);
 
     // Journals: 1–2 per map, like books but different visual
-    const journalEntries = getRandomJournalEntriesSync(Math.min(2, roomData.length));
+    // First, get the vault info to create a dynamic vault journal
+    const vaultInfo = useGameStore.getState().session.vaultInfo;
+    
+    // Get all journals except the vault hint (we'll handle it specially)
+    const allJournals = getJournalCacheSync();
+    const nonVaultJournals = allJournals.filter(j => j.id !== 'journal-diary-2');
+    const shuffledNonVault = [...nonVaultJournals].sort(() => Math.random() - 0.5);
+    const journalEntries = shuffledNonVault.slice(0, Math.min(1, roomData.length));
+    
+    // Create dynamic vault journal if we have vault info
+    if (vaultInfo) {
+      const vaultJournal: JournalEntryDef = {
+        id: 'journal-vault-hint',
+        title: 'Faded note',
+        lines: [
+          {
+            text: `If anyone finds this: the ${vaultInfo.roomName} vault code is ${vaultInfo.code.split('').join('-')}. The director's birthday. They sealed it before they left. There's nothing down there worth dying for, they said. I think they were wrong.`,
+          },
+        ],
+      };
+      journalEntries.push(vaultJournal);
+    }
+    
+    // Get rooms, but exclude vault room from vault journal placement
     const shuffledRooms = [...roomData].sort(() => Math.random() - 0.5);
     for (let i = 0; i < journalEntries.length; i++) {
       const journal = journalEntries[i];
-      const roomWithSpace = shuffledRooms.find(({ tiles }) =>
+      // If this is the vault hint journal, exclude the vault room
+      const isVaultHint = journal.id === 'journal-vault-hint';
+      const eligibleRooms = isVaultHint && this.vaultRoomName
+        ? shuffledRooms.filter(({ room }) => room.name !== this.vaultRoomName)
+        : shuffledRooms;
+      const roomWithSpace = eligibleRooms.find(({ tiles }) =>
         tiles.some((t) => !usedTiles.has(`${t.x},${t.y}`) && !isAdjacentToUsed(t.x, t.y))
       );
       if (!roomWithSpace) break;
@@ -788,6 +834,78 @@ export default class ExploreScene extends Scene {
       // Track for room content announcements
       this.addRoomContent(mapRoom.name, 'map');
       break; // Only place one map
+    }
+
+    // Vault: exactly 1 per map, in a room other than spawn, solid (like NPCs), purple ring
+    // Generate a random 4-digit code
+    const vaultCode = String(Math.floor(1000 + Math.random() * 9000));
+    const vaultRoomData = [...bookRoomData].sort(() => Math.random() - 0.5);
+    for (const { room: vaultRoom, tiles } of vaultRoomData) {
+      const available = tiles.filter(
+        (t) => !usedTiles.has(`${t.x},${t.y}`) && 
+               !isAdjacentToUsed(t.x, t.y) &&
+               !isCorridorTile(t.x, t.y)
+      );
+      if (available.length === 0) continue;
+
+      // Prefer interior tiles (like NPCs)
+      const sortedByCenter = [...available].sort((a, b) => {
+        const distA = Math.abs(a.x - vaultRoom.centerX) + Math.abs(a.y - vaultRoom.centerY);
+        const distB = Math.abs(b.x - vaultRoom.centerX) + Math.abs(b.y - vaultRoom.centerY);
+        return distA - distB;
+      });
+      const centerCount = Math.max(2, Math.floor(sortedByCenter.length * 0.3));
+      const centerTiles = sortedByCenter.slice(0, centerCount);
+      const tile = centerTiles[Math.floor(Math.random() * centerTiles.length)];
+      usedTiles.add(`${tile.x},${tile.y}`);
+      this.npcBlockedTiles.add(`${tile.x},${tile.y}`); // Vault is solid
+
+      const px = tile.x * TILE_SIZE + TILE_SIZE / 2;
+      const py = tile.y * TILE_SIZE + TILE_SIZE / 2;
+      const container = this.add.container(px, py);
+      container.setDepth(5);
+
+      const shadow = this.add.graphics();
+      shadow.fillStyle(0x1a1a2e, 0.6);
+      shadow.fillCircle(0, 2, 14);
+      container.add(shadow);
+      const outlineRing = this.add.graphics();
+      outlineRing.lineStyle(5, 0x1a1a2e, 1);
+      outlineRing.strokeCircle(0, 0, 18);
+      container.add(outlineRing);
+      const ring = this.add.graphics();
+      ring.lineStyle(3, 0x9370db, 1); // Purple — vault/mystery
+      ring.strokeCircle(0, 0, 18);
+      container.add(ring);
+      container.add(this.add.sprite(0, 0, 'vault'));
+      this.vaultContainer = container;
+      this.vaultRoomName = vaultRoom.name;
+
+      this.tweens.add({
+        targets: container,
+        scale: 1.06,
+        duration: 1100,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
+      this.interactionSystem.register({
+        id: 'vault',
+        type: 'vault',
+        gridX: tile.x,
+        gridY: tile.y,
+        label: 'Vault',
+        interactionRange: 'adjacent',
+      });
+      // Store vault info in state for dynamic journal text and artifact
+      const collectedArtifacts = useGameStore.getState().exploration.collectedArtifacts;
+      const vaultArtifact = getRandomUncollectedArtifact(collectedArtifacts);
+      useGameStore.getState().actions.setVaultInfo({
+        roomName: vaultRoom.name,
+        code: vaultCode,
+        artifactId: vaultArtifact?.id ?? null,
+      });
+      break; // Only place one vault
     }
   }
 

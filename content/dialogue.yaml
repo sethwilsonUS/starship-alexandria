@@ -1,0 +1,34 @@
+transporter:
+  noFragments:
+    text: "You haven't recovered any new texts yet. The ruins may still hold knowledge worth preserving."
+    choices:
+      - label: Leave anyway
+        key: y
+        action: beam-up
+      - label: Keep searching
+        key: n
+        action: stay
+
+  fragmentsRemaining:
+    text: "The archives still hold {count} {plural}. Ready to beam up to Alexandria?"
+    choices:
+      - label: Yes
+        key: y
+        action: beam-up
+      - label: No
+        key: n
+        action: stay
+
+  allCollected:
+    text: "You've thoroughly explored this area. Beam up to Alexandria?"
+    choices:
+      - label: Yes
+        key: y
+        action: beam-up
+      - label: No
+        key: n
+        action: stay
+
+marthaHint:
+  template: "I've spotted fragments in {rooms}. That's where the remaining texts would be."
+  fallback: "The archives had the rarest editions. If any room survived intact, it would be there."

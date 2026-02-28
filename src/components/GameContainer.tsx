@@ -7,6 +7,8 @@ import { useGameStore } from '@/store/gameStore';
 import { getFragmentById, getBookCatalogSync } from '@/data/books';
 import { getNPCById, getMarthaBookHint } from '@/data/npcs';
 import { getJournalById } from '@/data/journalEntries';
+import { getArtifactById } from '@/data/artifacts';
+import { getGameloopCacheSync } from '@/utils/contentLoaderSync';
 import { unlockInteractions } from '@/game/systems/Interaction';
 import HUD from './HUD';
 import AccessibleLog from './AccessibleLog';
@@ -200,16 +202,32 @@ export default function GameContainer() {
           unlockInteractions();
         }
       } else if (type === 'journal' && id) {
-        const journal = await getJournalById(id);
-        if (journal) {
-          useGameStore.getState().actions.readJournal(id);
-          useGameStore.getState().actions.openDialogue(journal.lines);
-          // Delay consumed event to ensure React has rendered the dialogue
-          setTimeout(() => {
-            EventBridge.emit('interactive-consumed', { type: 'journal', id });
-          }, 100);
+        // Special handling for dynamic vault hint journal
+        if (id === 'journal-vault-hint') {
+          const vaultInfo = useGameStore.getState().session.vaultInfo;
+          if (vaultInfo) {
+            const formattedCode = vaultInfo.code.split('').join('-');
+            useGameStore.getState().actions.readJournal(id);
+            useGameStore.getState().actions.openDialogue([
+              { text: `If anyone finds this: the ${vaultInfo.roomName} vault code is ${formattedCode}. The director's birthday. They sealed it before they left. There's nothing down there worth dying for, they said. I think they were wrong.` }
+            ]);
+            setTimeout(() => {
+              EventBridge.emit('interactive-consumed', { type: 'journal', id });
+            }, 100);
+          } else {
+            unlockInteractions();
+          }
         } else {
-          unlockInteractions();
+          const journal = await getJournalById(id);
+          if (journal) {
+            useGameStore.getState().actions.readJournal(id);
+            useGameStore.getState().actions.openDialogue(journal.lines);
+            setTimeout(() => {
+              EventBridge.emit('interactive-consumed', { type: 'journal', id });
+            }, 100);
+          } else {
+            unlockInteractions();
+          }
         }
       } else if (type === 'battery' && id) {
         useGameStore.getState().actions.addBattery();
@@ -235,6 +253,42 @@ export default function GameContainer() {
         setTimeout(() => {
           EventBridge.emit('interactive-consumed', { type: 'map', id });
         }, 100);
+      } else if (type === 'vault') {
+        const state = useGameStore.getState();
+        const vaultInfo = state.session.vaultInfo;
+        const hasReadHint = state.exploration.readJournals.includes('journal-vault-hint');
+        const vaultOpened = state.session.vaultOpened;
+        const gameloop = getGameloopCacheSync();
+        
+        if (vaultOpened) {
+          const lines = gameloop.vault.alreadyOpened.map(line => ({ text: line.text }));
+          useGameStore.getState().actions.openDialogue(lines);
+        } else if (hasReadHint && vaultInfo) {
+          const formattedCode = vaultInfo.code.split('').join('-');
+          useGameStore.getState().actions.openVault();
+          
+          // Get the artifact from the vault
+          const artifact = vaultInfo.artifactId ? getArtifactById(vaultInfo.artifactId) : null;
+          
+          if (artifact) {
+            useGameStore.getState().actions.collectArtifact(artifact.id);
+            const lines = gameloop.vault.openWithArtifact.map(line => ({
+              text: line.text
+                .replace('{code}', formattedCode)
+                .replace('{artifactName}', artifact.name)
+                .replace('{artifactDescription}', artifact.description)
+            }));
+            useGameStore.getState().actions.openDialogue(lines);
+          } else {
+            const lines = gameloop.vault.openEmpty.map(line => ({
+              text: line.text.replace('{code}', formattedCode)
+            }));
+            useGameStore.getState().actions.openDialogue(lines);
+          }
+        } else {
+          const lines = gameloop.vault.locked.map(line => ({ text: line.text }));
+          useGameStore.getState().actions.openDialogue(lines);
+        }
       } else {
         const lines = getDialogueForInteraction(type, id);
         if (lines.length > 0) {
@@ -267,18 +321,27 @@ export default function GameContainer() {
   // Handle welcome message for first-time players
   useEffect(() => {
     const onShowWelcome = () => {
-      const welcomeLines = [
-        { text: "Welcome aboard the Starship Alexandria." },
-        { text: "After the cataclysm, Earth's great works of literature were scattered across the ruins." },
-        { text: "Your mission: beam down to the surface, recover fragments of lost texts, and rebuild humanity's library." },
-        { text: "The archives await their first acquisitions. Press Space or Enter to begin your expedition." },
-      ];
+      const gameloop = getGameloopCacheSync();
+      const welcomeLines = gameloop.welcome.lines.map(line => ({ text: line.text }));
       useGameStore.getState().actions.openDialogue(welcomeLines);
       useGameStore.getState().actions.setHasSeenWelcome();
     };
     EventBridge.on('show-welcome', onShowWelcome);
     return () => {
       EventBridge.off('show-welcome', onShowWelcome);
+    };
+  }, []);
+
+  // Handle victory message when all fragments collected
+  useEffect(() => {
+    const onShowVictory = () => {
+      const gameloop = getGameloopCacheSync();
+      const victoryLines = gameloop.victory.lines.map(line => ({ text: line.text }));
+      useGameStore.getState().actions.openDialogue(victoryLines);
+    };
+    EventBridge.on('show-victory', onShowVictory);
+    return () => {
+      EventBridge.off('show-victory', onShowVictory);
     };
   }, []);
 

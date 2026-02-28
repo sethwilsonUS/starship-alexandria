@@ -1,12 +1,13 @@
 import { Scene } from 'phaser';
 import { TILE_SIZE } from '@/config/gameConfig';
 import { useGameStore } from '@/store/gameStore';
-import { preloadAllContent, loadRoomNames, loadBooks, loadJournals, getAllNPCs, getAllFragments } from '@/utils/contentLoader';
+import { preloadAllContent, loadRoomNames, loadBooks, loadJournals, loadArtifacts, loadGameloop, getAllNPCs, getAllFragments } from '@/utils/contentLoader';
 import { setRoomNamesCache } from '../systems/MapGenerator';
 import { setCachedNPCCatalog, type NPC } from '@/data/npcs';
 import { setCachedBookCatalog, type Book } from '@/data/books';
-import { setJournalCache } from '@/utils/contentLoaderSync';
+import { setJournalCache, setArtifactCache, setGameloopCache } from '@/utils/contentLoaderSync';
 import type { JournalEntryDef } from '@/data/journalEntries';
+import type { Artifact } from '@/data/artifacts';
 
 /**
  * BootScene: Preload minimal assets and create procedural tileset.
@@ -174,6 +175,28 @@ export default class BootScene extends Scene {
     mapPickup.strokeRect(6, 8, 20, 16);
     mapPickup.generateTexture('map-pickup', 32, 32);
     mapPickup.destroy();
+
+    // Placeholder: vault — sturdy metal box with lock, distinct purple/steel color
+    const vault = this.add.graphics();
+    // Steel body
+    vault.fillStyle(0x5a5a6a, 1); // Steel gray-blue
+    vault.fillRoundedRect(4, 6, 24, 20, 3);
+    // Lock mechanism (gold/brass)
+    vault.fillStyle(0xc4a060, 1);
+    vault.fillCircle(16, 16, 5);
+    // Keyhole
+    vault.fillStyle(0x1a1a1a, 1);
+    vault.fillCircle(16, 15, 2);
+    vault.fillRect(15, 16, 2, 4);
+    // Hinges
+    vault.fillStyle(0x8b8b9b, 1);
+    vault.fillRect(5, 8, 3, 4);
+    vault.fillRect(5, 18, 3, 4);
+    // Dark outline
+    vault.lineStyle(3, 0x2a2520, 1);
+    vault.strokeRoundedRect(4, 6, 24, 20, 3);
+    vault.generateTexture('vault', 32, 32);
+    vault.destroy();
   }
 
   async create() {
@@ -251,9 +274,27 @@ export default class BootScene extends Scene {
         lines: j.lines.map((line) => ({ speaker: line.speaker, text: line.text })),
       }));
       setJournalCache(journalsCasted);
+      
+      // Cache artifacts for sync access
+      const artifacts = await loadArtifacts();
+      const artifactsCasted: Artifact[] = artifacts.map((a) => ({
+        id: a.id,
+        name: a.name,
+        description: a.description,
+      }));
+      setArtifactCache(artifactsCasted);
+      
+      // Cache gameloop dialogue for sync access
+      const gameloop = await loadGameloop();
+      setGameloopCache(gameloop);
+
+      // Signal to React components that content is ready
+      useGameStore.getState().actions.setContentReady();
     } catch (error) {
       console.error('Failed to load content:', error);
       // Game can still run with defaults if content loading fails
+      // Still mark content as ready so UI doesn't wait forever
+      useGameStore.getState().actions.setContentReady();
     }
   }
 }

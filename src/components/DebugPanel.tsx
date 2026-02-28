@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { EventBridge } from '@/game/EventBridge';
+import { getBookCatalogSync, type Book } from '@/data/books';
+import type { BookFragment } from '@/types/books';
 
 /**
  * Debug panel for development/testing.
@@ -13,6 +15,7 @@ export default function DebugPanel() {
   const [isVisible, setIsVisible] = useState(false);
   const resetGame = useGameStore((s) => s.actions.resetGame);
   const collectMap = useGameStore((s) => s.actions.collectMap);
+  const collectFragment = useGameStore((s) => s.actions.collectFragment);
   const setTTSEnabled = useGameStore((s) => s.actions.setTTSEnabled);
   const library = useGameStore((s) => s.library);
   const exploration = useGameStore((s) => s.exploration);
@@ -46,6 +49,34 @@ export default function DebugPanel() {
     if (hasAreaMap) return;
     collectMap();
     EventBridge.emit('interactive-consumed', { type: 'map', id: 'area-map' });
+  };
+
+  const handleGetAllFragments = () => {
+    try {
+      const catalog = getBookCatalogSync();
+      const collectedIds = new Set(library.map(f => f.id));
+      
+      // Collect all fragments not already in library
+      catalog.forEach((book: Book) => {
+        book.fragments.forEach((fragDef) => {
+          if (!collectedIds.has(fragDef.id)) {
+            const fragment: BookFragment = {
+              id: fragDef.id,
+              bookId: book.id,
+              label: fragDef.label,
+              order: fragDef.order,
+              text: fragDef.text || `[Text for ${fragDef.label}]`,
+            };
+            collectFragment(fragment);
+          }
+        });
+      });
+      
+      // Despawn all books on the current map
+      EventBridge.emit('debug-despawn-all-books');
+    } catch (e) {
+      console.error('Failed to get all fragments:', e);
+    }
   };
 
   return (
@@ -125,21 +156,37 @@ export default function DebugPanel() {
           Clear All localStorage
         </button>
         {gamePhase === 'exploring' && (
-          <button
-            onClick={handleGetMap}
-            disabled={hasAreaMap}
-            style={{
-              background: hasAreaMap ? '#333' : '#00ced1',
-              color: hasAreaMap ? '#666' : '#000',
-              border: 'none',
-              borderRadius: '4px',
-              padding: '0.5rem',
-              cursor: hasAreaMap ? 'not-allowed' : 'pointer',
-              fontWeight: 'bold',
-            }}
-          >
-            {hasAreaMap ? 'Map Collected' : 'Get Map'}
-          </button>
+          <>
+            <button
+              onClick={handleGetMap}
+              disabled={hasAreaMap}
+              style={{
+                background: hasAreaMap ? '#333' : '#00ced1',
+                color: hasAreaMap ? '#666' : '#000',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '0.5rem',
+                cursor: hasAreaMap ? 'not-allowed' : 'pointer',
+                fontWeight: 'bold',
+              }}
+            >
+              {hasAreaMap ? 'Map Collected' : 'Get Map'}
+            </button>
+            <button
+              onClick={handleGetAllFragments}
+              style={{
+                background: '#ffd700',
+                color: '#000',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '0.5rem',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+              }}
+            >
+              ✨ Get All Fragments
+            </button>
+          </>
         )}
       </div>
       <p style={{ margin: '0.5rem 0 0', color: '#666', fontSize: '10px' }}>

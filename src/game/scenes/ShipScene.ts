@@ -1,6 +1,7 @@
 import { Scene } from 'phaser';
 import { EventBridge } from '../EventBridge';
 import { useGameStore } from '@/store/gameStore';
+import { getBookCatalogSync } from '@/data/books';
 
 /**
  * ShipScene: The Starship Alexandria library deck.
@@ -9,6 +10,7 @@ import { useGameStore } from '@/store/gameStore';
  */
 export default class ShipScene extends Scene {
   private beamDownListener: (() => void) | null = null;
+  private hasShownVictory = false;
 
   constructor() {
     super({ key: 'ShipScene' });
@@ -28,6 +30,8 @@ export default class ShipScene extends Scene {
       // Only beam down if not in reading phase
       const gamePhase = useGameStore.getState().session.gamePhase;
       if (gamePhase === 'reading' || gamePhase === 'dialogue') return;
+      // Don't allow beam down if game is complete
+      if (this.isGameComplete()) return;
       this.beamDown();
     };
     EventBridge.on('beam-down-requested', this.beamDownListener);
@@ -42,6 +46,23 @@ export default class ShipScene extends Scene {
       this.time.delayedCall(300, () => {
         EventBridge.emit('show-welcome');
       });
+    } else if (this.isGameComplete() && !this.hasShownVictory) {
+      // Show victory dialogue if all fragments collected
+      this.hasShownVictory = true;
+      this.time.delayedCall(500, () => {
+        EventBridge.emit('show-victory');
+      });
+    }
+  }
+  
+  private isGameComplete(): boolean {
+    const library = useGameStore.getState().library;
+    try {
+      const catalog = getBookCatalogSync();
+      const totalFragments = catalog.reduce((sum, book) => sum + book.fragments.length, 0);
+      return library.length >= totalFragments && totalFragments > 0;
+    } catch {
+      return false;
     }
   }
   

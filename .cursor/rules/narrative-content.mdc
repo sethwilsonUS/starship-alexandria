@@ -1,0 +1,43 @@
+# Narrative Content Guidelines
+
+## All Narrative Text Lives in YAML
+
+When adding or modifying narrative content (dialogue, lore, descriptions, names), **always use YAML files** in the `content/` folder rather than hardcoding text in TypeScript files. This allows non-technical contributors to edit game content without touching code.
+
+## Content Types and Their Files
+
+| Content Type | YAML File | Purpose |
+|--------------|-----------|---------|
+| NPC dialogue | `content/npcs.yaml` | Character conversations |
+| Journal entries | `content/journals.yaml` | Lore, worldbuilding, hints |
+| Book metadata | `content/books.yaml` | Titles, authors, fragment lists |
+| Book text | `content/texts/*.txt` | Long-form literature passages |
+| Room names | `content/rooms.yaml` | Procedural room naming |
+| Transporter dialogue | `content/dialogue.yaml` | System messages, prompts |
+| Artifacts | `content/artifacts.yaml` | Vault collectibles |
+| Game loop | `content/gameloop.yaml` | Welcome, victory, vault dialogue |
+
+## When Creating New Narrative Features
+
+1. **Create a YAML file** in `content/` for the narrative data
+2. **Copy to `public/content/`** (the game loads from public folder)
+3. **Update `EDITING.md`** to document the new content type
+4. **Add loading code** in `src/utils/contentLoader.ts` if needed
+5. **Add sync cache** in `src/utils/contentLoaderSync.ts` for Phaser scene access
+
+## Pattern to Follow
+
+See existing content loaders for the pattern:
+- Define TypeScript interface for the YAML structure
+- Add cache variable and loading function
+- Add to `preloadAllContent()` 
+- Cache in `BootScene.loadContent()` for sync access
+
+## Never Hardcode
+
+Avoid putting player-facing text directly in:
+- React components
+- Phaser scenes
+- Game logic files
+
+Instead, load it from YAML and reference by ID.

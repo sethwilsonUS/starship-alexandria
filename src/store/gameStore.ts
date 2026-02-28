@@ -65,6 +65,7 @@ const initialExploration: ExplorationState = {
   discoveredNPCs: [],
   readJournals: [],
   totalFragmentsFound: 0,
+  collectedArtifacts: [],
 };
 
 const initialSettings: SettingsState = {
@@ -72,6 +73,7 @@ const initialSettings: SettingsState = {
 };
 
 const createInitialSession = () => ({
+  contentReady: false,
   currentDialogue: null,
   currentJournal: null,
   isReadingBook: false,
@@ -90,6 +92,8 @@ const createInitialSession = () => ({
   mapWalls: [] as number[][],
   mapSpawn: { x: 0, y: 0 },
   visitedRooms: [] as string[],
+  vaultInfo: null as { roomName: string; code: string; artifactId: string | null } | null,
+  vaultOpened: false,
 });
 
 type GameStore = GameState;
@@ -219,18 +223,25 @@ const createActions = (
     })),
 
   closeDialogue: () =>
-    set((s) => ({
-      session: {
-        ...s.session,
-        currentDialogue: null,
-        gamePhase:
-          s.session.isReadingBook || s.session.currentBookFragment
-            ? 'reading'
-            : s.player.currentMapId === 'ship'
-              ? 'ship'
-              : 'exploring',
-      },
-    })),
+    set((s) => {
+      // Determine the correct phase to return to
+      let nextPhase: 'ship' | 'exploring' | 'reading' = 'ship';
+      
+      if (s.session.isReadingBook || s.session.currentBookFragment) {
+        nextPhase = 'reading';
+      } else if (s.player.currentMapId && s.player.currentMapId !== 'ship' && s.player.currentMapId !== 'default') {
+        nextPhase = 'exploring';
+      }
+      // Default to 'ship' for safety (handles undefined/null/ship/default mapId)
+      
+      return {
+        session: {
+          ...s.session,
+          currentDialogue: null,
+          gamePhase: nextPhase,
+        },
+      };
+    }),
 
   closeBook: () =>
     set((s) => ({
@@ -285,6 +296,9 @@ const createActions = (
         mapRooms: [],
         mapWalls: [],
         mapSpawn: { x: 0, y: 0 },
+        visitedRooms: [],
+        vaultInfo: null,
+        vaultOpened: false,
       },
     })),
 
@@ -355,6 +369,11 @@ const createActions = (
       hasSeenWelcome: true,
     })),
 
+  setContentReady: () =>
+    set((s) => ({
+      session: { ...s.session, contentReady: true },
+    })),
+
   resetGame: () => {
     // Clear localStorage and reset all state
     localStorage.removeItem(STORAGE_KEY);
@@ -401,6 +420,8 @@ const createActions = (
         mapWalls: [],
         mapSpawn: { x: 0, y: 0 },
         visitedRooms: [],
+        vaultInfo: null,
+        vaultOpened: false,
       },
     })),
 
@@ -434,6 +455,32 @@ const createActions = (
         visitedRooms: s.session.visitedRooms.includes(roomName)
           ? s.session.visitedRooms
           : [...s.session.visitedRooms, roomName],
+      },
+    })),
+
+  setVaultInfo: (info: { roomName: string; code: string; artifactId: string | null } | null) =>
+    set((s) => ({
+      session: {
+        ...s.session,
+        vaultInfo: info,
+      },
+    })),
+
+  openVault: () =>
+    set((s) => ({
+      session: {
+        ...s.session,
+        vaultOpened: true,
+      },
+    })),
+
+  collectArtifact: (artifactId: string) =>
+    set((s) => ({
+      exploration: {
+        ...s.exploration,
+        collectedArtifacts: s.exploration.collectedArtifacts.includes(artifactId)
+          ? s.exploration.collectedArtifacts
+          : [...s.exploration.collectedArtifacts, artifactId],
       },
     })),
 });

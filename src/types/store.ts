@@ -60,10 +60,14 @@ export interface ExplorationState {
   discoveredNPCs: string[];
   readJournals: string[];
   totalFragmentsFound: number;
+  /** Artifact IDs collected from vaults */
+  collectedArtifacts: string[];
 }
 
 /** Session state (not persisted – local UI/session only) */
 export interface SessionState {
+  /** Whether YAML content (books, NPCs, etc.) has finished loading */
+  contentReady: boolean;
   currentDialogue: DialogueLine[] | null;
   currentJournal: JournalEntry | null;
   isReadingBook: boolean;
@@ -94,6 +98,10 @@ export interface SessionState {
   mapSpawn: { x: number; y: number };
   /** Room names the player has visited this expedition */
   visitedRooms: string[];
+  /** Vault info for the current map (room name, code, artifact inside) */
+  vaultInfo: { roomName: string; code: string; artifactId: string | null } | null;
+  /** Whether the vault has been opened this expedition */
+  vaultOpened: boolean;
 }
 
 export type GamePhase = 'exploring' | 'ship' | 'dialogue' | 'reading' | 'viewing-map';
@@ -145,6 +153,8 @@ export interface GameActions {
   startExpedition: () => void;
   /** Mark welcome as seen (first ship arrival) */
   setHasSeenWelcome: () => void;
+  /** Mark YAML content as loaded (called by BootScene) */
+  setContentReady: () => void;
   /** Reset all game state for "New Game" */
   resetGame: () => void;
   /** Store the map layout data when scene is created (before map is found) */
@@ -161,4 +171,10 @@ export interface GameActions {
   setTTSEnabled: (enabled: boolean) => void;
   /** Mark a room as visited */
   visitRoom: (roomName: string) => void;
+  /** Set vault info for current map */
+  setVaultInfo: (info: { roomName: string; code: string; artifactId: string | null } | null) => void;
+  /** Mark vault as opened */
+  openVault: () => void;
+  /** Collect an artifact from a vault */
+  collectArtifact: (artifactId: string) => void;
 }

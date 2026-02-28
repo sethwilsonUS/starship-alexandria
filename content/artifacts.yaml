@@ -1,0 +1,51 @@
+artifacts:
+  - id: artifact-locket
+    name: Tarnished Locket
+    description: >-
+      A silver locket, green with age. Inside, two faded photographs: a young couple
+      on their wedding day. On the back, an inscription: "Until the stars go out."
+
+  - id: artifact-drawing
+    name: Child's Drawing
+    description: >-
+      A crayon drawing on yellowed paper. A tall ship floats among the clouds, trailing
+      light. Below it, a stick figure waves. Written in wobbly letters: "The library
+      ship is coming back."
+
+  - id: artifact-music-box
+    name: Music Box
+    description: >-
+      A small wooden box with a brass mechanism. When you turn the key, it plays a
+      melody you almost recognize—something your grandmother might have hummed.
+
+  - id: artifact-glasses
+    name: Reading Glasses
+    description: >-
+      Wire-rimmed spectacles, one lens cracked. A small label inside the case reads
+      "Property of the Head Librarian." The prescription is surprisingly strong.
+
+  - id: artifact-letter
+    name: Unsent Letter
+    description: >-
+      A handwritten letter, never mailed. "Dear Michael, I know you said not to wait,
+      but I am waiting anyway. The evacuation ships are leaving tomorrow. I saved you
+      a seat. Please come home. —R"
+
+  - id: artifact-pressed-flower
+    name: Pressed Flower
+    description: >-
+      A delicate flower, pressed between wax paper. The petals have faded to a pale
+      lavender, but the shape is still perfect. Someone loved this enough to save it.
+
+  - id: artifact-pocket-watch
+    name: Stopped Pocket Watch
+    description: >-
+      A brass pocket watch, frozen at 3:47. The glass is intact, the mechanism silent.
+      Whatever happened at 3:47, time moved on without it.
+
+  - id: artifact-chess-piece
+    name: Carved Chess King
+    description: >-
+      A hand-carved chess piece, the white king. The wood is worn smooth from years
+      of handling. Initials "J.M." are carved into the base. The rest of the set is
+      long gone.

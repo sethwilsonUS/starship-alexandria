@@ -1,0 +1,84 @@
+books:
+  - id: inferno
+    title: "The Divine Comedy: Inferno"
+    author: Dante Alighieri
+    totalFragments: 34
+    fragments:
+      - id: inferno-canto-1
+        label: Canto I
+        order: 1
+        textFile: inferno/canto-1.txt
+      - id: inferno-canto-3
+        label: Canto III
+        order: 3
+        textFile: inferno/canto-3.txt
+
+  - id: tempest
+    title: The Tempest
+    author: William Shakespeare
+    totalFragments: 5
+    fragments:
+      - id: tempest-act-1
+        label: Act I, Scene 1
+        order: 1
+        textFile: tempest/act-1.txt
+      - id: tempest-act-4
+        label: Act IV, Scene 1
+        order: 4
+        textFile: tempest/act-4.txt
+
+  - id: canterbury
+    title: The Canterbury Tales
+    author: Geoffrey Chaucer
+    totalFragments: 24
+    fragments:
+      - id: canterbury-knights-tale
+        label: "The Knight's Tale (opening)"
+        order: 1
+        textFile: canterbury/knights-tale.txt
+
+  - id: faerie-queene
+    title: The Faerie Queene
+    author: Edmund Spenser
+    totalFragments: 6
+    fragments:
+      - id: faerie-queene-1-1
+        label: Book I, Canto 1
+        order: 1
+        textFile: faerie-queene/book-1-canto-1.txt
+
+  - id: dickinson
+    title: Selected Poems
+    author: Emily Dickinson
+    totalFragments: 1
+    fragments:
+      - id: dickinson-hope
+        label: '"Hope" is the thing with feathers'
+        order: 1
+        textFile: dickinson/hope.txt
+
+  - id: bible-kjv
+    title: The Holy Bible (King James Version)
+    author: Anonymous
+    totalFragments: 1189
+    fragments:
+      - id: bible-genesis-1
+        label: Genesis 1
+        order: 1
+        textFile: bible-kjv/genesis-1.txt
+      - id: bible-psalm-23
+        label: Psalm 23
+        order: 23
+        textFile: bible-kjv/psalm-23.txt
+      - id: bible-matthew-5
+        label: Matthew 5 (Beatitudes)
+        order: 5
+        textFile: bible-kjv/matthew-5.txt
+      - id: bible-1corinthians-13
+        label: 1 Corinthians 13
+        order: 13
+        textFile: bible-kjv/1corinthians-13.txt
+      - id: bible-revelation-21
+        label: Revelation 21:1-7
+        order: 21
+        textFile: bible-kjv/revelation-21.txt

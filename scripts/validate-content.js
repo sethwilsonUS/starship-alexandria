@@ -259,6 +259,85 @@ function validateDialogue() {
   }
 }
 
+function validateArtifacts() {
+  const data = loadYaml('artifacts.yaml');
+  if (!data) return;
+
+  if (!data.artifacts || !Array.isArray(data.artifacts)) {
+    addError('artifacts.yaml', 'Missing or invalid "artifacts" array');
+    return;
+  }
+
+  const ids = new Set();
+
+  data.artifacts.forEach((artifact, index) => {
+    const prefix = `artifacts[${index}]`;
+
+    if (!artifact.id) addError('artifacts.yaml', `${prefix}: Missing required field "id"`);
+    if (!artifact.name) addError('artifacts.yaml', `${prefix}: Missing required field "name"`);
+    if (!artifact.description) addError('artifacts.yaml', `${prefix}: Missing required field "description"`);
+
+    if (artifact.id && ids.has(artifact.id)) {
+      addError('artifacts.yaml', `${prefix}: Duplicate id "${artifact.id}"`);
+    }
+    if (artifact.id) ids.add(artifact.id);
+
+    // Recommend artifact- prefix for consistency
+    if (artifact.id && !artifact.id.startsWith('artifact-')) {
+      addWarning('artifacts.yaml', `${prefix}: ID "${artifact.id}" should start with "artifact-" for consistency`);
+    }
+  });
+}
+
+function validateGameloop() {
+  const data = loadYaml('gameloop.yaml');
+  if (!data) return;
+
+  // Validate welcome
+  if (!data.welcome) {
+    addError('gameloop.yaml', 'Missing "welcome" section');
+  } else if (!data.welcome.lines || !Array.isArray(data.welcome.lines)) {
+    addError('gameloop.yaml', 'welcome: Missing or invalid "lines" array');
+  } else {
+    data.welcome.lines.forEach((line, i) => {
+      if (!line.text) {
+        addError('gameloop.yaml', `welcome.lines[${i}]: Missing required field "text"`);
+      }
+    });
+  }
+
+  // Validate victory
+  if (!data.victory) {
+    addError('gameloop.yaml', 'Missing "victory" section');
+  } else if (!data.victory.lines || !Array.isArray(data.victory.lines)) {
+    addError('gameloop.yaml', 'victory: Missing or invalid "lines" array');
+  } else {
+    data.victory.lines.forEach((line, i) => {
+      if (!line.text) {
+        addError('gameloop.yaml', `victory.lines[${i}]: Missing required field "text"`);
+      }
+    });
+  }
+
+  // Validate vault
+  if (!data.vault) {
+    addError('gameloop.yaml', 'Missing "vault" section');
+  } else {
+    ['alreadyOpened', 'openWithArtifact', 'openEmpty', 'locked'].forEach((key) => {
+      const lines = data.vault[key];
+      if (!lines || !Array.isArray(lines)) {
+        addError('gameloop.yaml', `vault.${key}: Missing or invalid array`);
+      } else {
+        lines.forEach((line, i) => {
+          if (!line.text) {
+            addError('gameloop.yaml', `vault.${key}[${i}]: Missing required field "text"`);
+          }
+        });
+      }
+    });
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Main
 // ─────────────────────────────────────────────────────────────────────────────
@@ -278,6 +357,8 @@ function main() {
   validateBooks();
   validateRooms();
   validateDialogue();
+  validateArtifacts();
+  validateGameloop();
 
   // Report results
   if (warnings.length > 0) {

@@ -30,6 +30,12 @@ export type EventBridgeEvents = {
   'open-map-scene': void;
   /** Room announcement TTS completed */
   'room-announcements-complete': void;
+  /** Show victory message when all fragments collected */
+  'show-victory': void;
+  /** Debug: despawn all books on current map */
+  'debug-despawn-all-books': void;
+  /** Vault interaction - player attempts to open vault */
+  'vault-interaction': { vaultId: string; code: string; roomName: string };
 };
 
 /**

@@ -1,0 +1,22 @@
+journals:
+  - id: journal-diary-1
+    title: Water-damaged diary page
+    lines:
+      - text: "March 14. The power's been out for three days. We're moving the rare books to the basement. Martha says it's temporary. I hope she's right."
+      - text: "March 15. The evacuation order came. We can't take them all. I took a copy of Donne. Small. Fits in my pocket. It feels like a crime to choose."
+
+  - id: journal-diary-2
+    title: Faded note
+    lines:
+      - text: "If anyone finds this: the rotunda vault code was 7-3-9-1. The director's birthday. They sealed it before they left. There's nothing down there worth dying for, they said. I think they were wrong."
+
+  - id: journal-memo
+    title: Library memo
+    lines:
+      - text: "STAFF MEMO: All personnel. The Alexandria extraction is scheduled for dawn. Priority items: Gutenberg Bibles, first folios, illuminated manuscripts. Personal effects will not be accommodated. Report to the north entrance."
+      - text: "They took 400 volumes. They left 400,000. We did what we could."
+
+  - id: journal-child
+    title: Child's drawing
+    lines:
+      - text: "A crude drawing of a tall ship in the sky. Written underneath in messy script: 'The library ship is coming back. Dad said. I drew it so I remember.'"

@@ -14,6 +14,8 @@ Quick reference for editing game content. All narrative content lives in the `pu
 | Book text | `public/content/texts/<book-id>/<fragment>.txt` |
 | Room names | `public/content/rooms.yaml` |
 | Transporter dialogue | `public/content/dialogue.yaml` |
+| Vault artifacts | `public/content/artifacts.yaml` |
+| Game loop (welcome, victory, vault) | `public/content/gameloop.yaml` |
 
 ---
 
@@ -223,6 +225,106 @@ marthaHint:
 
 ---
 
+## 6. Artifacts (Vault Collectibles)
+
+**File:** `public/content/artifacts.yaml`
+
+Artifacts are optional collectibles found inside locked vaults. Each vault contains one random artifact the player hasn't collected yet.
+
+### Edit Existing Artifacts
+
+```yaml
+artifacts:
+  - id: artifact-locket
+    name: Tarnished Locket
+    description: >-
+      A silver locket, green with age. Inside, two faded photographs: a young
+      couple on their wedding day. On the back, an inscription: "Until the
+      stars go out."
+```
+
+### Add a New Artifact
+
+Add to the `artifacts` list:
+
+```yaml
+  - id: artifact-unique-id
+    name: Display Name
+    description: >-
+      A longer description that appears when the player finds the artifact
+      in a vault. This should be evocative and tell a small story about who
+      owned it and why they left it behind.
+```
+
+### Artifact Fields
+
+- `id`: Unique identifier (must start with `artifact-`)
+- `name`: Short display name (shown in ship's Curiosities shelf)
+- `description`: Full description (shown when vault is opened)
+
+**Note:** Use `>-` for multi-line descriptions to avoid awkward line breaks.
+
+---
+
+## 7. Game Loop Dialogue
+
+**File:** `public/content/gameloop.yaml`
+
+Core game messages: welcome screen, victory, and vault interactions.
+
+### Welcome Message
+
+Shown when a new player first boards the ship:
+
+```yaml
+welcome:
+  lines:
+    - text: "Welcome aboard the Starship Alexandria."
+    - text: "Your mission: recover lost literature from the ruins."
+```
+
+### Victory Message
+
+Shown when all fragments are collected:
+
+```yaml
+victory:
+  lines:
+    - text: "The final fragment has been recovered."
+    - text: "Thank you, Librarian. Your mission is complete."
+```
+
+### Vault Dialogue
+
+Four variants depending on vault state:
+
+```yaml
+vault:
+  alreadyOpened:
+    - text: "The vault stands open."
+
+  openWithArtifact:
+    - text: "Your fingers find the dial: {code}."
+    - text: "Inside, you find: {artifactName}."
+    - text: "{artifactDescription}"
+
+  openEmpty:
+    - text: "Your fingers find the dial: {code}."
+    - text: "The vault is empty."
+
+  locked:
+    - text: "A sturdy vault, sealed tight."
+    - text: "Someone around here might know the combination..."
+```
+
+### Vault Placeholders
+
+- `{code}`: The vault's 4-digit code (e.g., "7-3-9-1")
+- `{artifactName}`: Name of the artifact inside
+- `{artifactDescription}`: Full artifact description
+
+---
+
 ## YAML Tips
 
 - **Strings with special characters** should be quoted: `text: "Hello! How are you?"`
@@ -274,6 +376,8 @@ public/content/
 ├── books.yaml          # Book metadata (title, author, fragments list)
 ├── rooms.yaml          # Room name vocabulary
 ├── dialogue.yaml       # Transporter and misc dialogue templates
+├── artifacts.yaml      # Vault collectibles (optional treasures)
+├── gameloop.yaml       # Welcome, victory, and vault dialogue
 └── texts/              # Long-form book text (one file per fragment)
     ├── inferno/
     │   ├── canto-1.txt

@@ -65,6 +65,31 @@ export interface DialogueContentYaml {
   };
 }
 
+export interface ArtifactYaml {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface GameloopDialogueLineYaml {
+  text: string;
+}
+
+export interface GameloopYaml {
+  welcome: {
+    lines: GameloopDialogueLineYaml[];
+  };
+  victory: {
+    lines: GameloopDialogueLineYaml[];
+  };
+  vault: {
+    alreadyOpened: GameloopDialogueLineYaml[];
+    openWithArtifact: GameloopDialogueLineYaml[];
+    openEmpty: GameloopDialogueLineYaml[];
+    locked: GameloopDialogueLineYaml[];
+  };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Cache for loaded content
 // ─────────────────────────────────────────────────────────────────────────────
@@ -74,6 +99,8 @@ let journalsCache: JournalYaml[] | null = null;
 let booksCache: BookYaml[] | null = null;
 let roomNamesCache: string[] | null = null;
 let dialogueCache: DialogueContentYaml | null = null;
+let artifactsCache: ArtifactYaml[] | null = null;
+let gameloopCache: GameloopYaml | null = null;
 const textFileCache: Map<string, string> = new Map();
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -296,6 +323,36 @@ export async function getMarthaBookHint(roomNames: string[]): Promise<string> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Artifacts
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function loadArtifacts(): Promise<ArtifactYaml[]> {
+  if (artifactsCache) return artifactsCache;
+  const data = await fetchYaml<{ artifacts: ArtifactYaml[] }>('/content/artifacts.yaml');
+  artifactsCache = data.artifacts;
+  return artifactsCache;
+}
+
+export async function getArtifactById(id: string): Promise<ArtifactYaml | undefined> {
+  const artifacts = await loadArtifacts();
+  return artifacts.find((a) => a.id === id);
+}
+
+export async function getAllArtifacts(): Promise<ArtifactYaml[]> {
+  return loadArtifacts();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Gameloop (welcome, victory, vault dialogues)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function loadGameloop(): Promise<GameloopYaml> {
+  if (gameloopCache) return gameloopCache;
+  gameloopCache = await fetchYaml<GameloopYaml>('/content/gameloop.yaml');
+  return gameloopCache;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Preload all content (call at game start for better UX)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -306,6 +363,8 @@ export async function preloadAllContent(): Promise<void> {
     loadBooks(),
     loadRoomNames(),
     loadDialogue(),
+    loadArtifacts(),
+    loadGameloop(),
   ]);
 }
 
@@ -319,5 +378,7 @@ export function clearContentCache(): void {
   booksCache = null;
   roomNamesCache = null;
   dialogueCache = null;
+  artifactsCache = null;
+  gameloopCache = null;
   textFileCache.clear();
 }

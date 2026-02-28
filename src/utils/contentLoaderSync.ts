@@ -6,6 +6,7 @@
 
 import { getBookCatalogSync, type FragmentDef } from '@/data/books';
 import type { JournalEntryDef } from '@/data/journalEntries';
+import type { Artifact } from '@/data/artifacts';
 
 // Journal cache (set by BootScene)
 let _journalCache: JournalEntryDef[] | null = null;
@@ -19,6 +20,45 @@ export function getJournalCacheSync(): JournalEntryDef[] {
     throw new Error('Journal cache not loaded. Call preloadAllContent() first.');
   }
   return _journalCache;
+}
+
+// Artifact cache (set by BootScene)
+let _artifactCache: Artifact[] | null = null;
+
+export function setArtifactCache(artifacts: Artifact[]): void {
+  _artifactCache = artifacts;
+}
+
+export function getArtifactCacheSync(): Artifact[] {
+  if (!_artifactCache) {
+    return []; // Return empty array before cache loads - UI will update once loaded
+  }
+  return _artifactCache;
+}
+
+// Gameloop cache (set by BootScene)
+export interface GameloopContent {
+  welcome: { lines: { text: string }[] };
+  victory: { lines: { text: string }[] };
+  vault: {
+    alreadyOpened: { text: string }[];
+    openWithArtifact: { text: string }[];
+    openEmpty: { text: string }[];
+    locked: { text: string }[];
+  };
+}
+
+let _gameloopCache: GameloopContent | null = null;
+
+export function setGameloopCache(gameloop: GameloopContent): void {
+  _gameloopCache = gameloop;
+}
+
+export function getGameloopCacheSync(): GameloopContent {
+  if (!_gameloopCache) {
+    throw new Error('Gameloop cache not loaded. Call preloadAllContent() first.');
+  }
+  return _gameloopCache;
 }
 
 /**
