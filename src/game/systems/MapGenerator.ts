@@ -164,6 +164,7 @@ export function generateMap(): GeneratedMap {
   }
 
   // Corridor rubble: block some corridor tiles (distinct dark tiles, impassable)
+  // But ensure all rooms remain reachable from spawn
   const floodedTiles = new Set<string>();
   const inRoom = (x: number, y: number) =>
     taggedRooms.some((r) => x >= r.x1 && x <= r.x2 && y >= r.y1 && y <= r.y2);
@@ -174,30 +175,8 @@ export function generateMap(): GeneratedMap {
       if (!inRoom(x, y)) corridorTiles.push({ x, y });
     }
   }
-  const rubbleCount = Math.min(5 + Math.floor(Math.random() * 8), corridorTiles.length);
-  const shuffledCorridors = [...corridorTiles].sort(() => Math.random() - 0.5);
-  for (let i = 0; i < rubbleCount; i++) {
-    const { x, y } = shuffledCorridors[i];
-    walls[y][x] = TILE.RUBBLE;
-  }
-
-  // Flooded tiles: passable but slow, visually distinct (blue-gray overlay)
-  const floorTiles: { x: number; y: number }[] = [];
-  for (let y = 0; y < MAP_HEIGHT; y++) {
-    for (let x = 0; x < MAP_WIDTH; x++) {
-      if (walls[y][x] === TILE.EMPTY && decoration[y][x] === TILE.EMPTY) {
-        floorTiles.push({ x, y });
-      }
-    }
-  }
-  const floodCount = Math.min(3 + Math.floor(Math.random() * 5), floorTiles.length);
-  const shuffledFloors = [...floorTiles].sort(() => Math.random() - 0.5);
-  for (let i = 0; i < floodCount; i++) {
-    const { x, y } = shuffledFloors[i];
-    decoration[y][x] = TILE.FLOODED;
-    floodedTiles.add(`${x},${y}`);
-  }
-
+  
+  // Determine spawn point first (needed for reachability checks)
   let spawnX = Math.floor(MAP_WIDTH / 2);
   let spawnY = Math.floor(MAP_HEIGHT / 2);
   const spawnRoom = taggedRooms[0];
@@ -216,6 +195,57 @@ export function generateMap(): GeneratedMap {
         }
       }
     }
+  }
+  
+  // Helper to check if all rooms are reachable from spawn
+  const allRoomsReachable = (): boolean => {
+    const reached = computeReachableTiles(walls, spawnX, spawnY);
+    for (const room of taggedRooms) {
+      // Check if any tile in the room is reachable
+      let roomReachable = false;
+      for (let ry = room.y1; ry <= room.y2 && !roomReachable; ry++) {
+        for (let rx = room.x1; rx <= room.x2 && !roomReachable; rx++) {
+          if (reached.has(`${rx},${ry}`)) {
+            roomReachable = true;
+          }
+        }
+      }
+      if (!roomReachable) return false;
+    }
+    return true;
+  };
+  
+  // Place rubble one at a time, only if it doesn't disconnect any room
+  const rubbleCount = Math.min(5 + Math.floor(Math.random() * 8), corridorTiles.length);
+  const shuffledCorridors = [...corridorTiles].sort(() => Math.random() - 0.5);
+  let rubblePlaced = 0;
+  for (let i = 0; i < shuffledCorridors.length && rubblePlaced < rubbleCount; i++) {
+    const { x, y } = shuffledCorridors[i];
+    walls[y][x] = TILE.RUBBLE;
+    
+    if (allRoomsReachable()) {
+      rubblePlaced++;
+    } else {
+      // This rubble disconnects a room, remove it
+      walls[y][x] = TILE.EMPTY;
+    }
+  }
+
+  // Flooded tiles: passable but slow, visually distinct (blue-gray overlay)
+  const floorTiles: { x: number; y: number }[] = [];
+  for (let y = 0; y < MAP_HEIGHT; y++) {
+    for (let x = 0; x < MAP_WIDTH; x++) {
+      if (walls[y][x] === TILE.EMPTY && decoration[y][x] === TILE.EMPTY) {
+        floorTiles.push({ x, y });
+      }
+    }
+  }
+  const floodCount = Math.min(3 + Math.floor(Math.random() * 5), floorTiles.length);
+  const shuffledFloors = [...floorTiles].sort(() => Math.random() - 0.5);
+  for (let i = 0; i < floodCount; i++) {
+    const { x, y } = shuffledFloors[i];
+    decoration[y][x] = TILE.FLOODED;
+    floodedTiles.add(`${x},${y}`);
   }
 
   // BFS from spawn to get reachable tiles (after rubble) — items only placed here

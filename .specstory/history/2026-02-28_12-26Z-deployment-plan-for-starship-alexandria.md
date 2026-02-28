@@ -2489,3 +2489,26 @@ Fixed. Now rooms are tracked by their coordinates (`x1,y1`) instead of names, so
 
 ---
 
+_**User**_
+
+I'm still running into a problem where some rooms are inaccessible in some maps. Will you add some logic to make sure this doesn't happen?
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user is saying some rooms are inaccessible in some maps. This is likely because the procedural generation with rot.js Digger can sometimes create rooms that aren't connected to the main area, or rubble blocking corridors can make rooms unreachable.
+
+Looking at the MapGenerator, there's already a `computeReachableTiles` function that does a BFS from spawn to find reachable tiles. The issue is that rubble is placed in corridors which can block access to some rooms.
+
+I need to:
+1. After placing rubble, check if all rooms are still reachable from spawn
+2. If a room becomes unreachable, remove the rubble that's blocking it
+
+Or alternatively:
+1. Before placing rubble in a corridor tile, check if removing it would disconnect any room
+2. Only place rubble if it doesn't disconnect rooms</details></think>
+
+---
+
