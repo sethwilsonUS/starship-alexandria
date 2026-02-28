@@ -60,9 +60,12 @@ export default class MapScene extends Scene {
     super({ key: 'MapScene' });
   }
   
+  private visitedRooms: Set<string> = new Set();
+  
   create() {
-    const { mapRooms, mapSpawn, mapWalls, npcPositionsOnMap } = useGameStore.getState().session;
+    const { mapRooms, mapSpawn, mapWalls, npcPositionsOnMap, visitedRooms } = useGameStore.getState().session;
     this.mapWalls = mapWalls;
+    this.visitedRooms = new Set(visitedRooms);
     const { discoveredNPCs } = useGameStore.getState().exploration;
     const playerPos = useGameStore.getState().player.position;
     
@@ -141,19 +144,26 @@ export default class MapScene extends Scene {
       const h = (room.y2 - room.y1 + 1) * this.mapScale;
 
       const isPlayerRoom = room === this.playerRoom;
+      const isVisited = this.visitedRooms.has(`${room.x1},${room.y1}`);
 
       // Room rectangle
       const graphics = this.add.graphics();
       this.roomGraphics.push(graphics);
 
-      this.drawRoom(graphics, x, y, w, h, false, isPlayerRoom);
+      this.drawRoom(graphics, x, y, w, h, false, isPlayerRoom, isVisited);
 
-      // Room name
+      // Room name - dimmer for unvisited rooms
       const fontSize = Math.max(12, Math.min(18, Math.min(w, h) / 4));
+      let textColor = '#cccccc';
+      if (isPlayerRoom) {
+        textColor = '#7fff7f';
+      } else if (!isVisited) {
+        textColor = '#666666';
+      }
       const text = this.add.text(x + w / 2, y + h / 2, room.name, {
         fontSize: `${fontSize}px`,
         fontFamily: 'sans-serif',
-        color: isPlayerRoom ? '#7fff7f' : '#cccccc',
+        color: textColor,
         align: 'center',
         wordWrap: { width: w - 8 },
       }).setOrigin(0.5);
@@ -197,18 +207,28 @@ export default class MapScene extends Scene {
     // Legend at bottom
     const legendY = this.cameras.main.height - 20;
     const hasNpcs = this.discoveredNpcs.length > 0;
-    const legendSpacing = hasNpcs ? 120 : 90;
+    const legendItems = 4 + (hasNpcs ? 1 : 0);
+    const totalWidth = legendItems * 100;
+    const startX = (this.cameras.main.width - totalWidth) / 2 + 50;
     
-    this.add.text(this.cameras.main.width / 2 - legendSpacing, legendY, '■ Selected', {
+    this.add.text(startX, legendY, '■ Selected', {
       fontSize: '13px',
       color: '#00ced1',
     }).setOrigin(0.5);
-    this.add.text(this.cameras.main.width / 2, legendY, '■ You are here', {
+    this.add.text(startX + 100, legendY, '■ You', {
       fontSize: '13px',
       color: '#5cb85c',
     }).setOrigin(0.5);
+    this.add.text(startX + 200, legendY, '■ Visited', {
+      fontSize: '13px',
+      color: '#888888',
+    }).setOrigin(0.5);
+    this.add.text(startX + 300, legendY, '■ Unvisited', {
+      fontSize: '13px',
+      color: '#444444',
+    }).setOrigin(0.5);
     if (hasNpcs) {
-      this.add.text(this.cameras.main.width / 2 + legendSpacing, legendY, '● NPC', {
+      this.add.text(startX + 400, legendY, '● NPC', {
         fontSize: '13px',
         color: '#e8a838',
       }).setOrigin(0.5);
@@ -224,10 +244,12 @@ export default class MapScene extends Scene {
     // TTS intro
     const playerRoomName = this.playerRoom?.name ?? 'a corridor';
     const npcCount = this.discoveredNpcs.length;
+    const visitedCount = this.visitedRooms.size;
     const npcNote = npcCount > 0 
       ? ` ${npcCount} survivor${npcCount > 1 ? 's' : ''} discovered.`
       : '';
-    const intro = `Map of the area. ${this.rooms.length} rooms.${npcNote} You are in ${playerRoomName}. Use arrow keys to navigate between rooms. Press Escape or M to close.`;
+    const visitedNote = ` ${visitedCount} of ${this.rooms.length} rooms visited.`;
+    const intro = `Map of the area.${visitedNote}${npcNote} You are in ${playerRoomName}. Use arrow keys to navigate between rooms. Press Escape or M to close.`;
     speak(intro);
   }
   
@@ -235,7 +257,8 @@ export default class MapScene extends Scene {
     graphics: Phaser.GameObjects.Graphics,
     x: number, y: number, w: number, h: number,
     isSelected: boolean,
-    isPlayerRoom: boolean
+    isPlayerRoom: boolean,
+    isVisited: boolean = true
   ) {
     graphics.clear();
     
@@ -251,8 +274,14 @@ export default class MapScene extends Scene {
       graphics.fillRoundedRect(x, y, w, h, 6);
       graphics.lineStyle(3, 0x5cb85c, 1);
       graphics.strokeRoundedRect(x, y, w, h, 6);
+    } else if (!isVisited) {
+      // Unvisited room: darker, dashed border
+      graphics.fillStyle(0x252530, 0.5);
+      graphics.fillRoundedRect(x, y, w, h, 6);
+      graphics.lineStyle(2, 0x3a3a44, 1);
+      graphics.strokeRoundedRect(x, y, w, h, 6);
     } else {
-      // Normal room: gray
+      // Visited room: normal gray
       graphics.fillStyle(0x404050, 0.6);
       graphics.fillRoundedRect(x, y, w, h, 6);
       graphics.lineStyle(2, 0x555555, 1);
@@ -301,14 +330,17 @@ export default class MapScene extends Scene {
       
       const isSelected = idx === this.selectedIndex;
       const isPlayerRoom = room === this.playerRoom;
+      const isVisited = this.visitedRooms.has(`${room.x1},${room.y1}`);
       
-      this.drawRoom(this.roomGraphics[idx], x, y, w, h, isSelected, isPlayerRoom);
+      this.drawRoom(this.roomGraphics[idx], x, y, w, h, isSelected, isPlayerRoom, isVisited);
       
       // Update text color
       if (isSelected) {
         this.roomTexts[idx].setColor('#00ced1');
       } else if (isPlayerRoom) {
         this.roomTexts[idx].setColor('#7fff7f');
+      } else if (!isVisited) {
+        this.roomTexts[idx].setColor('#666666');
       } else {
         this.roomTexts[idx].setColor('#cccccc');
       }
@@ -379,6 +411,7 @@ export default class MapScene extends Scene {
 
     const direction = getDirectionLabel(room);
     const isPlayerHere = room === this.playerRoom;
+    const isVisited = this.visitedRooms.has(`${room.x1},${room.y1}`);
     
     // Check for NPCs in this room
     const npcsInRoom = this.discoveredNpcs.filter(npc => npc.roomName === room.name);
@@ -387,7 +420,11 @@ export default class MapScene extends Scene {
     const exits = this.getCorridorExits(room);
     const exitText = this.formatCorridorExits(exits);
     
-    let text = `${room.name}. ${direction} side of the map.`;
+    let text = `${room.name}.`;
+    if (!isVisited && !isPlayerHere) {
+      text += ' Not yet visited.';
+    }
+    text += ` ${direction} side of the map.`;
     if (exitText) {
       text += ` ${exitText}.`;
     }

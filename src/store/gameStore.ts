@@ -89,6 +89,7 @@ const createInitialSession = () => ({
   mapRooms: [] as MapRoom[],
   mapWalls: [] as number[][],
   mapSpawn: { x: 0, y: 0 },
+  visitedRooms: [] as string[],
 });
 
 type GameStore = GameState;
@@ -399,6 +400,7 @@ const createActions = (
         mapRooms: [],
         mapWalls: [],
         mapSpawn: { x: 0, y: 0 },
+        visitedRooms: [],
       },
     })),
 
@@ -424,6 +426,16 @@ const createActions = (
       settings: { ...s.settings, ttsEnabled: enabled },
     }));
   },
+
+  visitRoom: (roomName: string) =>
+    set((s) => ({
+      session: {
+        ...s.session,
+        visitedRooms: s.session.visitedRooms.includes(roomName)
+          ? s.session.visitedRooms
+          : [...s.session.visitedRooms, roomName],
+      },
+    })),
 });
 
 export const useGameStore = create<GameStore>()(

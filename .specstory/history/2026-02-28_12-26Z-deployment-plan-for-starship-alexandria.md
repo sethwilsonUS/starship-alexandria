@@ -1822,7 +1822,670 @@ Okay we're REALLY close! This looks good overall and the TTS functionality is co
 _**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
 
 <think><details><summary>Thought Process</summary>
-Looking at the screenshot, I can see the corridors are being drawn but there</details></think>
+Looking at the screenshot, I can see the corridors are being drawn but there are gaps. The issue is likely that I'm drawing each corridor tile as a small square with some spacing between them. The `size` calculation uses `this.mapScale * 0.9` which leaves gaps.
+
+Let me fix this by using the full tile size and ensuring the rectangles fully connect. I should use `this.mapScale` for the full size, or even slightly larger to ensure overlap and no gaps.</details></think>
+
+---
+
+I see the issue - the corridor tiles are being drawn with gaps between them because I'm using `mapScale * 0.9`. Let me fix that to use the full tile size so they connect seamlessly.
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/sethwilson/dev/starship-alexandria/src/game/scenes/MapScene.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+That should fix the gaps. The change uses `Math.ceil(this.mapScale)` to ensure the tile size is rounded up, which will make adjacent tiles slightly overlap rather than having gaps. The dev server should hot reload automatically.</details></think>
+
+---
+
+Fixed - now using `Math.ceil(this.mapScale)` for the tile size so adjacent corridor tiles will slightly overlap instead of having gaps. Should hot-reload in your browser.
+
+---
+
+_**User**_
+
+Currently the map doesn't do a great job of showing what rooms you have and haven't been in. Can you address this?
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants to show which rooms have been visited vs. not visited on the map. I need to track which rooms the player has entered and then display them differently on the map.
+
+Looking at the existing code, there's already exploration tracking in the store. Let me check what's available.
+
+I need to:
+1. Track visited rooms (probably in the session or exploration state)
+2. Display visited vs. unvisited rooms differently on the map
+
+Let me check what exploration data exists and how room entry is tracked.</details></think>
+
+---
+
+Good point. Let me check what room visit tracking exists and add visual differentiation for visited vs. unvisited rooms.
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "visitedRooms|roomEntry|checkRoomEntry",
+  "path": "/Users/sethwilson/dev/starship-alexandria/src",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "visitedRooms|roomEntry|checkRoomEntry",
+  "path": "/Users/sethwilson/dev/starship-alexandria/src",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 3,
+  "topFiles": [
+    {
+      "uri": "src/game/scenes/ExploreScene.ts",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+There's a `checkRoomEntry` method that runs on player movement. Let me check the store to see if there's room visit tracking, and if not, add it.</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/sethwilson/dev/starship-alexandria/src/game/scenes/ExploreScene.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "visitedRooms",
+  "path": "/Users/sethwilson/dev/starship-alexandria/src/store/gameStore.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "visitedRooms",
+  "path": "/Users/sethwilson/dev/starship-alexandria/src/store/gameStore.ts",
+  "outputMode": "content",
+  "totalFiles": 0,
+  "totalMatches": 0,
+  "topFiles": []
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+I see that there's a local `this.announcedRooms` Set in ExploreScene that tracks which rooms have been announced. But this isn't stored in the game store, so it won't be available to MapScene.
+
+I need to:
+1. Add `visitedRooms` to the session state in the store
+2. Add an action to mark a room as visited
+3. Update ExploreScene to call this action when entering a room
+4. Update MapScene to display visited vs. unvisited rooms differently
+
+Let me check the store types and add the new state.</details></think>
+
+---
+
+I see there's local tracking in ExploreScene (`announcedRooms`) but it's not in the store. I need to add visited room tracking to the store so MapScene can access it.
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/sethwilson/dev/starship-alexandria/src/types/store.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+I'll add `visitedRooms` to SessionState and add an action to mark rooms as visited. Let me update the types first, then the store, then ExploreScene, and finally MapScene.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/sethwilson/dev/starship-alexandria/src/types/store.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Now I need to add the action to mark rooms as visited. Let me check the GameActions interface and add the action.</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/sethwilson/dev/starship-alexandria/src/types/store.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+I need to add `visitRoom` action to mark a room as visited. Let me add it to GameActions.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/sethwilson/dev/starship-alexandria/src/types/store.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Now let me update the game store to implement these changes - add the initial state and the action.</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/sethwilson/dev/starship-alexandria/src/store/gameStore.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+I need to add `visitedRooms: []` to the initial session state.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/sethwilson/dev/starship-alexandria/src/store/gameStore.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Now I need to add the `visitRoom` action and also clear `visitedRooms` when the map is cleared. Let me find where the actions are defined and add the new action.</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/sethwilson/dev/starship-alexandria/src/store/gameStore.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+I need to:
+1. Add `visitedRooms: []` to clearAreaMap 
+2. Add the `visitRoom` action
+
+Let me do both.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/sethwilson/dev/starship-alexandria/src/store/gameStore.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Now let me add the visitRoom action. I'll add it right after setTTSEnabled.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/sethwilson/dev/starship-alexandria/src/store/gameStore.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Now I need to update ExploreScene to call `visitRoom` when the player enters a room. Let me find where `checkRoomEntry` emits `area-entered` and add the call there.</details></think>
+
+---
+
+Now let me update ExploreScene to call `visitRoom` when entering a room.
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/sethwilson/dev/starship-alexandria/src/game/scenes/ExploreScene.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Now I need to update MapScene to display visited vs. unvisited rooms differently. Let me update the drawing code to show unvisited rooms as darker/grayed out.</details></think>
+
+---
+
+Now let me update MapScene to show visited vs. unvisited rooms differently.
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/sethwilson/dev/starship-alexandria/src/game/scenes/MapScene.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+I need to:
+1. Get `visitedRooms` from the store
+2. Store it as a class property
+3. Update `drawRoom` to handle visited/unvisited state
+4. Update the TTS to mention if a room is unvisited
+
+Let me make these changes.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/sethwilson/dev/starship-alexandria/src/game/scenes/MapScene.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Now I need to update the room drawing code to pass the visited state and update the `drawRoom` method to handle it. Let me find where rooms are drawn.</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/sethwilson/dev/starship-alexandria/src/game/scenes/MapScene.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+I need to:
+1. Update the room drawing loop to pass the visited state
+2. Update the `drawRoom` method to handle the visited state
+3. Update the room text color based on visited state
+
+Let me update the room drawing code first.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/sethwilson/dev/starship-alexandria/src/game/scenes/MapScene.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Now I need to update the `drawRoom` method to handle the visited state, and also update `updateSelection` to pass the visited state when redrawing rooms.</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/sethwilson/dev/starship-alexandria/src/game/scenes/MapScene.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+I need to update the `drawRoom` method to include the `isVisited` parameter and show unvisited rooms differently.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/sethwilson/dev/starship-alexandria/src/game/scenes/MapScene.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Now I need to update `updateSelection` to pass the visited state when redrawing rooms.</details></think>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/sethwilson/dev/starship-alexandria/src/game/scenes/MapScene.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+I need to update `updateSelection` to pass the `isVisited` state and update the text color accordingly.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/sethwilson/dev/starship-alexandria/src/game/scenes/MapScene.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Now let me also update the TTS to mention if a room is unvisited. Let me find the `speakCurrentRoom` method.</details></think>
+
+---
+
+Now let me update the TTS to mention if a room is unvisited.
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/sethwilson/dev/starship-alexandria/src/game/scenes/MapScene.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+I need to add unvisited status to the TTS. Let me update `speakCurrentRoom`.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/sethwilson/dev/starship-alexandria/src/game/scenes/MapScene.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Let me also add a legend item for unvisited rooms and update the intro message to mention how many rooms have been visited. Let me check the legend code.</details></think>
+
+---
+
+Let me also update the legend to show unvisited rooms.
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/sethwilson/dev/starship-alexandria/src/game/scenes/MapScene.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+I need to update the legend to show unvisited rooms and update the intro message to include visited count.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/sethwilson/dev/starship-alexandria/src/game/scenes/MapScene.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Now let me run a TypeScript check to make sure everything compiles.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: npx tsc --noEmit 2>&1</summary>
+
+```bash
+npx tsc --noEmit 2>&1
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+All good. The changes should hot-reload in the browser. Let me summarize what I've done for the user.</details></think>
+
+---
+
+Done! The map now tracks and displays visited vs. unvisited rooms:
+
+**Visual changes:**
+- **Visited rooms**: Normal gray fill with lighter border
+- **Unvisited rooms**: Darker fill (#252530) with dimmer border and text
+- **Legend**: Updated to show "Visited" and "Unvisited" colors
+
+**TTS changes:**
+- Intro now says "X of Y rooms visited"
+- When navigating to an unvisited room, says "Not yet visited"
+
+The dev server should hot-reload. Visit a few rooms, then open the map (M) to see which ones you've been to vs. haven't.
+
+---
+
+_**User**_
+
+Okay one problem I notice, the map I'm in now has two rooms called "reading room" so when I visit one, they both mark as visited...
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+Ah, that's a problem. The room tracking is using room names, but room names can be duplicated. I need to use a unique identifier for each room instead of just the name.
+
+Looking at the MapRoom interface:
+```typescript
+export interface MapRoom {
+  name: string;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  centerX: number;
+  centerY: number;
+}
+```
+
+There's no unique ID. I could either:
+1. Add a unique ID to each room when generating them
+2. Use the coordinates as a unique identifier (e.g., `${x1},${y1}`)
+
+Option 2 is simpler and doesn't require changing the room generation. I'll use a coordinate-based key like `${room.x1},${room.y1}` to uniquely identify rooms.
+
+Let me update:
+1. The store to track visited rooms by coordinate key instead of name
+2. ExploreScene to pass the coordinate key
+3. MapScene to check visited status by coordinate key</details></think>
+
+---
+
+Good catch! Room names can be duplicated. I need to use coordinates as a unique identifier instead of names. Let me fix this.
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/sethwilson/dev/starship-alexandria/src/game/scenes/ExploreScene.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Now I need to update MapScene to check visited status using the coordinate key instead of the room name.</details></think>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="ripgrep_raw_search">
+<details>
+<summary>Tool use: **ripgrep_raw_search**</summary>
+
+
+Parameters:
+
+```json
+{
+  "pattern": "visitedRooms\\.has\\(room\\.name\\)",
+  "path": "/Users/sethwilson/dev/starship-alexandria/src/game/scenes/MapScene.ts",
+  "caseInsensitive": false
+}
+```
+Additional data:
+
+```json
+{
+  "isPruned": true,
+  "pattern": "visitedRooms\\.has\\(room\\.name\\)",
+  "path": "/Users/sethwilson/dev/starship-alexandria/src/game/scenes/MapScene.ts",
+  "outputMode": "content",
+  "totalFiles": 1,
+  "totalMatches": 3,
+  "topFiles": [
+    {
+      "uri": "src/game/scenes/MapScene.ts",
+      "matchCount": 3
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+I need to update all three places to use the coordinate key.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/sethwilson/dev/starship-alexandria/src/game/scenes/MapScene.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Good. Now rooms are tracked by their unique coordinates instead of names. The dev server should hot-reload. Let me also run a quick TypeScript check to make sure nothing broke.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: npx tsc --noEmit 2>&1</summary>
+
+```bash
+npx tsc --noEmit 2>&1
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+All good. Now rooms are tracked by their coordinate key (`x1,y1`) instead of name, so two rooms with the same name will be tracked separately.</details></think>
+
+---
+
+Fixed. Now rooms are tracked by their coordinates (`x1,y1`) instead of names, so two "reading room"s will be tracked separately. Should hot-reload in your browser.
 
 ---
 

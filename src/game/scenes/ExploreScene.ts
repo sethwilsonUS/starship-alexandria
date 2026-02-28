@@ -798,6 +798,11 @@ export default class ExploreScene extends Scene {
       this.lastRoomName = name;
       EventBridge.emit('area-entered', { areaName: name });
       
+      // Track visited rooms for map display (use coordinates as unique key)
+      if (room) {
+        useGameStore.getState().actions.visitRoom(`${room.x1},${room.y1}`);
+      }
+      
       // Announce room name and contents if entering a room for the first time
       if (name !== 'corridor' && !this.announcedRooms.has(name)) {
         this.announcedRooms.add(name);

@@ -92,6 +92,8 @@ export interface SessionState {
   mapWalls: number[][];
   /** Player spawn position for the current area */
   mapSpawn: { x: number; y: number };
+  /** Room names the player has visited this expedition */
+  visitedRooms: string[];
 }
 
 export type GamePhase = 'exploring' | 'ship' | 'dialogue' | 'reading' | 'viewing-map';
@@ -157,4 +159,6 @@ export interface GameActions {
   closeMap: () => void;
   /** Toggle TTS on/off */
   setTTSEnabled: (enabled: boolean) => void;
+  /** Mark a room as visited */
+  visitRoom: (roomName: string) => void;
 }
