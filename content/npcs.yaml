@@ -1,0 +1,51 @@
+npcs:
+  - id: martha
+    name: Martha
+    firstMeet:
+      - speaker: Martha
+        text: "Oh! A visitor. I didn't think anyone would find this place."
+      - speaker: Martha
+        text: "I was the head librarian here. Before... well. Before everything."
+      - speaker: Martha
+        text: "The Alexandria still flies. I see it sometimes, a speck in the sky. They're preserving what we couldn't."
+      - speaker: Martha
+        text: "If you're collecting fragments—and you must be—keep looking. The old texts are still here. Buried, scattered, but here."
+    return:
+      - speaker: Martha
+        text: "Back again? I hope you're finding what you need."
+      - speaker: Martha
+        text: "The archives had the rarest editions. If any room survived intact, it would be there."
+
+  - id: eli
+    name: Eli
+    firstMeet:
+      - speaker: Eli
+        text: "Hey. You with the Alexandria? Saw the beam."
+      - speaker: Eli
+        text: "I scavenge. Old books sell—well, traded. People still want stories. Something to read when the power's out."
+      - speaker: Eli
+        text: "I've found fragments in the scriptorium. Copyists used to work there. Lots of loose pages."
+      - speaker: Eli
+        text: "Rumor is there's a vault under the rotunda. Sealed before the collapse. Could be nothing. Could be gold."
+    return:
+      - speaker: Eli
+        text: "Still hunting? Check the corners. People hid things when they fled."
+      - speaker: Eli
+        text: "The courtyard's overgrown, but I've pulled whole volumes from under the vines."
+
+  - id: cora
+    name: Cora
+    firstMeet:
+      - speaker: Cora
+        text: "You're not one of the scavengers. You have that look—like you actually care about the books."
+      - speaker: Cora
+        text: "I was a grad student. Medieval literature. My thesis was on Spenser. Ironic, isn't it?"
+      - speaker: Cora
+        text: "The reading room had a special collection. Faerie Queene, Canterbury Tales. If the shelves didn't collapse..."
+      - speaker: Cora
+        text: "Good luck. Someone has to remember."
+    return:
+      - speaker: Cora
+        text: "Still at it. I admire that."
+      - speaker: Cora
+        text: "I heard Martha's still in the {{martha_room}}. She knows where everything used to be."

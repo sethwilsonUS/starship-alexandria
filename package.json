@@ -1,42 +1,50 @@
 {
-    "name": "template-nextjs",
-    "version": "1.2.0",
-    "description": "A Phaser 3 Next.js project template that demonstrates Next.js with React communication and uses Vite for bundling.",
+    "name": "starship-alexandria",
+    "version": "0.1.0",
+    "description": "A cozy roguelike web game about recovering lost literature from post-apocalyptic Earth. Built with Phaser 3, Next.js, and TypeScript.",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/phaserjs/template-nextjs.git"
+        "url": "git+https://github.com/sethwilsonUS/starship-alexandria.git"
     },
-    "author": "Phaser Studio <support@phaser.io> (https://phaser.io/)",
+    "author": "Seth Wilson",
     "license": "MIT",
-    "licenseUrl": "http://www.opensource.org/licenses/mit-license.php",
     "bugs": {
-        "url": "https://github.com/phaserjs/template-nextjs/issues"
+        "url": "https://github.com/sethwilsonUS/starship-alexandria/issues"
     },
-    "homepage": "https://github.com/phaserjs/template-nextjs#readme",
+    "homepage": "https://github.com/sethwilsonUS/starship-alexandria#readme",
     "keywords": [
         "phaser",
         "phaser3",
+        "roguelike",
         "next",
         "nextjs",
-        "vite",
-        "typescript"
+        "typescript",
+        "game"
     ],
     "scripts": {
         "dev": "node log.js dev & next dev -p 8080",
-        "build": "node log.js build & next build",
+        "clean": "rm -rf dist .next",
+        "build": "npm run validate-content && node log.js build & next build",
         "dev-nolog": "next dev -p 8080",
-        "build-nolog": "next build"
+        "build-nolog": "npm run validate-content && next build",
+        "validate-content": "node scripts/validate-content.js"
     },
     "dependencies": {
         "next": "15.3.1",
         "phaser": "^3.90.0",
         "react": "19.0.0",
-        "react-dom": "19.0.0"
+        "react-dom": "19.0.0",
+        "rot-js": "^2.2.1",
+        "uuid": "^13.0.0",
+        "yaml": "^2.8.2",
+        "zustand": "^5.0.11"
     },
     "devDependencies": {
         "@types/node": "^20",
         "@types/react": "^19",
         "@types/react-dom": "^19",
+        "@types/uuid": "^10.0.0",
+        "ts-node": "^10.9.2",
         "typescript": "^5"
     }
 }
