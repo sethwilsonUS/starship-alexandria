@@ -7,6 +7,7 @@ import { EventEmitter } from 'events';
 export type EventBridgeEvents = {
   'player-moving': void;
   'player-moved': { x: number; y: number };
+  'movement-blocked': { direction: string };
   'interaction-available': { type: string; label?: string };
   'interaction-triggered': { type: string; id?: string };
   /** Emitted by GameContainer after successfully handling an interaction. ExploreScene uses this to destroy/remove. */
