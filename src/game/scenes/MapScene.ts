@@ -54,6 +54,7 @@ export default class MapScene extends Scene {
   private mapOffsetX = 0;
   private mapOffsetY = 0;
   private discoveredNpcs: NpcOnMap[] = [];
+  private mapWalls: number[][] = [];
   
   constructor() {
     super({ key: 'MapScene' });
@@ -61,6 +62,7 @@ export default class MapScene extends Scene {
   
   create() {
     const { mapRooms, mapSpawn, mapWalls, npcPositionsOnMap } = useGameStore.getState().session;
+    this.mapWalls = mapWalls;
     const { discoveredNPCs } = useGameStore.getState().exploration;
     const playerPos = useGameStore.getState().player.position;
     
@@ -110,21 +112,23 @@ export default class MapScene extends Scene {
       color: '#888888',
     }).setOrigin(0.5);
     
-    // Draw corridors (walkable tiles not in rooms)
+    // Draw corridors (walkable tiles not in rooms) - TILE.EMPTY is -1
     if (mapWalls && mapWalls.length > 0) {
       const corridorGraphics = this.add.graphics();
-      corridorGraphics.fillStyle(0x555566, 0.6);
+      corridorGraphics.fillStyle(0x666677, 0.7);
+      
+      // Use ceiling of scale to ensure no gaps between tiles
+      const tileSize = Math.ceil(this.mapScale);
       
       for (let y = 0; y < mapWalls.length; y++) {
         for (let x = 0; x < (mapWalls[y]?.length ?? 0); x++) {
-          const isWall = mapWalls[y][x] !== 0;
-          if (isWall) continue;
+          const isWalkable = mapWalls[y][x] === -1; // TILE.EMPTY
+          if (!isWalkable) continue;
           if (isInAnyRoom(mapRooms, x, y)) continue;
           
           const px = this.mapOffsetX + x * this.mapScale;
           const py = this.mapOffsetY + y * this.mapScale;
-          const size = Math.max(2, this.mapScale * 0.8);
-          corridorGraphics.fillRect(px, py, size, size);
+          corridorGraphics.fillRect(px, py, tileSize, tileSize);
         }
       }
     }
@@ -311,6 +315,64 @@ export default class MapScene extends Scene {
     });
   }
   
+  private getCorridorExits(room: MapRoom): { north: number; south: number; east: number; west: number } {
+    const exits = { north: 0, south: 0, east: 0, west: 0 };
+    if (this.mapWalls.length === 0) return exits;
+    
+    // Check north edge (y = room.y1 - 1)
+    const northY = room.y1 - 1;
+    if (northY >= 0) {
+      for (let x = room.x1; x <= room.x2; x++) {
+        if (this.mapWalls[northY]?.[x] === -1 && !isInAnyRoom(this.rooms, x, northY)) {
+          exits.north++;
+        }
+      }
+    }
+    
+    // Check south edge (y = room.y2 + 1)
+    const southY = room.y2 + 1;
+    if (southY < this.mapWalls.length) {
+      for (let x = room.x1; x <= room.x2; x++) {
+        if (this.mapWalls[southY]?.[x] === -1 && !isInAnyRoom(this.rooms, x, southY)) {
+          exits.south++;
+        }
+      }
+    }
+    
+    // Check west edge (x = room.x1 - 1)
+    const westX = room.x1 - 1;
+    if (westX >= 0) {
+      for (let y = room.y1; y <= room.y2; y++) {
+        if (this.mapWalls[y]?.[westX] === -1 && !isInAnyRoom(this.rooms, westX, y)) {
+          exits.west++;
+        }
+      }
+    }
+    
+    // Check east edge (x = room.x2 + 1)
+    const eastX = room.x2 + 1;
+    for (let y = room.y1; y <= room.y2; y++) {
+      if (this.mapWalls[y]?.[eastX] === -1 && !isInAnyRoom(this.rooms, eastX, y)) {
+        exits.east++;
+      }
+    }
+    
+    return exits;
+  }
+  
+  private formatCorridorExits(exits: { north: number; south: number; east: number; west: number }): string {
+    const parts: string[] = [];
+    if (exits.north > 0) parts.push(`${exits.north > 1 ? exits.north + ' corridors' : 'corridor'} north`);
+    if (exits.south > 0) parts.push(`${exits.south > 1 ? exits.south + ' corridors' : 'corridor'} south`);
+    if (exits.east > 0) parts.push(`${exits.east > 1 ? exits.east + ' corridors' : 'corridor'} east`);
+    if (exits.west > 0) parts.push(`${exits.west > 1 ? exits.west + ' corridors' : 'corridor'} west`);
+    
+    if (parts.length === 0) return '';
+    if (parts.length === 1) return parts[0];
+    if (parts.length === 2) return parts.join(' and ');
+    return parts.slice(0, -1).join(', ') + ', and ' + parts[parts.length - 1];
+  }
+  
   private speakCurrentRoom() {
     const room = this.sortedRooms[this.selectedIndex];
     if (!room) return;
@@ -321,7 +383,14 @@ export default class MapScene extends Scene {
     // Check for NPCs in this room
     const npcsInRoom = this.discoveredNpcs.filter(npc => npc.roomName === room.name);
     
+    // Get corridor exits
+    const exits = this.getCorridorExits(room);
+    const exitText = this.formatCorridorExits(exits);
+    
     let text = `${room.name}. ${direction} side of the map.`;
+    if (exitText) {
+      text += ` ${exitText}.`;
+    }
     if (npcsInRoom.length > 0) {
       const npcNames = npcsInRoom.map(n => n.name).join(' and ');
       text += ` ${npcNames} is here.`;
