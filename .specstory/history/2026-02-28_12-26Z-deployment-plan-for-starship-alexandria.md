@@ -1053,11 +1053,194 @@ Found all the issues. Let me fix them:
 
 <details><summary>Tool use: **edit_file_v2** • Edit file: /Users/sethwilson/dev/starship-alexandria/src/game/EventBridge.ts</summary>
 
-Status: **loading**
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Now let me run typecheck again to make sure all errors are fixed.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: npx tsc --noEmit 2>&1</summary>
+
+```bash
+npx tsc --noEmit 2>&1
+```
+
+```
+src/game/scenes/ExploreScene.ts(810,59): error TS2554: Expected 1 arguments, but got 2.
+src/game/scenes/ExploreScene.ts(828,59): error TS2554: Expected 1 arguments, but got 2.
+src/game/systems/GridMovement.ts(84,67): error TS2353: Object literal may only specify known properties, and 'direction' does not exist in type '{ reason: string; }'.
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+There are still errors:
+1. ExploreScene is passing 2 arguments to an event that expects 1
+2. GridMovement is using `direction` instead of `reason`
+
+Let me look at these files to fix them.</details></think>
+
+---
+
+A few more fixes needed. Let me check and fix those files.
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/sethwilson/dev/starship-alexandria/src/game/systems/GridMovement.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/sethwilson/dev/starship-alexandria/src/game/scenes/ExploreScene.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+I see the issues:
+
+1. In GridMovement.ts line 84: The event is emitting `{ reason: blockReason, direction }` but the type only expects `{ reason: string }`. I need to update the type to also include direction, or remove direction from the emit.
+
+2. In ExploreScene.ts lines 810 and 828: The event is emitting with `{}` as an argument but `room-announcements-complete` is defined as `void` (no arguments). I need to change the emit calls to not pass any arguments.
+
+Let me fix both issues.</details></think>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/sethwilson/dev/starship-alexandria/src/game/systems/GridMovement.ts</summary>
 
 </details>
 
 </tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/sethwilson/dev/starship-alexandria/src/game/scenes/ExploreScene.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: /Users/sethwilson/dev/starship-alexandria/src/game/scenes/ExploreScene.ts</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+Now let me run tsc again to verify all errors are fixed.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: npx tsc --noEmit 2>&1</summary>
+
+```bash
+npx tsc --noEmit 2>&1
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+TypeScript passes now. Let me commit and push all the fixes.</details></think>
+
+---
+
+All TypeScript errors fixed. Let me commit and push.
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git add -A && git commit --trailer "Made-with: Cursor" -m "fix: resolve all TypeScript errors in EventBridge events" && git push origin main</summary>
+
+```bash
+git add -A && git commit --trailer "Made-with: Cursor" -m "fix: resolve all TypeScript errors in EventBridge events" && git push origin main
+```
+
+```
+[main dd009ed] fix: resolve all TypeScript errors in EventBridge events
+ 4 files changed, 734 insertions(+), 5 deletions(-)
+To https://github.com/sethwilsonUS/starship-alexandria.git
+   e30c0a6..dd009ed  main -&gt; main
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+All done. TypeScript passes locally and pushed to GitHub. Vercel should auto-deploy and succeed now.</details></think>
+
+---
+
+All TypeScript errors resolved and pushed. Vercel should build successfully now.
+
+---
+
+_**User**_
+
+Okay please commit and push. Thanks!
+
+---
+
+_**Agent (model claude-4.5-opus-high-thinking, mode Agent)**_
+
+<think><details><summary>Thought Process</summary>
+The user wants me to commit and push, but I just did that in my last response. Let me check if there are any uncommitted changes.</details></think>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git status</summary>
+
+```bash
+git status
+```
+
+```
+On branch main
+nothing to commit, working tree clean
+
+```
+</details>
+</tool-use>
+
+---
+
+<think><details><summary>Thought Process</summary>
+All changes are already committed and pushed. Let the user know.</details></think>
+
+---
+
+Already done - everything was committed and pushed in my last message. Working tree is clean and Vercel should be deploying now.
 
 ---
 
