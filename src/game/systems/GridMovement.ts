@@ -81,7 +81,7 @@ export class GridMovement implements MovementController {
     // Check what type of obstacle we hit (if any)
     const blockReason = this.getBlockReason(targetX, targetY);
     if (blockReason) {
-      EventBridge.emit('movement-blocked', { reason: blockReason, direction });
+      EventBridge.emit('movement-blocked', { reason: blockReason });
       return false;
     }
 

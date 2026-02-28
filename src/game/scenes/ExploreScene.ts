@@ -807,7 +807,7 @@ export default class ExploreScene extends Scene {
       } else if (isInitialSpawn) {
         // Even if spawning in corridor, emit event so transporter can be announced
         setTimeout(() => {
-          EventBridge.emit('room-announcements-complete', {});
+          EventBridge.emit('room-announcements-complete');
         }, 2000);
       }
     }
@@ -825,7 +825,7 @@ export default class ExploreScene extends Scene {
         // Finally: signal that initial announcements are done
         // InteractionSystem will then announce current interactive (e.g., transporter)
         setTimeout(() => {
-          EventBridge.emit('room-announcements-complete', {});
+          EventBridge.emit('room-announcements-complete');
         }, 1500);
       }, 1200);
     }, initialDelay);

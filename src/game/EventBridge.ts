@@ -7,7 +7,7 @@ import { EventEmitter } from 'events';
 export type EventBridgeEvents = {
   'player-moving': void;
   'player-moved': { x: number; y: number };
-  'movement-blocked': { direction: string };
+  'movement-blocked': { reason: string };
   'interaction-available': { type: string; label?: string };
   'interaction-triggered': { type: string; id?: string };
   /** Emitted by GameContainer after successfully handling an interaction. ExploreScene uses this to destroy/remove. */
@@ -28,6 +28,8 @@ export type EventBridgeEvents = {
   'show-welcome': void;
   /** Open the map scene (from M key) */
   'open-map-scene': void;
+  /** Room announcement TTS completed */
+  'room-announcements-complete': void;
 };
 
 /**
