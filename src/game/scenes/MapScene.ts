@@ -4,6 +4,10 @@ import { speak, cancelSpeech } from '@/utils/speech';
 import { MAP_WIDTH, MAP_HEIGHT } from '@/config/gameConfig';
 import type { MapRoom } from '@/types/store';
 
+function isInAnyRoom(rooms: MapRoom[], x: number, y: number): boolean {
+  return rooms.some(r => x >= r.x1 && x <= r.x2 && y >= r.y1 && y <= r.y2);
+}
+
 function getDirectionLabel(room: MapRoom): string {
   const cx = (room.x1 + room.x2) / 2;
   const cy = (room.y1 + room.y2) / 2;
@@ -56,7 +60,7 @@ export default class MapScene extends Scene {
   }
   
   create() {
-    const { mapRooms, mapSpawn, npcPositionsOnMap } = useGameStore.getState().session;
+    const { mapRooms, mapSpawn, mapWalls, npcPositionsOnMap } = useGameStore.getState().session;
     const { discoveredNPCs } = useGameStore.getState().exploration;
     const playerPos = useGameStore.getState().player.position;
     
@@ -105,6 +109,25 @@ export default class MapScene extends Scene {
       fontFamily: 'sans-serif',
       color: '#888888',
     }).setOrigin(0.5);
+    
+    // Draw corridors (walkable tiles not in rooms)
+    if (mapWalls && mapWalls.length > 0) {
+      const corridorGraphics = this.add.graphics();
+      corridorGraphics.fillStyle(0x555566, 0.6);
+      
+      for (let y = 0; y < mapWalls.length; y++) {
+        for (let x = 0; x < (mapWalls[y]?.length ?? 0); x++) {
+          const isWall = mapWalls[y][x] !== 0;
+          if (isWall) continue;
+          if (isInAnyRoom(mapRooms, x, y)) continue;
+          
+          const px = this.mapOffsetX + x * this.mapScale;
+          const py = this.mapOffsetY + y * this.mapScale;
+          const size = Math.max(2, this.mapScale * 0.8);
+          corridorGraphics.fillRect(px, py, size, size);
+        }
+      }
+    }
     
     // Draw each room
     this.sortedRooms.forEach((room, idx) => {
