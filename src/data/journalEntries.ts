@@ -20,7 +20,7 @@ export interface JournalEntryDef {
   lines: DialogueLine[];
 }
 
-function yamlToJournal(yaml: JournalYaml): JournalEntryDef {
+export function yamlToJournal(yaml: JournalYaml): JournalEntryDef {
   return {
     id: yaml.id,
     title: yaml.title,

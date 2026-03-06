@@ -266,7 +266,7 @@ export function generateMap(): GeneratedMap {
 /**
  * BFS from (sx, sy) over walkable tiles (walls EMPTY). Returns coord strings "x,y".
  */
-function computeReachableTiles(
+export function computeReachableTiles(
   walls: MapLayer,
   sx: number,
   sy: number

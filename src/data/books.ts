@@ -32,7 +32,7 @@ export interface FragmentDef {
   text: string;
 }
 
-function fragmentWithTextToFragmentDef(f: FragmentWithText): FragmentDef {
+export function fragmentWithTextToFragmentDef(f: FragmentWithText): FragmentDef {
   return {
     id: f.id,
     bookId: f.bookId,
