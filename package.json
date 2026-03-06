@@ -22,11 +22,9 @@
         "game"
     ],
     "scripts": {
-        "dev": "node log.js dev & next dev -p 8080",
+        "dev": "next dev -p 8080",
         "clean": "rm -rf dist .next",
-        "build": "npm run validate-content && node log.js build & next build",
-        "dev-nolog": "next dev -p 8080",
-        "build-nolog": "npm run validate-content && next build",
+        "build": "npm run validate-content && next build",
         "validate-content": "node scripts/validate-content.js"
     },
     "dependencies": {
