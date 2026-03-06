@@ -25,6 +25,10 @@
         "dev": "next dev -p 8080",
         "clean": "rm -rf dist .next",
         "build": "npm run validate-content && next build",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "lint": "eslint src/",
+        "typecheck": "tsc --noEmit",
         "validate-content": "node scripts/validate-content.js"
     },
     "dependencies": {
@@ -42,7 +46,10 @@
         "@types/react": "^19",
         "@types/react-dom": "^19",
         "@types/uuid": "^10.0.0",
+        "eslint": "^9.39.3",
+        "eslint-config-next": "^16.1.6",
         "ts-node": "^10.9.2",
-        "typescript": "^5"
+        "typescript": "^5",
+        "vitest": "^4.0.18"
     }
 }

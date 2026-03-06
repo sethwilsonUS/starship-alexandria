@@ -20,7 +20,7 @@ export interface NPC {
   return: DialogueLine[];
 }
 
-function yamlToNPC(yaml: NPCYaml): NPC {
+export function yamlToNPC(yaml: NPCYaml): NPC {
   return {
     id: yaml.id,
     name: yaml.name,
