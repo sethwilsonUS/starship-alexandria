@@ -34,8 +34,8 @@
     "dependencies": {
         "next": "^16.1.6",
         "phaser": "^3.90.0",
-        "react": "19.0.0",
-        "react-dom": "19.0.0",
+        "react": "19.2.5",
+        "react-dom": "19.2.5",
         "rot-js": "^2.2.1",
         "uuid": "^13.0.0",
         "yaml": "^2.8.2",
