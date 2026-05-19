@@ -1,7 +1,7 @@
 {
     "name": "starship-alexandria",
     "version": "0.1.0",
-    "description": "A cozy roguelike web game about recovering lost literature from post-apocalyptic Earth. Built with Phaser 3, Next.js, and TypeScript.",
+    "description": "A cozy roguelike web game about recovering lost literature from post-apocalyptic Earth. Built with Phaser 4, Next.js, and TypeScript.",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/sethwilsonUS/starship-alexandria.git"
@@ -14,7 +14,7 @@
     "homepage": "https://github.com/sethwilsonUS/starship-alexandria#readme",
     "keywords": [
         "phaser",
-        "phaser3",
+        "phaser4",
         "roguelike",
         "next",
         "nextjs",
@@ -31,7 +31,8 @@
         "typecheck": "tsc --noEmit",
         "validate-content": "node scripts/validate-content.js",
         "generate-assets": "npm run generate:game-assets",
-        "generate:game-assets": "node scripts/generate-game-assets.mjs"
+        "generate:game-assets": "node scripts/generate-game-assets.mjs",
+        "generate-voices:opening": "node scripts/generate-opening-voices.mjs"
     },
     "dependencies": {
         "next": "^16.1.6",

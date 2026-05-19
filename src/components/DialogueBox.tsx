@@ -5,6 +5,7 @@ import { useGameStore } from '@/store/gameStore';
 import { EventBridge } from '@/game/EventBridge';
 import { speak, cancelSpeech } from '@/utils/speech';
 import { unlockInteractions } from '@/game/systems/Interaction';
+import { isNativeInteractiveTarget } from '@/utils/domEvents';
 
 const TYPEWRITER_SPEED = 30; // ms per character
 
@@ -17,6 +18,7 @@ const TYPEWRITER_SPEED = 30; // ms per character
  */
 export default function DialogueBox() {
   const currentDialogue = useGameStore((s) => s.session.currentDialogue);
+  const ttsEnabled = useGameStore((s) => s.settings.ttsEnabled);
   const closeDialogue = useGameStore((s) => s.actions.closeDialogue);
   const [lineIndex, setLineIndex] = useState(0);
   const [displayedChars, setDisplayedChars] = useState(0);
@@ -28,6 +30,7 @@ export default function DialogueBox() {
   const currentLine = lines[lineIndex];
   const isOpen = lines.length > 0;
   const hasChoices = currentLine?.choices && currentLine.choices.length > 0;
+  const hasRecordedNarration = Boolean(currentLine?.voiceLineId && !hasChoices);
   
   const fullText = currentLine?.speaker
     ? `${currentLine.speaker}: ${currentLine.text}`
@@ -108,6 +111,12 @@ export default function DialogueBox() {
     EventBridge.emit('dialogue-choice', { action });
   }, [closeDialogue]);
 
+  const playRecordedNarration = useCallback(() => {
+    if (!currentLine?.voiceLineId) return;
+
+    speak(currentLine.text, { voiceLineId: currentLine.voiceLineId });
+  }, [currentLine]);
+
   useEffect(() => {
     if (!isOpen) return;
     openedAtRef.current = Date.now();
@@ -151,6 +160,7 @@ export default function DialogueBox() {
     if (!isOpen) return;
     const handleKey = (e: KeyboardEvent) => {
       if (e.repeat) return;
+      if (isNativeInteractiveTarget(e.target)) return;
       
       // Handle choice selection
       if (hasChoices && currentLine?.choices) {
@@ -216,7 +226,22 @@ export default function DialogueBox() {
               </span>
             ))}
           </div>
-        ) : hintText ? (
+        ) : null}
+        {hasRecordedNarration && ttsEnabled ? (
+          <div className="dialogue-box__voice-controls">
+            <button
+              type="button"
+              className="dialogue-box__voice-btn"
+              onClick={playRecordedNarration}
+            >
+              Play narration
+            </button>
+            <span className="dialogue-box__voice-note">
+              AI-generated voice clip
+            </span>
+          </div>
+        ) : null}
+        {hintText ? (
           <p className="dialogue-box__hint" aria-hidden="true">
             {hintText}
           </p>

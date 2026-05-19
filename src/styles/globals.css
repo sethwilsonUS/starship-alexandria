@@ -166,6 +166,40 @@ body {
   opacity: 0.7;
 }
 
+.dialogue-box__voice-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+  flex-wrap: wrap;
+}
+
+.dialogue-box__voice-btn {
+  padding: 0.4rem 0.85rem;
+  background: rgba(92, 179, 255, 0.14);
+  border: 1px solid rgba(125, 195, 255, 0.8);
+  border-radius: 4px;
+  color: #d8eeff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.dialogue-box__voice-btn:hover {
+  background: rgba(92, 179, 255, 0.24);
+  border-color: #a8d8ff;
+}
+
+.dialogue-box__voice-btn:focus {
+  outline: 2px solid #a8d8ff;
+  outline-offset: 2px;
+}
+
+.dialogue-box__voice-note {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.78);
+}
+
 .dialogue-box__cursor {
   display: inline-block;
   color: var(--hud-accent);
@@ -524,6 +558,13 @@ body {
   margin: 0.75rem 0 0;
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.5);
+}
+
+.library-shelf__voice-disclosure {
+  margin: 0.45rem auto 0;
+  max-width: 22rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .library-shelf__new-game-btn {

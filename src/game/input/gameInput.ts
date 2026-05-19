@@ -1,5 +1,6 @@
 import { getBookCatalogSync } from '@/data/books';
 import { useGameStore } from '@/store/gameStore';
+import { isNativeInteractiveTarget } from '@/utils/domEvents';
 import { EventBridge } from '../EventBridge';
 import {
   InputActionRouter,
@@ -10,16 +11,6 @@ import { TransitionGuard } from './TransitionGuard';
 
 export const transitionGuard = new TransitionGuard({ cooldownMs: 350 });
 export const inputActionRouter = new InputActionRouter({ transitionGuard });
-
-const NATIVE_INTERACTIVE_SELECTOR =
-  'button, a[href], input, select, textarea, [contenteditable="true"], [contenteditable=""]';
-
-function isNativeInteractiveTarget(target: EventTarget | null): boolean {
-  const closest = (target as { closest?: unknown } | null)?.closest;
-  if (typeof closest !== 'function') return false;
-
-  return Boolean(closest.call(target, NATIVE_INTERACTIVE_SELECTOR));
-}
 
 export function getInputActionContext(now = Date.now()): InputActionContext {
   const state = useGameStore.getState();
