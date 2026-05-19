@@ -45,13 +45,14 @@ export class InputActionRouter {
     event: Pick<KeyboardEvent, 'code' | 'repeat'>,
     context: InputActionContext
   ): GameInputAction | null {
+    if (this.transitionGuard && !this.transitionGuard.canAcceptAction(context.now)) return null;
+
     const moveAction = MOVE_KEYS[event.code];
     if (moveAction) {
       return context.phase === 'exploring' ? moveAction : null;
     }
 
     if (event.repeat) return null;
-    if (this.transitionGuard && !this.transitionGuard.canAcceptAction(context.now)) return null;
 
     if (context.phase === 'dialogue') {
       if (event.code === 'Space' || event.code === 'Enter') return 'advanceDialogue';
@@ -61,6 +62,7 @@ export class InputActionRouter {
     if (context.phase === 'reading') return null;
 
     if (context.phase === 'viewing-map') {
+      // Map overlay navigation stays in React; this router only closes it today.
       if (event.code === 'Escape' || event.code === 'KeyM') return 'closeMap';
       return null;
     }
@@ -74,6 +76,7 @@ export class InputActionRouter {
 
     if (context.phase === 'exploring') {
       if (event.code === 'Space' || event.code === 'KeyE') return 'interact';
+      // openMap is an intent request; the dispatcher handles the "map not found" dialogue.
       if (event.code === 'KeyM') return 'openMap';
       if (event.code === 'KeyB') return 'useBattery';
       if (event.code === 'KeyI') return 'hudSummary';

@@ -24,6 +24,10 @@ describe('InputActionRouter', () => {
     expect(router.actionFromKeyboard(keyboard('KeyW'), context())).toBe('move.up');
     expect(router.actionFromKeyboard(keyboard('ArrowDown'), context())).toBe('move.down');
     expect(router.actionFromKeyboard(keyboard('KeyS'), context())).toBe('move.down');
+    expect(router.actionFromKeyboard(keyboard('ArrowLeft'), context())).toBe('move.left');
+    expect(router.actionFromKeyboard(keyboard('KeyA'), context())).toBe('move.left');
+    expect(router.actionFromKeyboard(keyboard('ArrowRight'), context())).toBe('move.right');
+    expect(router.actionFromKeyboard(keyboard('KeyD'), context())).toBe('move.right');
   });
 
   it('maps interact, map, battery, info, and beam-down keys', () => {
@@ -44,6 +48,17 @@ describe('InputActionRouter', () => {
 
     expect(router.actionFromKeyboard(keyboard('Space'), context({ now: 1100 }))).toBeNull();
     expect(router.actionFromKeyboard(keyboard('Space'), context({ now: 1300 }))).toBe('interact');
+  });
+
+  it('blocks stale movement actions during transition cooldown', () => {
+    const guard = new TransitionGuard({ cooldownMs: 300 });
+    guard.beginTransition(1000);
+    const router = new InputActionRouter({ transitionGuard: guard });
+
+    expect(router.actionFromKeyboard(keyboard('ArrowRight'), context({ now: 1100 }))).toBeNull();
+    expect(router.actionFromKeyboard(keyboard('ArrowRight', true), context({ now: 1300 }))).toBe(
+      'move.right'
+    );
   });
 
   it('does not turn repeated Space into repeated interact or beam-down', () => {
