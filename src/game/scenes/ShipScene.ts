@@ -39,6 +39,7 @@ export default class ShipScene extends Scene {
       this.beamDown();
     };
     EventBridge.on('beam-down-requested', this.beamDownListener);
+    this.events.once('shutdown', () => this.cleanupOnShutdown());
     
     // Emit area-entered for accessibility
     EventBridge.emit('area-entered', { areaName: 'Starship Alexandria - Library Deck' });
@@ -184,7 +185,7 @@ export default class ShipScene extends Scene {
     });
   }
 
-  shutdown() {
+  private cleanupOnShutdown(): void {
     if (this.beamDownListener) {
       EventBridge.off('beam-down-requested', this.beamDownListener);
       this.beamDownListener = null;

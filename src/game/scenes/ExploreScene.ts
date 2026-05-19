@@ -144,6 +144,7 @@ export default class ExploreScene extends Scene {
     // Interaction system
     this.interactionSystem = new InteractionSystem();
     this.interactionSystem.attach(this, this.player);
+    this.events.once('shutdown', () => this.cleanupOnShutdown());
 
     this.placeInteractives(rooms, spawnX, spawnY);
 
@@ -1248,7 +1249,7 @@ export default class ExploreScene extends Scene {
     });
   }
 
-  shutdown() {
+  private cleanupOnShutdown(): void {
     this.gridMovement?.detach();
     this.interactionSystem?.detach();
     EventBridge.emit('interaction-available', { type: '', label: undefined });

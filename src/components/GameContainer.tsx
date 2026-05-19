@@ -130,6 +130,7 @@ export default function GameContainer() {
       type?: string;
       id?: string;
     }) => {
+      try {
       const { type, id } = payload ?? {};
       if (!type) {
         unlockInteractions();
@@ -266,6 +267,10 @@ export default function GameContainer() {
         } else {
           unlockInteractions();
         }
+      }
+      } catch (error) {
+        console.error('Failed to handle interaction', error);
+        unlockInteractions();
       }
     };
     EventBridge.on('interaction-triggered', onInteractionTriggered);
