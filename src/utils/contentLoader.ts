@@ -12,6 +12,7 @@ import { parse as parseYaml } from 'yaml';
 export interface DialogueLineYaml {
   speaker?: string;
   text: string;
+  voiceLineId?: string;
 }
 
 export interface NPCYaml {
@@ -50,6 +51,7 @@ export interface DialogueChoiceYaml {
 
 export interface TransporterDialogueYaml {
   text: string;
+  voiceLineId?: string;
   choices: DialogueChoiceYaml[];
 }
 
@@ -73,6 +75,7 @@ export interface ArtifactYaml {
 
 export interface GameloopDialogueLineYaml {
   text: string;
+  voiceLineId?: string;
 }
 
 export interface GameloopYaml {
@@ -286,23 +289,23 @@ export async function loadDialogue(): Promise<DialogueContentYaml> {
 export async function getTransporterDialogue(
   newFragmentsThisTrip: number,
   fragmentsRemaining: number
-): Promise<{ text: string; choices?: DialogueChoiceYaml[] }[]> {
+): Promise<{ text: string; voiceLineId?: string; choices?: DialogueChoiceYaml[] }[]> {
   const dialogue = await loadDialogue();
   
   if (newFragmentsThisTrip === 0) {
     const d = dialogue.transporter.noFragments;
-    return [{ text: d.text, choices: d.choices }];
+    return [{ text: d.text, voiceLineId: d.voiceLineId, choices: d.choices }];
   }
 
   if (fragmentsRemaining > 0) {
     const d = dialogue.transporter.fragmentsRemaining;
     const plural = fragmentsRemaining === 1 ? 'fragment' : 'fragments';
     const text = d.text.replace('{count}', String(fragmentsRemaining)).replace('{plural}', plural);
-    return [{ text, choices: d.choices }];
+    return [{ text, voiceLineId: d.voiceLineId, choices: d.choices }];
   }
 
   const d = dialogue.transporter.allCollected;
-  return [{ text: d.text, choices: d.choices }];
+  return [{ text: d.text, voiceLineId: d.voiceLineId, choices: d.choices }];
 }
 
 export async function getMarthaBookHint(roomNames: string[]): Promise<string> {

@@ -297,7 +297,10 @@ export default function GameContainer() {
   useEffect(() => {
     const onShowWelcome = () => {
       const gameloop = getGameloopCacheSync();
-      const welcomeLines = gameloop.welcome.lines.map(line => ({ text: line.text }));
+      const welcomeLines = gameloop.welcome.lines.map(line => ({
+        text: line.text,
+        voiceLineId: line.voiceLineId,
+      }));
       useGameStore.getState().actions.openDialogue(welcomeLines);
       useGameStore.getState().actions.setHasSeenWelcome();
     };

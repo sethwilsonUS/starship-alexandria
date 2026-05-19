@@ -37,14 +37,19 @@ export function getArtifactCacheSync(): Artifact[] {
 }
 
 // Gameloop cache (set by BootScene)
+interface GameloopDialogueLine {
+  text: string;
+  voiceLineId?: string;
+}
+
 export interface GameloopContent {
-  welcome: { lines: { text: string }[] };
-  victory: { lines: { text: string }[] };
+  welcome: { lines: GameloopDialogueLine[] };
+  victory: { lines: GameloopDialogueLine[] };
   vault: {
-    alreadyOpened: { text: string }[];
-    openWithArtifact: { text: string }[];
-    openEmpty: { text: string }[];
-    locked: { text: string }[];
+    alreadyOpened: GameloopDialogueLine[];
+    openWithArtifact: GameloopDialogueLine[];
+    openEmpty: GameloopDialogueLine[];
+    locked: GameloopDialogueLine[];
   };
 }
 

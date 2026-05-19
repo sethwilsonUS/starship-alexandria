@@ -15,6 +15,7 @@ export interface DialogueChoice {
 export interface DialogueLine {
   speaker?: string;
   text: string;
+  voiceLineId?: string;
   choices?: DialogueChoice[];
 }
 
