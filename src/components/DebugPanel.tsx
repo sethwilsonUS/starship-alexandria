@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { EventBridge } from '@/game/EventBridge';
 import { getBookCatalogSync, type Book } from '@/data/books';
@@ -12,7 +12,9 @@ import type { BookFragment } from '@/types/books';
  * Provides buttons for resetting game state, clearing localStorage, etc.
  */
 export default function DebugPanel() {
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible] = useState(() =>
+    typeof window !== 'undefined' && window.location.search.includes('debug')
+  );
   const resetGame = useGameStore((s) => s.actions.resetGame);
   const collectMap = useGameStore((s) => s.actions.collectMap);
   const collectFragment = useGameStore((s) => s.actions.collectFragment);
@@ -22,12 +24,6 @@ export default function DebugPanel() {
   const hasAreaMap = useGameStore((s) => s.session.hasAreaMap);
   const gamePhase = useGameStore((s) => s.session.gamePhase);
   const ttsEnabled = useGameStore((s) => s.settings.ttsEnabled);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setIsVisible(window.location.search.includes('debug'));
-    }
-  }, []);
 
   if (!isVisible) return null;
 

@@ -255,15 +255,6 @@ export default class ExploreScene extends Scene {
     EventBridge.on('debug-despawn-all-books', onDebugDespawnAllBooks);
     this.events.once('shutdown', () => EventBridge.off('debug-despawn-all-books', onDebugDespawnAllBooks));
 
-    // Map scene: M key opens the MapScene (sleep this scene)
-    const onOpenMapScene = () => {
-      useGameStore.getState().actions.openMap();
-      this.scene.sleep('ExploreScene');
-      this.scene.run('MapScene');
-    };
-    EventBridge.on('open-map-scene', onOpenMapScene);
-    this.events.once('shutdown', () => EventBridge.off('open-map-scene', onOpenMapScene));
-
     useGameStore.getState().actions.movePlayer({ x: spawnX, y: spawnY });
     this.checkRoomEntry(spawnX, spawnY, true); // isInitialSpawn = true
     useGameStore.getState().actions.clearExploredTiles();
@@ -1166,6 +1157,7 @@ export default class ExploreScene extends Scene {
     // Disable player input during animation
     this.gridMovement?.detach();
     this.interactionSystem?.detach();
+    EventBridge.emit('interaction-available', { type: '', label: undefined });
 
     const playerPos = this.player.getPixelPosition();
     
@@ -1250,5 +1242,6 @@ export default class ExploreScene extends Scene {
   shutdown() {
     this.gridMovement?.detach();
     this.interactionSystem?.detach();
+    EventBridge.emit('interaction-available', { type: '', label: undefined });
   }
 }

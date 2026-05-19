@@ -101,6 +101,9 @@ export class InteractionSystem {
   }
 
   detach(): void {
+    if (this.currentInteractive) {
+      EventBridge.emit('interaction-available', { type: '', label: undefined });
+    }
     EventBridge.off('player-moving', this.onPlayerMoving);
     EventBridge.off('player-moved', this.onPlayerMoved);
     EventBridge.off('room-announcements-complete', this.onAnnouncementsComplete);

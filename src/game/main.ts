@@ -2,7 +2,6 @@ import { AUTO, Game } from 'phaser';
 import BootScene from './scenes/BootScene';
 import ExploreScene from './scenes/ExploreScene';
 import ShipScene from './scenes/ShipScene';
-import MapScene from './scenes/MapScene';
 
 const config: Phaser.Types.Core.GameConfig = {
   type: AUTO,
@@ -10,7 +9,7 @@ const config: Phaser.Types.Core.GameConfig = {
   height: 768,
   parent: 'game-container',
   backgroundColor: '#1a1a2e',
-  scene: [BootScene, ExploreScene, ShipScene, MapScene],
+  scene: [BootScene, ExploreScene, ShipScene],
   physics: {
     default: 'arcade',
     arcade: {

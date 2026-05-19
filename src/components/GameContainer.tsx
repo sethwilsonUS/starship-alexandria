@@ -13,6 +13,7 @@ import { unlockInteractions } from '@/game/systems/Interaction';
 import HUD from './HUD';
 import AccessibleLog from './AccessibleLog';
 import LibraryShelf from './LibraryShelf';
+import MapOverlay from './MapOverlay';
 import { getTransporterDialogue as getTransporterDialogueFromContent } from '@/utils/contentLoader';
 
 function getTotalFragments(): number {
@@ -151,21 +152,23 @@ export default function GameContainer() {
         return;
       }
 
-      // Tell ExploreScene to open the map (Phaser scene, not React overlay)
-      EventBridge.emit('open-map-scene');
+      useGameStore.getState().actions.openMap();
     };
     window.addEventListener('keydown', handleMapKey);
     return () => window.removeEventListener('keydown', handleMapKey);
   }, []);
 
   useEffect(() => {
-    const onInteractionTriggered = async ({
-      type,
-      id,
-    }: {
-      type: string;
+    const onInteractionTriggered = async (payload?: {
+      type?: string;
       id?: string;
     }) => {
+      const { type, id } = payload ?? {};
+      if (!type) {
+        unlockInteractions();
+        return;
+      }
+
       if (type === 'book' && id) {
         const fragment = await getFragmentById(id);
         if (fragment) {
@@ -351,6 +354,7 @@ export default function GameContainer() {
       <HUD />
       <AccessibleLog />
       <LibraryShelf />
+      <MapOverlay />
       <DialogueBox />
       <BookDetail />
       <InteractionPrompt />

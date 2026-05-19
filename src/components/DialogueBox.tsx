@@ -35,34 +35,39 @@ export default function DialogueBox() {
   const displayedText = fullText.slice(0, displayedChars);
   const isFullyRevealed = displayedChars >= fullText.length;
 
-  // Clear typewriter on cleanup
+  // Clear typewriter timer without touching React state; callers decide state.
   const clearTypewriter = useCallback(() => {
     if (typewriterRef.current) {
       clearInterval(typewriterRef.current);
       typewriterRef.current = null;
     }
-    setIsTyping(false);
   }, []);
 
   // Start typewriter when line changes
   useEffect(() => {
     if (!isOpen || !currentLine) return;
-    
-    clearTypewriter();
-    setDisplayedChars(0);
-    setIsTyping(true);
-    
-    typewriterRef.current = setInterval(() => {
-      setDisplayedChars(prev => {
-        const next = prev + 1;
-        if (next >= fullText.length) {
-          clearTypewriter();
-        }
-        return next;
-      });
-    }, TYPEWRITER_SPEED);
-    
-    return clearTypewriter;
+
+    const frame = requestAnimationFrame(() => {
+      clearTypewriter();
+      setDisplayedChars(0);
+      setIsTyping(true);
+
+      typewriterRef.current = setInterval(() => {
+        setDisplayedChars(prev => {
+          const next = prev + 1;
+          if (next >= fullText.length) {
+            clearTypewriter();
+            setIsTyping(false);
+          }
+          return next;
+        });
+      }, TYPEWRITER_SPEED);
+    });
+
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTypewriter();
+    };
   }, [isOpen, lineIndex, currentLine, fullText.length, clearTypewriter]);
 
   // Skip to full text or advance
@@ -70,6 +75,7 @@ export default function DialogueBox() {
     if (isTyping) {
       // Skip to end of current line
       clearTypewriter();
+      setIsTyping(false);
       setDisplayedChars(fullText.length);
       return;
     }
@@ -105,7 +111,8 @@ export default function DialogueBox() {
   useEffect(() => {
     if (!isOpen) return;
     openedAtRef.current = Date.now();
-    setLineIndex(0);
+    const frame = requestAnimationFrame(() => setLineIndex(0));
+    return () => cancelAnimationFrame(frame);
   }, [isOpen]);
 
   // TTS: speak current line when it changes (include choices and continuation hint)

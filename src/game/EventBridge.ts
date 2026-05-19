@@ -26,8 +26,6 @@ export type EventBridgeEvents = {
   'dialogue-choice': { action: string };
   /** Show welcome message to first-time players */
   'show-welcome': void;
-  /** Open the map scene (from M key) */
-  'open-map-scene': void;
   /** Room announcement TTS completed */
   'room-announcements-complete': void;
   /** Show victory message when all fragments collected */

@@ -28,13 +28,11 @@ export default function AccessibleLog() {
       addEntry(`You entered ${areaName}`);
     };
     let lastFacingId: string | null = null;
-    const onInteractionAvailable = ({
-      type,
-      label,
-    }: {
-      type: string;
+    const onInteractionAvailable = (payload?: {
+      type?: string;
       label?: string;
     }) => {
+      const { type, label } = payload ?? {};
       const id = type ? `${type}-${label ?? ''}` : '';
       if (id && id !== lastFacingId) {
         lastFacingId = id;
@@ -45,13 +43,12 @@ export default function AccessibleLog() {
         lastFacingId = null;
       }
     };
-    const onInteractionTriggered = ({
-      type,
-      id,
-    }: {
-      type: string;
+    const onInteractionTriggered = (payload?: {
+      type?: string;
       id?: string;
     }) => {
+      const { type, id } = payload ?? {};
+      if (!type) return;
       if (type === 'book') return; // book-found handles it
       if (type === 'journal' && id) {
         try {

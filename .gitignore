@@ -39,3 +39,7 @@ next-env.d.ts
 
 # AI tool history
 .specstory/
+
+# Codex/Superpowers local artifacts
+.superpowers/
+.codex-playtest-*.png
