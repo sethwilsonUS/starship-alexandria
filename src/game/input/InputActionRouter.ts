@@ -23,7 +23,7 @@ export interface InputActionRouterOptions {
   transitionGuard?: TransitionGuard;
 }
 
-const MOVE_KEYS: Record<string, `move.${Direction}`> = {
+export const MOVE_KEYS: Record<string, `move.${Direction}`> = {
   ArrowUp: 'move.up',
   KeyW: 'move.up',
   ArrowDown: 'move.down',

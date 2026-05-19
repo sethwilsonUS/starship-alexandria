@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { InputActionRouter, type InputActionContext } from '../InputActionRouter';
+import { InputActionRouter, MOVE_KEYS, type InputActionContext } from '../InputActionRouter';
 import { TransitionGuard } from '../TransitionGuard';
 
 function keyboard(code: string, repeat = false): KeyboardEvent {
@@ -17,6 +17,10 @@ function context(overrides: Partial<InputActionContext> = {}): InputActionContex
 }
 
 describe('InputActionRouter', () => {
+  it('exports the movement key map', () => {
+    expect(MOVE_KEYS.ArrowLeft).toBe('move.left');
+  });
+
   it('maps movement keys to movement actions', () => {
     const router = new InputActionRouter();
 
