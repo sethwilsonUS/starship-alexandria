@@ -7,10 +7,11 @@ import type { GameInputAction } from '@/game/input/InputActionRouter';
 
 const INTERACTION_BLOCKED_PHASES: readonly string[] = ['dialogue', 'reading', 'viewing-map'];
 
-// Global lock to prevent interaction processing during state transitions
-let interactionLocked = false;
-export function lockInteractions() { interactionLocked = true; }
-export function unlockInteractions() { interactionLocked = false; }
+const interactionUnlockListeners = new Set<() => void>();
+
+export function unlockInteractions() {
+  interactionUnlockListeners.forEach((listener) => listener());
+}
 
 /**
  * Proximity-based interaction detection.
@@ -26,10 +27,14 @@ export class InteractionSystem {
   private boundKeyHandler: (({ action }: { action: GameInputAction }) => void) | null = null;
   private isPlayerMoving = false;
   private lastInteractionTime = 0;
+  private interactionInFlight = false;
   private announcementsReady = false; // Wait for room announcements before announcing interactives
   private lastAnnouncedId: string | null = null; // Prevent double-announcing same interactive
   private onPlayerMoving = () => { this.isPlayerMoving = true; };
   private onPlayerMoved = () => { this.isPlayerMoving = false; };
+  private onInteractionUnlocked = () => {
+    this.interactionInFlight = false;
+  };
   private onAnnouncementsComplete = () => {
     const wasReady = this.announcementsReady;
     this.announcementsReady = true;
@@ -59,6 +64,8 @@ export class InteractionSystem {
     this.scene = scene;
     this.player = player;
     this.announcementsReady = false;
+    this.interactionInFlight = false;
+    interactionUnlockListeners.add(this.onInteractionUnlocked);
 
     this.boundKeyHandler = ({ action }: { action: GameInputAction }) => {
       if (action !== 'interact') return;
@@ -68,13 +75,13 @@ export class InteractionSystem {
 
       const gamePhase = useGameStore.getState().session.gamePhase;
       if (INTERACTION_BLOCKED_PHASES.includes(gamePhase)) return;
-      if (interactionLocked) return;
+      if (this.interactionInFlight) return;
 
       const target = this.currentInteractive;
       if (!target) return;
 
       this.lastInteractionTime = now;
-      lockInteractions();
+      this.interactionInFlight = true;
       EventBridge.emit('interaction-triggered', {
         type: target.type,
         id: target.id,
@@ -94,6 +101,7 @@ export class InteractionSystem {
     EventBridge.off('player-moving', this.onPlayerMoving);
     EventBridge.off('player-moved', this.onPlayerMoved);
     EventBridge.off('room-announcements-complete', this.onAnnouncementsComplete);
+    interactionUnlockListeners.delete(this.onInteractionUnlocked);
     if (this.boundKeyHandler) {
       EventBridge.off('input-action', this.boundKeyHandler);
     }
@@ -104,6 +112,7 @@ export class InteractionSystem {
     this.boundKeyHandler = null;
     this.announcementsReady = false;
     this.lastAnnouncedId = null;
+    this.interactionInFlight = false;
   }
 
   /** Call every frame; only shows prompt when standing on the interactive tile */
