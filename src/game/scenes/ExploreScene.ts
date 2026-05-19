@@ -1,6 +1,5 @@
 import { Scene } from 'phaser';
 import { MAP_WIDTH, MAP_HEIGHT, TILE_SIZE } from '@/config/gameConfig';
-import { TILE } from '@/data/tilesets';
 import {
   generateMap,
   getRoomAt,
@@ -22,6 +21,7 @@ import { GridMovement } from '../systems/GridMovement';
 import { InteractionSystem } from '../systems/Interaction';
 import { AnnouncementQueue, createSceneAnnouncementScheduler } from '../systems/AnnouncementQueue';
 import { FxController } from '../systems/FxController';
+import { FogRenderer } from '../systems/FogRenderer';
 import { createCpuTilemapLayer } from '../utils/tilemapLayers';
 import { playBumpSound, speak, playDiscoveryChime } from '@/utils/speech';
 import { transitionGuard } from '@/game/input/gameInput';
@@ -42,12 +42,11 @@ export default class ExploreScene extends Scene {
   private interactionSystem!: InteractionSystem;
   private announcementQueue!: AnnouncementQueue;
   private fx!: FxController;
+  private fogRenderer!: FogRenderer;
   private camera!: Phaser.Cameras.Scene2D.Camera;
   private mapData!: GeneratedMap;
   private lastRoomName: string | null = null;
   private revealedRoomNames = new Set<string>();
-  private wallOutline!: Phaser.GameObjects.Graphics;
-  private fogOverlay!: Phaser.GameObjects.Graphics;
   private vignetteOverlay!: Phaser.GameObjects.Graphics;
   private bookContainers = new Map<string, Phaser.GameObjects.Container>();
   private journalContainers = new Map<string, Phaser.GameObjects.Container>();
@@ -125,13 +124,7 @@ export default class ExploreScene extends Scene {
     this.decorationLayer = createCpuTilemapLayer(decoMapData, 0, decoTileset, 0, 0);
     this.decorationLayer.setDepth(2);
 
-    // Wall outline — thin border along wall edges for clarity
-    this.wallOutline = this.add.graphics();
-    this.wallOutline.setDepth(2.5);
-
-    // Fog overlay — drawn on top of map, avoids Phaser layer APIs (see .cursor/rules)
-    this.fogOverlay = this.add.graphics();
-    this.fogOverlay.setDepth(4);
+    this.fogRenderer = new FogRenderer(this, this.mapData.walls);
 
     // Player entity
     this.player = new Player(this, 'player', spawnX, spawnY);
@@ -1009,7 +1002,7 @@ export default class ExploreScene extends Scene {
     useGameStore.getState().actions.addExploredTiles(reachableVisible);
 
     const explored = new Set(useGameStore.getState().session.exploredTiles);
-    this.applyFogOfWar(visible, explored);
+    this.fogRenderer.render(visible, explored);
 
     // Emit area-entered when a new room first enters visibility
     for (const coord of visible) {
@@ -1019,67 +1012,6 @@ export default class ExploreScene extends Scene {
       if (name !== 'corridor' && !this.revealedRoomNames.has(name)) {
         this.revealedRoomNames.add(name);
         EventBridge.emit('area-entered', { areaName: name });
-      }
-    }
-  }
-
-  private applyFogOfWar(
-    visible: Set<string>,
-    explored: Set<string>,
-  ): void {
-    // Fog overlay: draw dark rectangles instead of modifying tile layers.
-    // Phaser layers from separate tilemaps (wall, decoration) have incompatible
-    // internal structure — forEachTile/getTileAt throw. Overlay avoids that.
-    const FOG_COLOR = 0x000000;
-    this.fogOverlay.clear();
-
-    for (let ty = 0; ty < MAP_HEIGHT; ty++) {
-      for (let tx = 0; tx < MAP_WIDTH; tx++) {
-        const coord = `${tx},${ty}`;
-        if (visible.has(coord)) continue;
-
-        const px = tx * TILE_SIZE;
-        const py = ty * TILE_SIZE;
-        const alpha = explored.has(coord) ? 0.5 : 1;
-        this.fogOverlay.fillStyle(FOG_COLOR, alpha);
-        this.fogOverlay.fillRect(px, py, TILE_SIZE, TILE_SIZE);
-      }
-    }
-
-    this.drawWallOutline(visible, explored);
-  }
-
-  /**
-   * Draw light, thick borders along wall edges — only on the side the player sees.
-   * An edge is drawn only when the adjacent floor tile is in current FoV (visible).
-   * This avoids outlining the "far" side of walls (e.g. in dead ends).
-   */
-  private drawWallOutline(visible: Set<string>, _explored: Set<string>): void {
-    const { walls } = this.mapData;
-    const isWall = (x: number, y: number) =>
-      x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT &&
-      (walls[y][x] === TILE.WALL || walls[y][x] === TILE.RUBBLE);
-    const floorVisible = (x: number, y: number) => visible.has(`${x},${y}`);
-
-    this.wallOutline.clear();
-
-    for (let y = 0; y < MAP_HEIGHT; y++) {
-      for (let x = 0; x < MAP_WIDTH; x++) {
-        if (!isWall(x, y)) continue;
-
-        const px = x * TILE_SIZE;
-        const py = y * TILE_SIZE;
-        this.wallOutline.lineStyle(4, 0xe8e4dc, 1);
-
-        // Only draw edge if the floor on that side is currently visible to the player
-        if (!isWall(x - 1, y) && floorVisible(x - 1, y))
-          this.wallOutline.lineBetween(px, py, px, py + TILE_SIZE);
-        if (!isWall(x + 1, y) && floorVisible(x + 1, y))
-          this.wallOutline.lineBetween(px + TILE_SIZE, py, px + TILE_SIZE, py + TILE_SIZE);
-        if (!isWall(x, y - 1) && floorVisible(x, y - 1))
-          this.wallOutline.lineBetween(px, py, px + TILE_SIZE, py);
-        if (!isWall(x, y + 1) && floorVisible(x, y + 1))
-          this.wallOutline.lineBetween(px, py + TILE_SIZE, px + TILE_SIZE, py + TILE_SIZE);
       }
     }
   }
@@ -1115,6 +1047,7 @@ export default class ExploreScene extends Scene {
 
   private cleanupOnShutdown(): void {
     this.fx?.destroy();
+    this.fogRenderer?.destroy();
     this.announcementQueue?.destroy();
     this.gridMovement?.detach();
     this.interactionSystem?.detach();
