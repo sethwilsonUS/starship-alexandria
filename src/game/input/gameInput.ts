@@ -59,6 +59,7 @@ export function dispatchGameInputAction(action: GameInputAction): boolean {
 }
 
 export function handleKeyboardInput(event: KeyboardEvent): boolean {
+  if (event.defaultPrevented) return false;
   if (isNativeInteractiveTarget(event.target)) return false;
 
   const action = inputActionRouter.actionFromKeyboard(event, getInputActionContext());

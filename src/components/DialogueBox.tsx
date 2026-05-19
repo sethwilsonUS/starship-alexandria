@@ -158,6 +158,10 @@ export default function DialogueBox() {
 
   useEffect(() => {
     if (!isOpen) return;
+    const consumeDialogKey = (event: KeyboardEvent) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    };
     const handleKey = (e: KeyboardEvent) => {
       if (e.repeat) return;
       if (isNativeInteractiveTarget(e.target)) return;
@@ -168,18 +172,18 @@ export default function DialogueBox() {
           (c) => c.key.toLowerCase() === e.key.toLowerCase()
         );
         if (choice) {
-          e.preventDefault();
+          consumeDialogKey(e);
           handleChoice(choice.action);
           return;
         }
       }
       
       if (e.code === 'Space' || e.code === 'Enter') {
-        e.preventDefault();
+        consumeDialogKey(e);
         advance();
       }
       if (e.code === 'Escape') {
-        e.preventDefault();
+        consumeDialogKey(e);
         cancelSpeech();
         closeDialogue();
         unlockInteractions();

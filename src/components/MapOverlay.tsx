@@ -141,9 +141,33 @@ export default function MapOverlay() {
       if (e.repeat) return;
       
       if (Date.now() - openedAtRef.current < 300) return;
+
+      const key = e.key.toLowerCase();
+      const isCloseKey =
+        e.code === 'Escape' ||
+        e.code === 'KeyM' ||
+        key === 'escape' ||
+        key === 'esc' ||
+        key === 'm' ||
+        key === 'keym';
+      const isNextRoomKey =
+        e.code === 'ArrowDown' ||
+        e.code === 'ArrowRight' ||
+        key === 'arrowdown' ||
+        key === 'arrowright' ||
+        key === 'down' ||
+        key === 'right';
+      const isPreviousRoomKey =
+        e.code === 'ArrowUp' ||
+        e.code === 'ArrowLeft' ||
+        key === 'arrowup' ||
+        key === 'arrowleft' ||
+        key === 'up' ||
+        key === 'left';
       
-      if (e.code === 'Escape' || e.code === 'KeyM') {
+      if (isCloseKey) {
         e.preventDefault();
+        e.stopImmediatePropagation();
         cancelSpeech();
         closeMap();
         return;
@@ -152,15 +176,17 @@ export default function MapOverlay() {
       const roomCount = rooms.length;
       if (roomCount === 0) return;
       
-      if (e.code === 'ArrowDown' || e.code === 'ArrowRight') {
+      if (isNextRoomKey) {
         e.preventDefault();
+        e.stopImmediatePropagation();
         setSelectedRoomIndex(prev => {
           const next = prev === null ? 0 : (prev + 1) % roomCount;
           speakRoom(next);
           return next;
         });
-      } else if (e.code === 'ArrowUp' || e.code === 'ArrowLeft') {
+      } else if (isPreviousRoomKey) {
         e.preventDefault();
+        e.stopImmediatePropagation();
         setSelectedRoomIndex(prev => {
           const next = prev === null ? roomCount - 1 : (prev - 1 + roomCount) % roomCount;
           speakRoom(next);

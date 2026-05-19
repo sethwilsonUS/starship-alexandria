@@ -6,6 +6,10 @@ function keyboard(code: string, repeat = false): KeyboardEvent {
   return { code, repeat, preventDefault() {} } as KeyboardEvent;
 }
 
+function keyboardWithKey(key: string, repeat = false): KeyboardEvent {
+  return { code: '', key, repeat, preventDefault() {} } as KeyboardEvent;
+}
+
 function context(overrides: Partial<InputActionContext> = {}): InputActionContext {
   return {
     phase: 'exploring',
@@ -90,5 +94,13 @@ describe('InputActionRouter', () => {
     const router = new InputActionRouter();
 
     expect(router.actionFromKeyboard(keyboard('KeyM'), context({ hasAreaMap: false }))).toBe('openMap');
+  });
+
+  it('falls back to KeyboardEvent.key for semantic controls', () => {
+    const router = new InputActionRouter();
+
+    expect(router.actionFromKeyboard(keyboardWithKey('m'), context())).toBe('openMap');
+    expect(router.actionFromKeyboard(keyboardWithKey('Escape'), context({ phase: 'viewing-map' }))).toBe('closeMap');
+    expect(router.actionFromKeyboard(keyboardWithKey('Enter'), context({ phase: 'ship' }))).toBe('beamDown');
   });
 });

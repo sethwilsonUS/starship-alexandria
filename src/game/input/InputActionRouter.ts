@@ -42,7 +42,7 @@ export class InputActionRouter {
   }
 
   actionFromKeyboard(
-    event: Pick<KeyboardEvent, 'code' | 'repeat'>,
+    event: Pick<KeyboardEvent, 'code' | 'repeat'> & Partial<Pick<KeyboardEvent, 'key'>>,
     context: InputActionContext
   ): GameInputAction | null {
     if (this.transitionGuard && !this.transitionGuard.canAcceptAction(context.now)) return null;
@@ -55,7 +55,9 @@ export class InputActionRouter {
     if (event.repeat) return null;
 
     if (context.phase === 'dialogue') {
-      if (event.code === 'Space' || event.code === 'Enter') return 'advanceDialogue';
+      if (isKeyboardMatch(event, 'Space', ' ') || isKeyboardMatch(event, 'Enter', 'enter')) {
+        return 'advanceDialogue';
+      }
       return null;
     }
 
@@ -63,25 +65,43 @@ export class InputActionRouter {
 
     if (context.phase === 'viewing-map') {
       // Map overlay navigation stays in React; this router only closes it today.
-      if (event.code === 'Escape' || event.code === 'KeyM') return 'closeMap';
+      if (isKeyboardMatch(event, 'Escape', 'escape', 'esc') || isKeyboardMatch(event, 'KeyM', 'm', 'keym')) {
+        return 'closeMap';
+      }
       return null;
     }
 
     if (context.phase === 'ship') {
-      if ((event.code === 'Space' || event.code === 'Enter') && !context.isGameComplete) {
+      if (
+        (isKeyboardMatch(event, 'Space', ' ') || isKeyboardMatch(event, 'Enter', 'enter')) &&
+        !context.isGameComplete
+      ) {
         return 'beamDown';
       }
       return null;
     }
 
     if (context.phase === 'exploring') {
-      if (event.code === 'Space' || event.code === 'KeyE') return 'interact';
+      if (isKeyboardMatch(event, 'Space', ' ') || isKeyboardMatch(event, 'KeyE', 'e', 'keye')) {
+        return 'interact';
+      }
       // openMap is an intent request; the dispatcher handles the "map not found" dialogue.
-      if (event.code === 'KeyM') return 'openMap';
-      if (event.code === 'KeyB') return 'useBattery';
-      if (event.code === 'KeyI') return 'hudSummary';
+      if (isKeyboardMatch(event, 'KeyM', 'm', 'keym')) return 'openMap';
+      if (isKeyboardMatch(event, 'KeyB', 'b', 'keyb')) return 'useBattery';
+      if (isKeyboardMatch(event, 'KeyI', 'i', 'keyi')) return 'hudSummary';
     }
 
     return null;
   }
+}
+
+function isKeyboardMatch(
+  event: Pick<KeyboardEvent, 'code'> & Partial<Pick<KeyboardEvent, 'key'>>,
+  code: string,
+  ...keys: string[]
+): boolean {
+  if (event.code === code) return true;
+
+  const key = event.key?.toLowerCase();
+  return Boolean(key && keys.includes(key));
 }
