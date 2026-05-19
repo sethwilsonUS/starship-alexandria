@@ -20,6 +20,7 @@ import { EventBridge } from '../EventBridge';
 import { Player } from '../entities/Player';
 import { GridMovement } from '../systems/GridMovement';
 import { InteractionSystem } from '../systems/Interaction';
+import { createCpuTilemapLayer } from '../utils/tilemapLayers';
 import { playBumpSound, speak, playDiscoveryChime } from '@/utils/speech';
 
 /**
@@ -81,7 +82,7 @@ export default class ExploreScene extends Scene {
     )!;
 
     // Create layers (bottom to top: ground → walls → decoration)
-    this.groundLayer = this.tilemap.createLayer(0, tileset, 0, 0)!;
+    this.groundLayer = createCpuTilemapLayer(this.tilemap, 0, tileset, 0, 0);
     this.groundLayer.setDepth(0);
 
     // Wall layer from separate data
@@ -96,7 +97,7 @@ export default class ExploreScene extends Scene {
       TILE_SIZE,
       TILE_SIZE
     )!;
-    this.wallLayer = wallMapData.createLayer(0, wallTileset, 0, 0)!;
+    this.wallLayer = createCpuTilemapLayer(wallMapData, 0, wallTileset, 0, 0);
     this.wallLayer.setDepth(1);
     this.wallLayer.setCollision([4, 5]); // Wall and rubble block
 
@@ -112,7 +113,7 @@ export default class ExploreScene extends Scene {
       TILE_SIZE,
       TILE_SIZE
     )!;
-    this.decorationLayer = decoMapData.createLayer(0, decoTileset, 0, 0)!;
+    this.decorationLayer = createCpuTilemapLayer(decoMapData, 0, decoTileset, 0, 0);
     this.decorationLayer.setDepth(2);
 
     // Wall outline — thin border along wall edges for clarity
