@@ -1,10 +1,15 @@
 /**
- * Browser TTS via Web Speech API + simple sound effects.
+ * Browser/local TTS + simple sound effects.
  * TTS can be toggled via setTTSEnabled() - called by the game store.
  */
 
+import { findVoiceClip, loadVoiceManifest } from './voiceManifest';
+
 // Global TTS state - avoids circular import with store
 let ttsEnabled = true;
+let browserTtsFallbackEnabled = false;
+let activeVoiceAudio: HTMLAudioElement | null = null;
+let speechRequestId = 0;
 
 export function setTTSEnabledGlobal(enabled: boolean): void {
   ttsEnabled = enabled;
@@ -14,14 +19,79 @@ export function getTTSEnabled(): boolean {
   return ttsEnabled;
 }
 
+export function setBrowserTtsFallbackEnabled(enabled: boolean): void {
+  browserTtsFallbackEnabled = enabled;
+}
+
+export interface SpeakOptions {
+  voiceLineId?: string;
+  allowBrowserFallback?: boolean;
+}
+
 function getSynth(): SpeechSynthesis | null {
   if (typeof window === 'undefined') return null;
   return window.speechSynthesis;
 }
 
-export function speak(text: string): void {
+export function speak(text: string, options: SpeakOptions = {}): void {
   if (!ttsEnabled) return;
-  
+  const trimmedText = text.trim();
+  if (!trimmedText) return;
+
+  const requestId = beginSpeechRequest();
+
+  if (options.voiceLineId) {
+    const allowFallback = options.allowBrowserFallback === true || browserTtsFallbackEnabled;
+    void speakLocalVoiceLine(options.voiceLineId, trimmedText, allowFallback, requestId);
+    return;
+  }
+
+  speakWithBrowserTts(trimmedText);
+}
+
+function beginSpeechRequest(): number {
+  speechRequestId += 1;
+  cancelCurrentPlayback();
+  return speechRequestId;
+}
+
+async function speakLocalVoiceLine(
+  lineId: string,
+  fallbackText: string,
+  allowBrowserFallback: boolean,
+  requestId: number
+): Promise<void> {
+  const manifest = await loadVoiceManifest();
+  if (requestId !== speechRequestId) return;
+
+  const clip = manifest ? findVoiceClip(manifest, lineId) : null;
+  if (!clip) {
+    if (allowBrowserFallback) speakWithBrowserTts(fallbackText);
+    return;
+  }
+
+  try {
+    const audio = new Audio(clip.path);
+    activeVoiceAudio = audio;
+    audio.addEventListener(
+      'ended',
+      () => {
+        if (activeVoiceAudio === audio) {
+          activeVoiceAudio = null;
+        }
+      },
+      { once: true }
+    );
+    await audio.play();
+  } catch (error) {
+    if (requestId !== speechRequestId) return;
+    activeVoiceAudio = null;
+    console.warn(`Voice clip failed for ${lineId}:`, error);
+    if (allowBrowserFallback) speakWithBrowserTts(fallbackText);
+  }
+}
+
+function speakWithBrowserTts(text: string): void {
   const synth = getSynth();
   if (!synth || !text.trim()) return;
 
@@ -33,7 +103,17 @@ export function speak(text: string): void {
 }
 
 export function cancelSpeech(): void {
+  speechRequestId += 1;
+  cancelCurrentPlayback();
+}
+
+function cancelCurrentPlayback(): void {
   getSynth()?.cancel();
+  if (activeVoiceAudio) {
+    activeVoiceAudio.pause();
+    activeVoiceAudio.currentTime = 0;
+    activeVoiceAudio = null;
+  }
 }
 
 // Audio context for sound effects

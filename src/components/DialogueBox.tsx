@@ -118,14 +118,19 @@ export default function DialogueBox() {
   // TTS: speak current line when it changes (include choices and continuation hint)
   useEffect(() => {
     if (!isOpen || !currentLine) return;
-    let text = currentLine.speaker
+    const authoredText = currentLine.speaker
       ? `${currentLine.speaker}: ${currentLine.text}`
       : currentLine.text;
+    let text = authoredText;
+    let voiceLineId: string | undefined;
+
     if (currentLine.choices && currentLine.choices.length > 0) {
       const choiceText = currentLine.choices
         .map((c) => `Press ${c.key.toUpperCase()} for ${c.label}`)
         .join('. ');
       text += `. ${choiceText}`;
+    } else if (currentLine.voiceLineId && text === currentLine.text) {
+      voiceLineId = currentLine.voiceLineId;
     } else {
       // Add continuation/close hint after a pause (... creates a pause in TTS)
       if (lineIndex < lines.length - 1) {
@@ -134,7 +139,7 @@ export default function DialogueBox() {
         text += ' ... Press space to close.';
       }
     }
-    speak(text);
+    speak(text, { voiceLineId });
     return () => cancelSpeech();
   }, [isOpen, lineIndex, currentLine, lines.length]);
 
