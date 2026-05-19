@@ -68,11 +68,13 @@ export class InteractionSystem {
 
       const gamePhase = useGameStore.getState().session.gamePhase;
       if (INTERACTION_BLOCKED_PHASES.includes(gamePhase)) return;
+      if (interactionLocked) return;
 
       const target = this.currentInteractive;
       if (!target) return;
 
       this.lastInteractionTime = now;
+      lockInteractions();
       EventBridge.emit('interaction-triggered', {
         type: target.type,
         id: target.id,

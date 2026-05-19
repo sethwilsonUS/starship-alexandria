@@ -24,6 +24,8 @@ import { createCpuTilemapLayer } from '../utils/tilemapLayers';
 import { playBumpSound, speak, playDiscoveryChime } from '@/utils/speech';
 import { transitionGuard } from '@/game/input/gameInput';
 
+const BEAM_UP_INPUT_BLOCK_MS = 1100;
+
 /**
  * ExploreScene: Main exploration gameplay.
  * Procedurally generated tilemap via MapGenerator (Phase 2.1).
@@ -54,6 +56,7 @@ export default class ExploreScene extends Scene {
   private bookToRoomMap = new Map<string, string>(); // fragmentId → roomName
   private roomContents = new Map<string, { books: number; journals: number; npcs: string[]; batteries: number; maps: number }>(); // roomName → contents
   private announcedRooms = new Set<string>(); // Rooms we've already announced contents for
+  private isBeamingUp = false;
 
   constructor() {
     super({ key: 'ExploreScene' });
@@ -1156,7 +1159,9 @@ export default class ExploreScene extends Scene {
   }
 
   private playBeamUpAnimation(): void {
-    transitionGuard.beginTransition();
+    if (this.isBeamingUp) return;
+    this.isBeamingUp = true;
+    transitionGuard.beginTransition(Date.now(), BEAM_UP_INPUT_BLOCK_MS);
 
     // Disable player input during animation
     this.gridMovement?.detach();
@@ -1247,5 +1252,6 @@ export default class ExploreScene extends Scene {
     this.gridMovement?.detach();
     this.interactionSystem?.detach();
     EventBridge.emit('interaction-available', { type: '', label: undefined });
+    this.isBeamingUp = false;
   }
 }

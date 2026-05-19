@@ -4,6 +4,8 @@ import { useGameStore } from '@/store/gameStore';
 import { getBookCatalogSync } from '@/data/books';
 import { transitionGuard } from '@/game/input/gameInput';
 
+const BEAM_DOWN_INPUT_BLOCK_MS = 700;
+
 /**
  * ShipScene: The Starship Alexandria library deck.
  * A cozy interior where players return after expeditions.
@@ -12,6 +14,7 @@ import { transitionGuard } from '@/game/input/gameInput';
 export default class ShipScene extends Scene {
   private beamDownListener: (() => void) | null = null;
   private hasShownVictory = false;
+  private isBeamingDown = false;
 
   constructor() {
     super({ key: 'ShipScene' });
@@ -143,7 +146,9 @@ export default class ShipScene extends Scene {
   }
   
   private beamDown(): void {
-    transitionGuard.beginTransition();
+    if (this.isBeamingDown) return;
+    this.isBeamingDown = true;
+    transitionGuard.beginTransition(Date.now(), BEAM_DOWN_INPUT_BLOCK_MS);
 
     // Beam-down animation
     const { width, height } = this.cameras.main;
@@ -184,5 +189,6 @@ export default class ShipScene extends Scene {
       EventBridge.off('beam-down-requested', this.beamDownListener);
       this.beamDownListener = null;
     }
+    this.isBeamingDown = false;
   }
 }
