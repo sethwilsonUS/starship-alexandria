@@ -24,6 +24,7 @@ import { FxController } from '../systems/FxController';
 import { FogRenderer } from '../systems/FogRenderer';
 import { summarizeRoomContent, type RoomContentSummary } from '../systems/PlacementSystem';
 import { createCpuTilemapLayer } from '../utils/tilemapLayers';
+import { ASSET_KEYS } from '@/game/assets/assetManifest';
 import { playBumpSound, speak, playDiscoveryChime } from '@/utils/speech';
 import { transitionGuard } from '@/game/input/gameInput';
 
@@ -82,8 +83,8 @@ export default class ExploreScene extends Scene {
     });
 
     const tileset = this.tilemap.addTilesetImage(
-      'tileset',
-      'tileset',
+      ASSET_KEYS.tileset,
+      ASSET_KEYS.tileset,
       TILE_SIZE,
       TILE_SIZE,
       0,
@@ -101,8 +102,8 @@ export default class ExploreScene extends Scene {
       tileHeight: TILE_SIZE,
     });
     const wallTileset = wallMapData.addTilesetImage(
-      'tileset',
-      'tileset',
+      ASSET_KEYS.tileset,
+      ASSET_KEYS.tileset,
       TILE_SIZE,
       TILE_SIZE
     )!;
@@ -117,8 +118,8 @@ export default class ExploreScene extends Scene {
       tileHeight: TILE_SIZE,
     });
     const decoTileset = decoMapData.addTilesetImage(
-      'tileset',
-      'tileset',
+      ASSET_KEYS.tileset,
+      ASSET_KEYS.tileset,
       TILE_SIZE,
       TILE_SIZE
     )!;
@@ -128,7 +129,7 @@ export default class ExploreScene extends Scene {
     this.fogRenderer = new FogRenderer(this, this.mapData.walls);
 
     // Player entity
-    this.player = new Player(this, 'player', spawnX, spawnY);
+    this.player = new Player(this, ASSET_KEYS.sprites.player, spawnX, spawnY);
     this.player.setDirection('down');
 
     this.gridMovement = new GridMovement();
@@ -416,7 +417,7 @@ export default class ExploreScene extends Scene {
     tRing.lineStyle(3, 0x5cb3ff, 1); // Electric blue
     tRing.strokeCircle(0, 0, 18);
     transporterContainer.add(tRing);
-    transporterContainer.add(this.add.sprite(0, 0, 'transporter-pad'));
+    transporterContainer.add(this.add.sprite(0, 0, ASSET_KEYS.sprites.transporter));
     this.tweens.add({
       targets: transporterContainer,
       scale: 1.06,
@@ -532,7 +533,7 @@ export default class ExploreScene extends Scene {
       ring.lineStyle(3, 0xd4af37, 1); // Gold highlight — always bright
       ring.strokeCircle(0, 0, 18);
       container.add(ring);
-      const sprite = this.add.sprite(0, 0, 'book-pickup');
+      const sprite = this.add.sprite(0, 0, ASSET_KEYS.sprites.book);
       container.add(sprite);
       this.bookContainers.set(frag.id, container);
 
@@ -620,7 +621,7 @@ export default class ExploreScene extends Scene {
       nRing.lineStyle(3, 0xe8a838, 1); // Warm amber — survivor/friendly
       nRing.strokeCircle(0, 0, 18);
       npcContainer.add(nRing);
-      npcContainer.add(this.add.sprite(0, 0, 'npc'));
+      npcContainer.add(this.add.sprite(0, 0, ASSET_KEYS.sprites.npc));
       this.tweens.add({
         targets: npcContainer,
         scale: 1.06,
@@ -705,7 +706,7 @@ export default class ExploreScene extends Scene {
       ring.lineStyle(3, 0xb8860b, 1); // Dark goldenrod — aged paper/sepia
       ring.strokeCircle(0, 0, 16);
       container.add(ring);
-      const sprite = this.add.sprite(0, 0, 'journal-pickup');
+      const sprite = this.add.sprite(0, 0, ASSET_KEYS.sprites.journal);
       container.add(sprite);
       this.journalContainers.set(journal.id, container);
 
@@ -759,7 +760,7 @@ export default class ExploreScene extends Scene {
       ring.lineStyle(3, 0x5cb85c, 1); // Green — battery/energy
       ring.strokeCircle(0, 0, 18);
       container.add(ring);
-      container.add(this.add.sprite(0, 0, 'battery-pickup'));
+      container.add(this.add.sprite(0, 0, ASSET_KEYS.sprites.battery));
       this.batteryContainers.set(batteryId, container);
 
       this.tweens.add({
@@ -810,7 +811,7 @@ export default class ExploreScene extends Scene {
       ring.lineStyle(3, 0x00ced1, 1); // Cyan/teal — map/navigation
       ring.strokeCircle(0, 0, 18);
       container.add(ring);
-      container.add(this.add.sprite(0, 0, 'map-pickup'));
+      container.add(this.add.sprite(0, 0, ASSET_KEYS.sprites.map));
       this.mapContainer = container;
 
       this.tweens.add({
@@ -874,7 +875,7 @@ export default class ExploreScene extends Scene {
       ring.lineStyle(3, 0x9370db, 1); // Purple — vault/mystery
       ring.strokeCircle(0, 0, 18);
       container.add(ring);
-      container.add(this.add.sprite(0, 0, 'vault'));
+      container.add(this.add.sprite(0, 0, ASSET_KEYS.sprites.vault));
       this.vaultContainer = container;
       this.vaultRoomName = vaultRoom.name;
 
