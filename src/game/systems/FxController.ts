@@ -7,6 +7,7 @@ export class FxController {
   private ownedObjects = new Set<Phaser.GameObjects.GameObject>();
   private activeTweens = new Set<Phaser.Tweens.Tween>();
   private activeTimers = new Set<Phaser.Time.TimerEvent>();
+  private isDestroyed = false;
 
   constructor(private readonly scene: Phaser.Scene) {}
 
@@ -15,18 +16,19 @@ export class FxController {
     const overlay = this.trackObject(this.scene.add.graphics());
     overlay.setDepth(100);
     overlay.setScrollFactor(0);
-    overlay.setAlpha(0.2);
-    overlay.fillStyle(color, 0.2);
+    overlay.fillStyle(color, 0.3);
     overlay.fillRect(0, 0, width, height);
 
-    const tween = this.scene.tweens.add({
-      targets: overlay,
-      alpha: { from: 0.2, to: 1 },
+    const tween = this.scene.tweens.addCounter({
+      from: 0,
+      to: 1,
       duration,
       ease: 'Sine.easeInOut',
       onUpdate: (activeTween) => {
+        const t = activeTween.getValue() ?? 1;
+
         overlay.clear();
-        overlay.fillStyle(color, 0.2 + activeTween.progress * 0.6);
+        overlay.fillStyle(color, 0.3 + t * 0.7);
         overlay.fillRect(0, 0, width, height);
       },
       onComplete: () => {
@@ -128,7 +130,6 @@ export class FxController {
       onComplete: () => {
         this.activeTweens.delete(tween);
         this.destroyObject(beam);
-        onComplete();
       },
     });
     this.trackTween(tween);
@@ -138,9 +139,17 @@ export class FxController {
       onFade();
     });
     this.activeTimers.add(fadeTimer);
+
+    const completeTimer = this.scene.time.delayedCall(1000, () => {
+      this.activeTimers.delete(completeTimer);
+      if (!this.isDestroyed) onComplete();
+    });
+    this.activeTimers.add(completeTimer);
   }
 
   destroy(): void {
+    this.isDestroyed = true;
+    // Counter tweens do not target owned graphics, so stop both target-based and tracked tweens.
     this.scene.tweens.killTweensOf([...this.ownedObjects]);
     this.activeTweens.forEach((tween) => tween.stop());
     this.activeTweens.clear();
