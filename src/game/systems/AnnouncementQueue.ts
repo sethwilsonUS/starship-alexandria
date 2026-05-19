@@ -58,10 +58,15 @@ export class AnnouncementQueue {
       return;
     }
 
-    this.activeDelay = this.scheduler.delay(step.delayMs, () => {
+    let delay: CancellableDelay | null = null;
+    delay = this.scheduler.delay(step.delayMs, () => {
+      if (this.activeDelay === delay) {
+        this.activeDelay = null;
+      }
       if (token !== this.sequenceToken) return;
       step.run();
       this.playStep(token, steps, index + 1, onComplete);
     });
+    this.activeDelay = delay;
   }
 }

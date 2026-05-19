@@ -937,17 +937,11 @@ export default class ExploreScene extends Scene {
   }
 
   private announceRoomEntry(roomName: string, initialDelay: number): void {
-    this.announcementQueue.play(
-      [
-        { delayMs: initialDelay, run: () => speak(roomName) },
-        { delayMs: 1200, run: () => this.announceRoomContents(roomName) },
-      ],
-      () => {
-        this.time.delayedCall(1500, () => {
-          EventBridge.emit('room-announcements-complete');
-        });
-      }
-    );
+    this.announcementQueue.play([
+      { delayMs: initialDelay, run: () => speak(roomName) },
+      { delayMs: 1200, run: () => this.announceRoomContents(roomName) },
+      { delayMs: 1500, run: () => EventBridge.emit('room-announcements-complete') },
+    ]);
   }
 
   private addRoomContent(roomName: string, type: 'book' | 'journal' | 'battery' | 'map', npcName?: string): void {
