@@ -22,6 +22,7 @@ import { InteractionSystem } from '../systems/Interaction';
 import { AnnouncementQueue, createSceneAnnouncementScheduler } from '../systems/AnnouncementQueue';
 import { FxController } from '../systems/FxController';
 import { FogRenderer } from '../systems/FogRenderer';
+import { summarizeRoomContent, type RoomContentSummary } from '../systems/PlacementSystem';
 import { createCpuTilemapLayer } from '../utils/tilemapLayers';
 import { playBumpSound, speak, playDiscoveryChime } from '@/utils/speech';
 import { transitionGuard } from '@/game/input/gameInput';
@@ -57,7 +58,7 @@ export default class ExploreScene extends Scene {
   private npcBlockedTiles = new Set<string>();
   private moveCount = 0;
   private bookToRoomMap = new Map<string, string>(); // fragmentId → roomName
-  private roomContents = new Map<string, { books: number; journals: number; npcs: string[]; batteries: number; maps: number }>(); // roomName → contents
+  private roomContents = new Map<string, RoomContentSummary>(); // roomName → contents
   private announcedRooms = new Set<string>(); // Rooms we've already announced contents for
   private isBeamingUp = false;
 
@@ -554,7 +555,7 @@ export default class ExploreScene extends Scene {
       // Track which room this book is in (for updating Martha's hints)
       this.bookToRoomMap.set(frag.id, room.name);
       // Track for room content announcements
-      this.addRoomContent(room.name, 'book');
+      summarizeRoomContent(this.roomContents, room.name, 'book');
     }
     useGameStore.getState().actions.setBooksOnThisMap(count);
 
@@ -639,7 +640,7 @@ export default class ExploreScene extends Scene {
       npcRooms[npc.id] = room.name;
       npcPositions.push({ id: npc.id, name: npc.name, x: tile.x, y: tile.y, roomName: room.name });
       // Track for room content announcements
-      this.addNpcToRoom(room.name, npc.name);
+      summarizeRoomContent(this.roomContents, room.name, 'npc', npc.name);
     }
     useGameStore.getState().actions.setNpcRoomsOnMap(npcRooms);
     useGameStore.getState().actions.setNpcPositionsOnMap(npcPositions);
@@ -724,7 +725,7 @@ export default class ExploreScene extends Scene {
         label: journal.title,
       });
       // Track for room content announcements
-      this.addRoomContent(roomWithSpace.room.name, 'journal');
+      summarizeRoomContent(this.roomContents, roomWithSpace.room.name, 'journal');
     }
 
     // Batteries: 1–2 per map, same rules as books (never in spawn room), green ring
@@ -777,7 +778,7 @@ export default class ExploreScene extends Scene {
         label: 'Battery',
       });
       // Track for room content announcements
-      this.addRoomContent(batteryRoom.name, 'battery');
+      summarizeRoomContent(this.roomContents, batteryRoom.name, 'battery');
     }
 
     // Map: exactly 1 per map, in a room other than spawn, cyan/teal ring
@@ -828,7 +829,7 @@ export default class ExploreScene extends Scene {
         label: 'Map',
       });
       // Track for room content announcements
-      this.addRoomContent(mapRoom.name, 'map');
+      summarizeRoomContent(this.roomContents, mapRoom.name, 'map');
       break; // Only place one map
     }
 
@@ -938,27 +939,6 @@ export default class ExploreScene extends Scene {
       { delayMs: 1200, run: () => this.announceRoomContents(roomName) },
       { delayMs: 1500, run: () => EventBridge.emit('room-announcements-complete') },
     ]);
-  }
-
-  private addRoomContent(roomName: string, type: 'book' | 'journal' | 'battery' | 'map', npcName?: string): void {
-    if (!this.roomContents.has(roomName)) {
-      this.roomContents.set(roomName, { books: 0, journals: 0, npcs: [], batteries: 0, maps: 0 });
-    }
-    const contents = this.roomContents.get(roomName)!;
-    switch (type) {
-      case 'book': contents.books++; break;
-      case 'journal': contents.journals++; break;
-      case 'battery': contents.batteries++; break;
-      case 'map': contents.maps++; break;
-    }
-    if (npcName) contents.npcs.push(npcName);
-  }
-
-  private addNpcToRoom(roomName: string, npcName: string): void {
-    if (!this.roomContents.has(roomName)) {
-      this.roomContents.set(roomName, { books: 0, journals: 0, npcs: [], batteries: 0, maps: 0 });
-    }
-    this.roomContents.get(roomName)!.npcs.push(npcName);
   }
 
   private announceRoomContents(roomName: string): void {
