@@ -21,6 +21,7 @@ import { Player } from '../entities/Player';
 import { GridMovement } from '../systems/GridMovement';
 import { InteractionSystem } from '../systems/Interaction';
 import { AnnouncementQueue, createSceneAnnouncementScheduler } from '../systems/AnnouncementQueue';
+import { FxController } from '../systems/FxController';
 import { createCpuTilemapLayer } from '../utils/tilemapLayers';
 import { playBumpSound, speak, playDiscoveryChime } from '@/utils/speech';
 import { transitionGuard } from '@/game/input/gameInput';
@@ -40,6 +41,7 @@ export default class ExploreScene extends Scene {
   private gridMovement!: GridMovement;
   private interactionSystem!: InteractionSystem;
   private announcementQueue!: AnnouncementQueue;
+  private fx!: FxController;
   private camera!: Phaser.Cameras.Scene2D.Camera;
   private mapData!: GeneratedMap;
   private lastRoomName: string | null = null;
@@ -67,6 +69,7 @@ export default class ExploreScene extends Scene {
   create() {
     // Fade in from beam-down
     this.cameras.main.fadeIn(600, 92, 180, 255);
+    this.fx = new FxController(this);
     
     this.mapData = generateMap();
     const { ground, walls, decoration, rooms, spawnX, spawnY } = this.mapData;
@@ -1086,70 +1089,7 @@ export default class ExploreScene extends Scene {
   }
 
   private playBookPickupEffect(): void {
-    // Gentle camera shake
-    this.cameras.main.shake(200, 0.008);
-    
-    // Golden flash overlay
-    const flash = this.add.graphics();
-    flash.setDepth(200);
-    flash.fillStyle(0xd4af37, 0.3);
-    flash.fillRect(0, 0, this.cameras.main.width * 2, this.cameras.main.height * 2);
-    flash.setScrollFactor(0);
-    
-    // Radial burst from player position
-    const playerPos = this.player.getPixelPosition();
-    const particles: { x: number; y: number; vx: number; vy: number; alpha: number; size: number }[] = [];
-    for (let i = 0; i < 12; i++) {
-      const angle = (i / 12) * Math.PI * 2;
-      particles.push({
-        x: playerPos.x,
-        y: playerPos.y,
-        vx: Math.cos(angle) * 80,
-        vy: Math.sin(angle) * 80,
-        alpha: 1,
-        size: 4 + Math.random() * 3,
-      });
-    }
-    
-    const particleGraphics = this.add.graphics();
-    particleGraphics.setDepth(201);
-    
-    let elapsed = 0;
-    const duration = 400;
-    
-    const animate = () => {
-      elapsed += 16;
-      const t = elapsed / duration;
-      
-      // Fade flash
-      flash.clear();
-      flash.fillStyle(0xd4af37, 0.3 * (1 - t));
-      flash.fillRect(
-        this.cameras.main.scrollX - 50,
-        this.cameras.main.scrollY - 50,
-        this.cameras.main.width + 100,
-        this.cameras.main.height + 100
-      );
-      
-      // Animate particles
-      particleGraphics.clear();
-      particles.forEach(p => {
-        p.x += p.vx * 0.016;
-        p.y += p.vy * 0.016;
-        p.alpha = 1 - t;
-        particleGraphics.fillStyle(0xd4af37, p.alpha);
-        particleGraphics.fillCircle(p.x, p.y, p.size * (1 - t * 0.5));
-      });
-      
-      if (elapsed < duration) {
-        this.time.delayedCall(16, animate);
-      } else {
-        flash.destroy();
-        particleGraphics.destroy();
-      }
-    };
-    
-    animate();
+    this.fx.playPickupBurst(this.player.getPixelPosition());
   }
 
   private playBeamUpAnimation(): void {
@@ -1162,87 +1102,19 @@ export default class ExploreScene extends Scene {
     this.interactionSystem?.detach();
     EventBridge.emit('interaction-available', { type: '', label: undefined });
 
-    const playerPos = this.player.getPixelPosition();
-    
-    // Create beam effect graphics
-    const beamGraphics = this.add.graphics();
-    beamGraphics.setDepth(100);
-    
-    // Initial beam column (thin, bright blue)
-    const beamWidth = 40;
-    const beamX = playerPos.x - beamWidth / 2;
-    
-    // Animate beam expanding and brightening
-    let progress = 0;
-    const beamDuration = 800;
-    const fadeDelay = 600;
-    
-    // Beam particles rising effect
-    const particles: { x: number; y: number; speed: number; alpha: number }[] = [];
-    for (let i = 0; i < 20; i++) {
-      particles.push({
-        x: playerPos.x + (Math.random() - 0.5) * 30,
-        y: playerPos.y + Math.random() * 40 - 20,
-        speed: 50 + Math.random() * 100,
-        alpha: 0.6 + Math.random() * 0.4,
-      });
-    }
-    
-    const updateBeam = () => {
-      progress += 16;
-      const t = Math.min(progress / beamDuration, 1);
-      
-      beamGraphics.clear();
-      
-      // Expanding beam column
-      const expandedWidth = beamWidth + t * 60;
-      const beamAlpha = 0.3 + t * 0.5;
-      beamGraphics.fillStyle(0x5cb3ff, beamAlpha);
-      beamGraphics.fillRect(
-        playerPos.x - expandedWidth / 2,
-        0,
-        expandedWidth,
-        this.cameras.main.height * 2
-      );
-      
-      // Inner bright core
-      const coreWidth = 20 + t * 20;
-      beamGraphics.fillStyle(0xffffff, 0.6 + t * 0.4);
-      beamGraphics.fillRect(
-        playerPos.x - coreWidth / 2,
-        0,
-        coreWidth,
-        this.cameras.main.height * 2
-      );
-      
-      // Rising particles
-      particles.forEach((p) => {
-        p.y -= p.speed * 0.016;
-        beamGraphics.fillStyle(0x5cb3ff, p.alpha * (1 - t * 0.5));
-        beamGraphics.fillCircle(p.x, p.y, 3 + Math.random() * 2);
-      });
-      
-      if (progress < beamDuration) {
-        this.time.delayedCall(16, updateBeam);
+    this.fx.playBeamColumn(
+      this.player.getPixelPosition(),
+      () => this.cameras.main.fadeOut(400, 200, 220, 255),
+      () => {
+        useGameStore.getState().actions.beamToShip();
+        useGameStore.getState().actions.saveToLocalStorage();
+        this.scene.start('ShipScene');
       }
-    };
-    
-    updateBeam();
-    
-    // Screen fade to white/blue
-    this.time.delayedCall(fadeDelay, () => {
-      this.cameras.main.fadeOut(400, 200, 220, 255);
-    });
-    
-    // Transition to ship after animation
-    this.time.delayedCall(beamDuration + 200, () => {
-      useGameStore.getState().actions.beamToShip();
-      useGameStore.getState().actions.saveToLocalStorage();
-      this.scene.start('ShipScene');
-    });
+    );
   }
 
   private cleanupOnShutdown(): void {
+    this.fx?.destroy();
     this.announcementQueue?.destroy();
     this.gridMovement?.detach();
     this.interactionSystem?.detach();
