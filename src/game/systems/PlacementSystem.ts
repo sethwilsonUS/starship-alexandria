@@ -9,6 +9,7 @@ export interface RoomContentSummary {
 }
 
 export type RoomContentType = 'book' | 'journal' | 'battery' | 'map' | 'npc';
+type NonNpcRoomContentType = Exclude<RoomContentType, 'npc'>;
 
 export function tileKey(position: Position): string {
   return `${position.x},${position.y}`;
@@ -28,6 +29,17 @@ export function createRoomContentSummary(): RoomContentSummary {
 export function summarizeRoomContent(
   summaries: Map<string, RoomContentSummary>,
   roomName: string,
+  type: NonNpcRoomContentType
+): void;
+export function summarizeRoomContent(
+  summaries: Map<string, RoomContentSummary>,
+  roomName: string,
+  type: 'npc',
+  npcName: string
+): void;
+export function summarizeRoomContent(
+  summaries: Map<string, RoomContentSummary>,
+  roomName: string,
   type: RoomContentType,
   npcName?: string
 ): void {
@@ -40,5 +52,10 @@ export function summarizeRoomContent(
   if (type === 'journal') summary.journals += 1;
   if (type === 'battery') summary.batteries += 1;
   if (type === 'map') summary.maps += 1;
-  if (type === 'npc' && npcName) summary.npcs.push(npcName);
+  if (type === 'npc') {
+    if (!npcName) {
+      throw new Error('NPC room content requires an npcName');
+    }
+    summary.npcs.push(npcName);
+  }
 }
