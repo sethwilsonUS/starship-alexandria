@@ -80,6 +80,7 @@ export class GridMovement implements MovementController {
     this.isMoving = true;
     EventBridge.emit('player-moving');
     this.player.setDirection(direction);
+    this.player.beginStep?.(duration);
 
     const pixelTargetX = targetX * TILE_SIZE + TILE_SIZE / 2;
     const pixelTargetY = targetY * TILE_SIZE + TILE_SIZE / 2;
@@ -91,6 +92,7 @@ export class GridMovement implements MovementController {
       duration,
       ease: 'Linear',
       onComplete: () => {
+        this.player!.endStep?.();
         this.player!.setGridPosition(targetX, targetY);
         this.isMoving = false;
         EventBridge.emit('player-moved', { x: targetX, y: targetY });

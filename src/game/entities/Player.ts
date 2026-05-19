@@ -5,6 +5,8 @@ import { TILE_SIZE } from '@/config/gameConfig';
 const HIGHLIGHT_RADIUS = 20;
 const HIGHLIGHT_COLOR = 0xffffff;
 const HIGHLIGHT_ALPHA = 0.85;
+const STEP_BOB_PIXELS = 3;
+const STEP_BOB_HALF_DURATION = 75;
 
 /**
  * Player entity: sprite + grid position + facing direction.
@@ -14,9 +16,11 @@ const HIGHLIGHT_ALPHA = 0.85;
 export class Player implements IControllablePlayer {
   readonly container: Phaser.GameObjects.Container;
   readonly sprite: Phaser.GameObjects.Sprite;
+  private readonly scene: Phaser.Scene;
   private gridX: number;
   private gridY: number;
   private facing: Direction;
+  private walkTween: Phaser.Tweens.Tween | null = null;
 
   constructor(
     scene: Phaser.Scene,
@@ -27,6 +31,7 @@ export class Player implements IControllablePlayer {
     const pixelX = startX * TILE_SIZE + TILE_SIZE / 2;
     const pixelY = startY * TILE_SIZE + TILE_SIZE / 2;
 
+    this.scene = scene;
     this.container = scene.add.container(pixelX, pixelY);
     this.container.setDepth(10);
 
@@ -62,6 +67,27 @@ export class Player implements IControllablePlayer {
     this.updateFacingVisual();
   }
 
+  beginStep(durationMs: number): void {
+    this.walkTween?.stop();
+    this.resetWalkPose();
+
+    const repeats = Math.max(0, Math.round(durationMs / (STEP_BOB_HALF_DURATION * 2)) - 1);
+    this.walkTween = this.scene.tweens.add({
+      targets: this.sprite,
+      y: -STEP_BOB_PIXELS,
+      duration: STEP_BOB_HALF_DURATION,
+      yoyo: true,
+      repeat: repeats,
+      ease: 'Sine.easeInOut',
+      onComplete: () => this.resetWalkPose(),
+    });
+  }
+
+  endStep(): void {
+    this.walkTween?.stop();
+    this.resetWalkPose();
+  }
+
   getSprite(): Phaser.GameObjects.GameObject {
     return this.container;
   }
@@ -75,14 +101,15 @@ export class Player implements IControllablePlayer {
     this.container.setPosition(pixelX, pixelY);
   }
 
-  /** Apply facing direction to sprite (angle for 4-dir top-down) */
+  /** Keep the Kenney player upright; facing is gameplay state, not sprite rotation. */
   private updateFacingVisual(): void {
-    const angles: Record<Direction, number> = {
-      up: -90,
-      down: 90,
-      left: 180,
-      right: 0,
-    };
-    this.sprite.setAngle(angles[this.facing]);
+    this.sprite.setAngle(0);
+    this.sprite.setFlipX(this.facing === 'left');
+  }
+
+  private resetWalkPose(): void {
+    this.walkTween = null;
+    this.sprite.setY(0);
+    this.updateFacingVisual();
   }
 }
