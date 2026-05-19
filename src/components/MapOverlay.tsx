@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { speak, cancelSpeech } from '@/utils/speech';
 import { MAP_WIDTH, MAP_HEIGHT } from '@/config/gameConfig';
@@ -32,6 +32,10 @@ function getRoomContainingPoint(rooms: MapRoom[], x: number, y: number): MapRoom
   return rooms.find(r => x >= r.x1 && x <= r.x2 && y >= r.y1 && y <= r.y2) ?? null;
 }
 
+function isInAnyRoom(rooms: MapRoom[], x: number, y: number): boolean {
+  return rooms.some(r => x >= r.x1 && x <= r.x2 && y >= r.y1 && y <= r.y2);
+}
+
 function getRoomIcon(roomName: string): string {
   const name = roomName.toLowerCase();
   if (name.includes('archive') || name.includes('records')) return '📜';
@@ -48,9 +52,12 @@ function getRoomIcon(roomName: string): string {
 export default function MapOverlay() {
   const gamePhase = useGameStore((s) => s.session.gamePhase);
   const mapRooms = useGameStore((s) => s.session.mapRooms);
+  const mapWalls = useGameStore((s) => s.session.mapWalls);
   const playerPosition = useGameStore((s) => s.player.position);
   const mapSpawn = useGameStore((s) => s.session.mapSpawn);
   const npcPositions = useGameStore((s) => s.session.npcPositionsOnMap);
+  const discoveredNPCs = useGameStore((s) => s.exploration.discoveredNPCs);
+  const visitedRooms = useGameStore((s) => s.session.visitedRooms);
   const closeMap = useGameStore((s) => s.actions.closeMap);
   
   const [selectedRoomIndex, setSelectedRoomIndex] = useState<number | null>(null);
@@ -58,59 +65,74 @@ export default function MapOverlay() {
   const [isVisible, setIsVisible] = useState(false);
   const openedAtRef = useRef<number>(0);
   const isOpen = gamePhase === 'viewing-map';
-  
-  const sortedRooms = useRef<MapRoom[]>([]);
-  
-  useEffect(() => {
-    if (isOpen && mapRooms.length > 0) {
-      sortedRooms.current = [...mapRooms].sort((a, b) => {
-        const aY = (a.y1 + a.y2) / 2;
-        const bY = (b.y1 + b.y2) / 2;
-        if (Math.abs(aY - bY) > 3) return aY - bY;
-        return (a.x1 + a.x2) / 2 - (b.x1 + b.x2) / 2;
-      });
-    }
-  }, [isOpen, mapRooms]);
+
+  const rooms = useMemo(
+    () => [...mapRooms].sort((a, b) => {
+      const aY = (a.y1 + a.y2) / 2;
+      const bY = (b.y1 + b.y2) / 2;
+      if (Math.abs(aY - bY) > 3) return aY - bY;
+      return (a.x1 + a.x2) / 2 - (b.x1 + b.x2) / 2;
+    }),
+    [mapRooms]
+  );
+  const visitedRoomKeys = useMemo(() => new Set(visitedRooms), [visitedRooms]);
+  const discoveredNPCSet = useMemo(() => new Set(discoveredNPCs), [discoveredNPCs]);
+  const visibleNpcs = useMemo(
+    () => npcPositions.filter((npc) => discoveredNPCSet.has(npc.id)),
+    [npcPositions, discoveredNPCSet]
+  );
   
   // Animate in when opening
   useEffect(() => {
+    let frame = 0;
     if (isOpen) {
-      setIsVisible(true);
-      // Trigger animation on next frame
-      requestAnimationFrame(() => {
-        setIsAnimatingIn(true);
+      frame = requestAnimationFrame(() => {
+        setIsVisible(true);
+        setSelectedRoomIndex(null);
+        requestAnimationFrame(() => {
+          setIsAnimatingIn(true);
+        });
       });
       openedAtRef.current = Date.now();
-      setSelectedRoomIndex(null);
-      
-      const playerRoom = getRoomContainingPoint(mapRooms, playerPosition.x, playerPosition.y);
+
+      const playerRoom = getRoomContainingPoint(rooms, playerPosition.x, playerPosition.y);
       const playerRoomName = playerRoom ? playerRoom.name : 'a corridor';
-      const intro = `Map of the area. ${mapRooms.length} rooms. You are in ${playerRoomName}. Use arrow keys to navigate between rooms. Press Escape or M to close.`;
+      const intro = `Map of the area. ${rooms.length} rooms. You are in ${playerRoomName}. Use arrow keys to navigate between rooms. Press Escape or M to close.`;
       speak(intro);
     } else {
-      setIsAnimatingIn(false);
+      frame = requestAnimationFrame(() => {
+        setIsAnimatingIn(false);
+      });
       // Delay hiding to allow animation out
       const timer = setTimeout(() => setIsVisible(false), 300);
-      return () => clearTimeout(timer);
+      return () => {
+        cancelAnimationFrame(frame);
+        clearTimeout(timer);
+      };
     }
     return () => {
+      cancelAnimationFrame(frame);
       if (isOpen) {
         cancelSpeech();
       }
     };
-  }, [isOpen, mapRooms, playerPosition.x, playerPosition.y]);
+  }, [isOpen, rooms, playerPosition.x, playerPosition.y]);
   
   const speakRoom = useCallback((index: number) => {
-    const room = sortedRooms.current[index];
+    const room = rooms[index];
     if (!room) return;
     
     const direction = getDirectionLabel(room, MAP_WIDTH, MAP_HEIGHT);
-    const playerRoom = getRoomContainingPoint(sortedRooms.current, playerPosition.x, playerPosition.y);
+    const playerRoom = getRoomContainingPoint(rooms, playerPosition.x, playerPosition.y);
     const isPlayerHere = playerRoom === room;
-    const suffix = isPlayerHere ? ' You are here.' : '';
-    const text = `${room.name}. ${direction} side of the map.${suffix}`;
+    const isVisited = visitedRoomKeys.has(`${room.x1},${room.y1}`);
+    const suffixes = [
+      isVisited ? 'visited' : 'not yet visited',
+      isPlayerHere ? 'You are here' : '',
+    ].filter(Boolean);
+    const text = `${room.name}. ${direction} side of the map. ${suffixes.join('. ')}.`;
     speak(text);
-  }, [playerPosition.x, playerPosition.y]);
+  }, [rooms, playerPosition.x, playerPosition.y, visitedRoomKeys]);
   
   useEffect(() => {
     if (!isOpen) return;
@@ -119,26 +141,52 @@ export default function MapOverlay() {
       if (e.repeat) return;
       
       if (Date.now() - openedAtRef.current < 300) return;
+
+      const key = e.key.toLowerCase();
+      const isCloseKey =
+        e.code === 'Escape' ||
+        e.code === 'KeyM' ||
+        key === 'escape' ||
+        key === 'esc' ||
+        key === 'm' ||
+        key === 'keym';
+      const isNextRoomKey =
+        e.code === 'ArrowDown' ||
+        e.code === 'ArrowRight' ||
+        key === 'arrowdown' ||
+        key === 'arrowright' ||
+        key === 'down' ||
+        key === 'right';
+      const isPreviousRoomKey =
+        e.code === 'ArrowUp' ||
+        e.code === 'ArrowLeft' ||
+        key === 'arrowup' ||
+        key === 'arrowleft' ||
+        key === 'up' ||
+        key === 'left';
       
-      if (e.code === 'Escape' || e.code === 'KeyM') {
+      if (isCloseKey) {
         e.preventDefault();
+        e.stopImmediatePropagation();
         cancelSpeech();
         closeMap();
         return;
       }
       
-      const roomCount = sortedRooms.current.length;
+      const roomCount = rooms.length;
       if (roomCount === 0) return;
       
-      if (e.code === 'ArrowDown' || e.code === 'ArrowRight') {
+      if (isNextRoomKey) {
         e.preventDefault();
+        e.stopImmediatePropagation();
         setSelectedRoomIndex(prev => {
           const next = prev === null ? 0 : (prev + 1) % roomCount;
           speakRoom(next);
           return next;
         });
-      } else if (e.code === 'ArrowUp' || e.code === 'ArrowLeft') {
+      } else if (isPreviousRoomKey) {
         e.preventDefault();
+        e.stopImmediatePropagation();
         setSelectedRoomIndex(prev => {
           const next = prev === null ? roomCount - 1 : (prev - 1 + roomCount) % roomCount;
           speakRoom(next);
@@ -149,11 +197,12 @@ export default function MapOverlay() {
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, closeMap, speakRoom]);
+  }, [isOpen, closeMap, speakRoom, rooms.length]);
   
   if (!isVisible) return null;
   
-  const rooms = sortedRooms.current.length > 0 ? sortedRooms.current : mapRooms;
+  if (rooms.length === 0) return null;
+
   const playerRoom = getRoomContainingPoint(rooms, playerPosition.x, playerPosition.y);
   
   // Calculate bounding box of all rooms for better scaling
@@ -174,11 +223,23 @@ export default function MapOverlay() {
   bounds.maxX = Math.min(MAP_WIDTH, bounds.maxX + padding);
   bounds.maxY = Math.min(MAP_HEIGHT, bounds.maxY + padding);
   
-  const boundsWidth = bounds.maxX - bounds.minX;
-  const boundsHeight = bounds.maxY - bounds.minY;
+  const boundsWidth = Math.max(1, bounds.maxX - bounds.minX);
+  const boundsHeight = Math.max(1, bounds.maxY - bounds.minY);
   
   // Convert coordinates relative to bounds
   const toPercent = (val: number, min: number, range: number) => ((val - min) / range) * 100;
+  const tileWidthPct = 100 / boundsWidth;
+  const tileHeightPct = 100 / boundsHeight;
+  const corridorTiles: Array<{ x: number; y: number }> = [];
+  if (mapWalls.length > 0) {
+    for (let y = bounds.minY; y <= bounds.maxY; y++) {
+      for (let x = bounds.minX; x <= bounds.maxX; x++) {
+        if (mapWalls[y]?.[x] === -1 && !isInAnyRoom(rooms, x, y)) {
+          corridorTiles.push({ x, y });
+        }
+      }
+    }
+  }
   
   return (
     <div
@@ -214,10 +275,24 @@ export default function MapOverlay() {
               <span className="map-overlay__compass-n">N</span>
               <span className="map-overlay__compass-rose">✧</span>
             </div>
+
+            {corridorTiles.map((tile) => (
+              <span
+                key={`${tile.x},${tile.y}`}
+                className="map-overlay__corridor"
+                style={{
+                  left: `${toPercent(tile.x, bounds.minX, boundsWidth)}%`,
+                  top: `${toPercent(tile.y, bounds.minY, boundsHeight)}%`,
+                  width: `${tileWidthPct}%`,
+                  height: `${tileHeightPct}%`,
+                }}
+              />
+            ))}
             
             {rooms.map((room, idx) => {
               const isSelected = selectedRoomIndex === idx;
               const isPlayerRoom = room === playerRoom;
+              const isVisited = visitedRoomKeys.has(`${room.x1},${room.y1}`);
               
               const leftPct = toPercent(room.x1, bounds.minX, boundsWidth);
               const topPct = toPercent(room.y1, bounds.minY, boundsHeight);
@@ -229,7 +304,7 @@ export default function MapOverlay() {
               return (
                 <div
                   key={room.name + idx}
-                  className={`map-overlay__room ${isSelected ? 'map-overlay__room--selected' : ''} ${isPlayerRoom ? 'map-overlay__room--player' : ''}`}
+                  className={`map-overlay__room ${isVisited ? 'map-overlay__room--visited' : 'map-overlay__room--unvisited'} ${isSelected ? 'map-overlay__room--selected' : ''} ${isPlayerRoom ? 'map-overlay__room--player' : ''}`}
                   style={{
                     left: `${leftPct}%`,
                     top: `${topPct}%`,
@@ -265,7 +340,7 @@ export default function MapOverlay() {
             )}
             
             {/* NPC markers */}
-            {npcPositions.map((npc) => (
+            {visibleNpcs.map((npc) => (
               <div
                 key={npc.id}
                 className="map-overlay__poi map-overlay__poi--npc"
@@ -296,7 +371,15 @@ export default function MapOverlay() {
             <span className="map-overlay__legend-icon">🔵</span>
             <span>Transporter</span>
           </div>
-          {npcPositions.length > 0 && (
+          <div className="map-overlay__legend-item">
+            <span className="map-overlay__legend-swatch map-overlay__legend-swatch--visited"></span>
+            <span>Visited</span>
+          </div>
+          <div className="map-overlay__legend-item">
+            <span className="map-overlay__legend-swatch map-overlay__legend-swatch--unvisited"></span>
+            <span>Unvisited</span>
+          </div>
+          {visibleNpcs.length > 0 && (
             <div className="map-overlay__legend-item">
               <span className="map-overlay__legend-icon">👤</span>
               <span>Survivor</span>

@@ -1,6 +1,5 @@
 import { Scene } from 'phaser';
 import { MAP_WIDTH, MAP_HEIGHT, TILE_SIZE } from '@/config/gameConfig';
-import { TILE } from '@/data/tilesets';
 import {
   generateMap,
   getRoomAt,
@@ -20,7 +19,16 @@ import { EventBridge } from '../EventBridge';
 import { Player } from '../entities/Player';
 import { GridMovement } from '../systems/GridMovement';
 import { InteractionSystem } from '../systems/Interaction';
+import { AnnouncementQueue, createSceneAnnouncementScheduler } from '../systems/AnnouncementQueue';
+import { FxController } from '../systems/FxController';
+import { FogRenderer } from '../systems/FogRenderer';
+import { summarizeRoomContent, type RoomContentSummary } from '../systems/PlacementSystem';
+import { createCpuTilemapLayer } from '../utils/tilemapLayers';
+import { ASSET_KEYS } from '@/game/assets/assetManifest';
 import { playBumpSound, speak, playDiscoveryChime } from '@/utils/speech';
+import { transitionGuard } from '@/game/input/gameInput';
+
+const BEAM_UP_INPUT_BLOCK_MS = 1100;
 
 /**
  * ExploreScene: Main exploration gameplay.
@@ -34,12 +42,13 @@ export default class ExploreScene extends Scene {
   private player!: Player;
   private gridMovement!: GridMovement;
   private interactionSystem!: InteractionSystem;
+  private announcementQueue!: AnnouncementQueue;
+  private fx!: FxController;
+  private fogRenderer!: FogRenderer;
   private camera!: Phaser.Cameras.Scene2D.Camera;
   private mapData!: GeneratedMap;
   private lastRoomName: string | null = null;
   private revealedRoomNames = new Set<string>();
-  private wallOutline!: Phaser.GameObjects.Graphics;
-  private fogOverlay!: Phaser.GameObjects.Graphics;
   private vignetteOverlay!: Phaser.GameObjects.Graphics;
   private bookContainers = new Map<string, Phaser.GameObjects.Container>();
   private journalContainers = new Map<string, Phaser.GameObjects.Container>();
@@ -50,8 +59,9 @@ export default class ExploreScene extends Scene {
   private npcBlockedTiles = new Set<string>();
   private moveCount = 0;
   private bookToRoomMap = new Map<string, string>(); // fragmentId → roomName
-  private roomContents = new Map<string, { books: number; journals: number; npcs: string[]; batteries: number; maps: number }>(); // roomName → contents
+  private roomContents = new Map<string, RoomContentSummary>(); // roomName → contents
   private announcedRooms = new Set<string>(); // Rooms we've already announced contents for
+  private isBeamingUp = false;
 
   constructor() {
     super({ key: 'ExploreScene' });
@@ -60,6 +70,7 @@ export default class ExploreScene extends Scene {
   create() {
     // Fade in from beam-down
     this.cameras.main.fadeIn(600, 92, 180, 255);
+    this.fx = new FxController(this);
     
     this.mapData = generateMap();
     const { ground, walls, decoration, rooms, spawnX, spawnY } = this.mapData;
@@ -72,8 +83,8 @@ export default class ExploreScene extends Scene {
     });
 
     const tileset = this.tilemap.addTilesetImage(
-      'tileset',
-      'tileset',
+      ASSET_KEYS.tileset,
+      ASSET_KEYS.tileset,
       TILE_SIZE,
       TILE_SIZE,
       0,
@@ -81,7 +92,7 @@ export default class ExploreScene extends Scene {
     )!;
 
     // Create layers (bottom to top: ground → walls → decoration)
-    this.groundLayer = this.tilemap.createLayer(0, tileset, 0, 0)!;
+    this.groundLayer = createCpuTilemapLayer(this.tilemap, 0, tileset, 0, 0);
     this.groundLayer.setDepth(0);
 
     // Wall layer from separate data
@@ -91,12 +102,12 @@ export default class ExploreScene extends Scene {
       tileHeight: TILE_SIZE,
     });
     const wallTileset = wallMapData.addTilesetImage(
-      'tileset',
-      'tileset',
+      ASSET_KEYS.tileset,
+      ASSET_KEYS.tileset,
       TILE_SIZE,
       TILE_SIZE
     )!;
-    this.wallLayer = wallMapData.createLayer(0, wallTileset, 0, 0)!;
+    this.wallLayer = createCpuTilemapLayer(wallMapData, 0, wallTileset, 0, 0);
     this.wallLayer.setDepth(1);
     this.wallLayer.setCollision([4, 5]); // Wall and rubble block
 
@@ -107,24 +118,18 @@ export default class ExploreScene extends Scene {
       tileHeight: TILE_SIZE,
     });
     const decoTileset = decoMapData.addTilesetImage(
-      'tileset',
-      'tileset',
+      ASSET_KEYS.tileset,
+      ASSET_KEYS.tileset,
       TILE_SIZE,
       TILE_SIZE
     )!;
-    this.decorationLayer = decoMapData.createLayer(0, decoTileset, 0, 0)!;
+    this.decorationLayer = createCpuTilemapLayer(decoMapData, 0, decoTileset, 0, 0);
     this.decorationLayer.setDepth(2);
 
-    // Wall outline — thin border along wall edges for clarity
-    this.wallOutline = this.add.graphics();
-    this.wallOutline.setDepth(2.5);
-
-    // Fog overlay — drawn on top of map, avoids Phaser layer APIs (see .cursor/rules)
-    this.fogOverlay = this.add.graphics();
-    this.fogOverlay.setDepth(4);
+    this.fogRenderer = new FogRenderer(this, this.mapData.walls);
 
     // Player entity
-    this.player = new Player(this, 'player', spawnX, spawnY);
+    this.player = new Player(this, ASSET_KEYS.sprites.player, spawnX, spawnY);
     this.player.setDirection('down');
 
     this.gridMovement = new GridMovement();
@@ -139,6 +144,8 @@ export default class ExploreScene extends Scene {
     // Interaction system
     this.interactionSystem = new InteractionSystem();
     this.interactionSystem.attach(this, this.player);
+    this.announcementQueue = new AnnouncementQueue(createSceneAnnouncementScheduler(this));
+    this.events.once('shutdown', () => this.cleanupOnShutdown());
 
     this.placeInteractives(rooms, spawnX, spawnY);
 
@@ -254,15 +261,6 @@ export default class ExploreScene extends Scene {
     };
     EventBridge.on('debug-despawn-all-books', onDebugDespawnAllBooks);
     this.events.once('shutdown', () => EventBridge.off('debug-despawn-all-books', onDebugDespawnAllBooks));
-
-    // Map scene: M key opens the MapScene (sleep this scene)
-    const onOpenMapScene = () => {
-      useGameStore.getState().actions.openMap();
-      this.scene.sleep('ExploreScene');
-      this.scene.run('MapScene');
-    };
-    EventBridge.on('open-map-scene', onOpenMapScene);
-    this.events.once('shutdown', () => EventBridge.off('open-map-scene', onOpenMapScene));
 
     useGameStore.getState().actions.movePlayer({ x: spawnX, y: spawnY });
     this.checkRoomEntry(spawnX, spawnY, true); // isInitialSpawn = true
@@ -419,7 +417,7 @@ export default class ExploreScene extends Scene {
     tRing.lineStyle(3, 0x5cb3ff, 1); // Electric blue
     tRing.strokeCircle(0, 0, 18);
     transporterContainer.add(tRing);
-    transporterContainer.add(this.add.sprite(0, 0, 'transporter-pad'));
+    transporterContainer.add(this.add.sprite(0, 0, ASSET_KEYS.sprites.transporter));
     this.tweens.add({
       targets: transporterContainer,
       scale: 1.06,
@@ -535,7 +533,7 @@ export default class ExploreScene extends Scene {
       ring.lineStyle(3, 0xd4af37, 1); // Gold highlight — always bright
       ring.strokeCircle(0, 0, 18);
       container.add(ring);
-      const sprite = this.add.sprite(0, 0, 'book-pickup');
+      const sprite = this.add.sprite(0, 0, ASSET_KEYS.sprites.book);
       container.add(sprite);
       this.bookContainers.set(frag.id, container);
 
@@ -558,7 +556,7 @@ export default class ExploreScene extends Scene {
       // Track which room this book is in (for updating Martha's hints)
       this.bookToRoomMap.set(frag.id, room.name);
       // Track for room content announcements
-      this.addRoomContent(room.name, 'book');
+      summarizeRoomContent(this.roomContents, room.name, 'book');
     }
     useGameStore.getState().actions.setBooksOnThisMap(count);
 
@@ -623,7 +621,7 @@ export default class ExploreScene extends Scene {
       nRing.lineStyle(3, 0xe8a838, 1); // Warm amber — survivor/friendly
       nRing.strokeCircle(0, 0, 18);
       npcContainer.add(nRing);
-      npcContainer.add(this.add.sprite(0, 0, 'npc'));
+      npcContainer.add(this.add.sprite(0, 0, ASSET_KEYS.sprites.npc));
       this.tweens.add({
         targets: npcContainer,
         scale: 1.06,
@@ -643,7 +641,7 @@ export default class ExploreScene extends Scene {
       npcRooms[npc.id] = room.name;
       npcPositions.push({ id: npc.id, name: npc.name, x: tile.x, y: tile.y, roomName: room.name });
       // Track for room content announcements
-      this.addNpcToRoom(room.name, npc.name);
+      summarizeRoomContent(this.roomContents, room.name, 'npc', npc.name);
     }
     useGameStore.getState().actions.setNpcRoomsOnMap(npcRooms);
     useGameStore.getState().actions.setNpcPositionsOnMap(npcPositions);
@@ -708,7 +706,7 @@ export default class ExploreScene extends Scene {
       ring.lineStyle(3, 0xb8860b, 1); // Dark goldenrod — aged paper/sepia
       ring.strokeCircle(0, 0, 16);
       container.add(ring);
-      const sprite = this.add.sprite(0, 0, 'journal-pickup');
+      const sprite = this.add.sprite(0, 0, ASSET_KEYS.sprites.journal);
       container.add(sprite);
       this.journalContainers.set(journal.id, container);
 
@@ -728,7 +726,7 @@ export default class ExploreScene extends Scene {
         label: journal.title,
       });
       // Track for room content announcements
-      this.addRoomContent(roomWithSpace.room.name, 'journal');
+      summarizeRoomContent(this.roomContents, roomWithSpace.room.name, 'journal');
     }
 
     // Batteries: 1–2 per map, same rules as books (never in spawn room), green ring
@@ -762,7 +760,7 @@ export default class ExploreScene extends Scene {
       ring.lineStyle(3, 0x5cb85c, 1); // Green — battery/energy
       ring.strokeCircle(0, 0, 18);
       container.add(ring);
-      container.add(this.add.sprite(0, 0, 'battery-pickup'));
+      container.add(this.add.sprite(0, 0, ASSET_KEYS.sprites.battery));
       this.batteryContainers.set(batteryId, container);
 
       this.tweens.add({
@@ -781,7 +779,7 @@ export default class ExploreScene extends Scene {
         label: 'Battery',
       });
       // Track for room content announcements
-      this.addRoomContent(batteryRoom.name, 'battery');
+      summarizeRoomContent(this.roomContents, batteryRoom.name, 'battery');
     }
 
     // Map: exactly 1 per map, in a room other than spawn, cyan/teal ring
@@ -813,7 +811,7 @@ export default class ExploreScene extends Scene {
       ring.lineStyle(3, 0x00ced1, 1); // Cyan/teal — map/navigation
       ring.strokeCircle(0, 0, 18);
       container.add(ring);
-      container.add(this.add.sprite(0, 0, 'map-pickup'));
+      container.add(this.add.sprite(0, 0, ASSET_KEYS.sprites.map));
       this.mapContainer = container;
 
       this.tweens.add({
@@ -832,7 +830,7 @@ export default class ExploreScene extends Scene {
         label: 'Map',
       });
       // Track for room content announcements
-      this.addRoomContent(mapRoom.name, 'map');
+      summarizeRoomContent(this.roomContents, mapRoom.name, 'map');
       break; // Only place one map
     }
 
@@ -877,7 +875,7 @@ export default class ExploreScene extends Scene {
       ring.lineStyle(3, 0x9370db, 1); // Purple — vault/mystery
       ring.strokeCircle(0, 0, 18);
       container.add(ring);
-      container.add(this.add.sprite(0, 0, 'vault'));
+      container.add(this.add.sprite(0, 0, ASSET_KEYS.sprites.vault));
       this.vaultContainer = container;
       this.vaultRoomName = vaultRoom.name;
 
@@ -929,50 +927,19 @@ export default class ExploreScene extends Scene {
         this.announceRoomEntry(name, initialDelay);
       } else if (isInitialSpawn) {
         // Even if spawning in corridor, emit event so transporter can be announced
-        setTimeout(() => {
-          EventBridge.emit('room-announcements-complete');
-        }, 2000);
+        this.announcementQueue.play([
+          { delayMs: 2000, run: () => EventBridge.emit('room-announcements-complete') },
+        ]);
       }
     }
   }
 
   private announceRoomEntry(roomName: string, initialDelay: number): void {
-    // First: announce room name
-    setTimeout(() => {
-      speak(roomName);
-
-      // Then: announce room contents after a pause
-      setTimeout(() => {
-        this.announceRoomContents(roomName);
-        
-        // Finally: signal that initial announcements are done
-        // InteractionSystem will then announce current interactive (e.g., transporter)
-        setTimeout(() => {
-          EventBridge.emit('room-announcements-complete');
-        }, 1500);
-      }, 1200);
-    }, initialDelay);
-  }
-
-  private addRoomContent(roomName: string, type: 'book' | 'journal' | 'battery' | 'map', npcName?: string): void {
-    if (!this.roomContents.has(roomName)) {
-      this.roomContents.set(roomName, { books: 0, journals: 0, npcs: [], batteries: 0, maps: 0 });
-    }
-    const contents = this.roomContents.get(roomName)!;
-    switch (type) {
-      case 'book': contents.books++; break;
-      case 'journal': contents.journals++; break;
-      case 'battery': contents.batteries++; break;
-      case 'map': contents.maps++; break;
-    }
-    if (npcName) contents.npcs.push(npcName);
-  }
-
-  private addNpcToRoom(roomName: string, npcName: string): void {
-    if (!this.roomContents.has(roomName)) {
-      this.roomContents.set(roomName, { books: 0, journals: 0, npcs: [], batteries: 0, maps: 0 });
-    }
-    this.roomContents.get(roomName)!.npcs.push(npcName);
+    this.announcementQueue.play([
+      { delayMs: initialDelay, run: () => speak(roomName) },
+      { delayMs: 1200, run: () => this.announceRoomContents(roomName) },
+      { delayMs: 1500, run: () => EventBridge.emit('room-announcements-complete') },
+    ]);
   }
 
   private announceRoomContents(roomName: string): void {
@@ -1016,7 +983,7 @@ export default class ExploreScene extends Scene {
     useGameStore.getState().actions.addExploredTiles(reachableVisible);
 
     const explored = new Set(useGameStore.getState().session.exploredTiles);
-    this.applyFogOfWar(visible, explored);
+    this.fogRenderer.render(visible, explored);
 
     // Emit area-entered when a new room first enters visibility
     for (const coord of visible) {
@@ -1030,225 +997,42 @@ export default class ExploreScene extends Scene {
     }
   }
 
-  private applyFogOfWar(
-    visible: Set<string>,
-    explored: Set<string>,
-  ): void {
-    // Fog overlay: draw dark rectangles instead of modifying tile layers.
-    // Phaser layers from separate tilemaps (wall, decoration) have incompatible
-    // internal structure — forEachTile/getTileAt throw. Overlay avoids that.
-    const FOG_COLOR = 0x000000;
-    this.fogOverlay.clear();
-
-    for (let ty = 0; ty < MAP_HEIGHT; ty++) {
-      for (let tx = 0; tx < MAP_WIDTH; tx++) {
-        const coord = `${tx},${ty}`;
-        if (visible.has(coord)) continue;
-
-        const px = tx * TILE_SIZE;
-        const py = ty * TILE_SIZE;
-        const alpha = explored.has(coord) ? 0.5 : 1;
-        this.fogOverlay.fillStyle(FOG_COLOR, alpha);
-        this.fogOverlay.fillRect(px, py, TILE_SIZE, TILE_SIZE);
-      }
-    }
-
-    this.drawWallOutline(visible, explored);
-  }
-
-  /**
-   * Draw light, thick borders along wall edges — only on the side the player sees.
-   * An edge is drawn only when the adjacent floor tile is in current FoV (visible).
-   * This avoids outlining the "far" side of walls (e.g. in dead ends).
-   */
-  private drawWallOutline(visible: Set<string>, _explored: Set<string>): void {
-    const { walls } = this.mapData;
-    const isWall = (x: number, y: number) =>
-      x >= 0 && x < MAP_WIDTH && y >= 0 && y < MAP_HEIGHT &&
-      (walls[y][x] === TILE.WALL || walls[y][x] === TILE.RUBBLE);
-    const floorVisible = (x: number, y: number) => visible.has(`${x},${y}`);
-
-    this.wallOutline.clear();
-
-    for (let y = 0; y < MAP_HEIGHT; y++) {
-      for (let x = 0; x < MAP_WIDTH; x++) {
-        if (!isWall(x, y)) continue;
-
-        const px = x * TILE_SIZE;
-        const py = y * TILE_SIZE;
-        this.wallOutline.lineStyle(4, 0xe8e4dc, 1);
-
-        // Only draw edge if the floor on that side is currently visible to the player
-        if (!isWall(x - 1, y) && floorVisible(x - 1, y))
-          this.wallOutline.lineBetween(px, py, px, py + TILE_SIZE);
-        if (!isWall(x + 1, y) && floorVisible(x + 1, y))
-          this.wallOutline.lineBetween(px + TILE_SIZE, py, px + TILE_SIZE, py + TILE_SIZE);
-        if (!isWall(x, y - 1) && floorVisible(x, y - 1))
-          this.wallOutline.lineBetween(px, py, px + TILE_SIZE, py);
-        if (!isWall(x, y + 1) && floorVisible(x, y + 1))
-          this.wallOutline.lineBetween(px, py + TILE_SIZE, px + TILE_SIZE, py + TILE_SIZE);
-      }
-    }
-  }
-
   update() {
     this.interactionSystem?.update();
   }
 
   private playBookPickupEffect(): void {
-    // Gentle camera shake
-    this.cameras.main.shake(200, 0.008);
-    
-    // Golden flash overlay
-    const flash = this.add.graphics();
-    flash.setDepth(200);
-    flash.fillStyle(0xd4af37, 0.3);
-    flash.fillRect(0, 0, this.cameras.main.width * 2, this.cameras.main.height * 2);
-    flash.setScrollFactor(0);
-    
-    // Radial burst from player position
-    const playerPos = this.player.getPixelPosition();
-    const particles: { x: number; y: number; vx: number; vy: number; alpha: number; size: number }[] = [];
-    for (let i = 0; i < 12; i++) {
-      const angle = (i / 12) * Math.PI * 2;
-      particles.push({
-        x: playerPos.x,
-        y: playerPos.y,
-        vx: Math.cos(angle) * 80,
-        vy: Math.sin(angle) * 80,
-        alpha: 1,
-        size: 4 + Math.random() * 3,
-      });
-    }
-    
-    const particleGraphics = this.add.graphics();
-    particleGraphics.setDepth(201);
-    
-    let elapsed = 0;
-    const duration = 400;
-    
-    const animate = () => {
-      elapsed += 16;
-      const t = elapsed / duration;
-      
-      // Fade flash
-      flash.clear();
-      flash.fillStyle(0xd4af37, 0.3 * (1 - t));
-      flash.fillRect(
-        this.cameras.main.scrollX - 50,
-        this.cameras.main.scrollY - 50,
-        this.cameras.main.width + 100,
-        this.cameras.main.height + 100
-      );
-      
-      // Animate particles
-      particleGraphics.clear();
-      particles.forEach(p => {
-        p.x += p.vx * 0.016;
-        p.y += p.vy * 0.016;
-        p.alpha = 1 - t;
-        particleGraphics.fillStyle(0xd4af37, p.alpha);
-        particleGraphics.fillCircle(p.x, p.y, p.size * (1 - t * 0.5));
-      });
-      
-      if (elapsed < duration) {
-        this.time.delayedCall(16, animate);
-      } else {
-        flash.destroy();
-        particleGraphics.destroy();
-      }
-    };
-    
-    animate();
+    this.fx.playPickupBurst(this.player.getPixelPosition());
   }
 
   private playBeamUpAnimation(): void {
+    if (this.isBeamingUp) return;
+    this.isBeamingUp = true;
+    transitionGuard.beginTransition(Date.now(), BEAM_UP_INPUT_BLOCK_MS);
+
     // Disable player input during animation
     this.gridMovement?.detach();
     this.interactionSystem?.detach();
+    EventBridge.emit('interaction-available', { type: '', label: undefined });
 
-    const playerPos = this.player.getPixelPosition();
-    
-    // Create beam effect graphics
-    const beamGraphics = this.add.graphics();
-    beamGraphics.setDepth(100);
-    
-    // Initial beam column (thin, bright blue)
-    const beamWidth = 40;
-    const beamX = playerPos.x - beamWidth / 2;
-    
-    // Animate beam expanding and brightening
-    let progress = 0;
-    const beamDuration = 800;
-    const fadeDelay = 600;
-    
-    // Beam particles rising effect
-    const particles: { x: number; y: number; speed: number; alpha: number }[] = [];
-    for (let i = 0; i < 20; i++) {
-      particles.push({
-        x: playerPos.x + (Math.random() - 0.5) * 30,
-        y: playerPos.y + Math.random() * 40 - 20,
-        speed: 50 + Math.random() * 100,
-        alpha: 0.6 + Math.random() * 0.4,
-      });
-    }
-    
-    const updateBeam = () => {
-      progress += 16;
-      const t = Math.min(progress / beamDuration, 1);
-      
-      beamGraphics.clear();
-      
-      // Expanding beam column
-      const expandedWidth = beamWidth + t * 60;
-      const beamAlpha = 0.3 + t * 0.5;
-      beamGraphics.fillStyle(0x5cb3ff, beamAlpha);
-      beamGraphics.fillRect(
-        playerPos.x - expandedWidth / 2,
-        0,
-        expandedWidth,
-        this.cameras.main.height * 2
-      );
-      
-      // Inner bright core
-      const coreWidth = 20 + t * 20;
-      beamGraphics.fillStyle(0xffffff, 0.6 + t * 0.4);
-      beamGraphics.fillRect(
-        playerPos.x - coreWidth / 2,
-        0,
-        coreWidth,
-        this.cameras.main.height * 2
-      );
-      
-      // Rising particles
-      particles.forEach((p) => {
-        p.y -= p.speed * 0.016;
-        beamGraphics.fillStyle(0x5cb3ff, p.alpha * (1 - t * 0.5));
-        beamGraphics.fillCircle(p.x, p.y, 3 + Math.random() * 2);
-      });
-      
-      if (progress < beamDuration) {
-        this.time.delayedCall(16, updateBeam);
+    this.fx.playBeamColumn(
+      this.player.getPixelPosition(),
+      () => this.cameras.main.fadeOut(400, 200, 220, 255),
+      () => {
+        useGameStore.getState().actions.beamToShip();
+        useGameStore.getState().actions.saveToLocalStorage();
+        this.scene.start('ShipScene');
       }
-    };
-    
-    updateBeam();
-    
-    // Screen fade to white/blue
-    this.time.delayedCall(fadeDelay, () => {
-      this.cameras.main.fadeOut(400, 200, 220, 255);
-    });
-    
-    // Transition to ship after animation
-    this.time.delayedCall(beamDuration + 200, () => {
-      useGameStore.getState().actions.beamToShip();
-      useGameStore.getState().actions.saveToLocalStorage();
-      this.scene.start('ShipScene');
-    });
+    );
   }
 
-  shutdown() {
+  private cleanupOnShutdown(): void {
+    this.fx?.destroy();
+    this.fogRenderer?.destroy();
+    this.announcementQueue?.destroy();
     this.gridMovement?.detach();
     this.interactionSystem?.detach();
+    EventBridge.emit('interaction-available', { type: '', label: undefined });
+    this.isBeamingUp = false;
   }
 }

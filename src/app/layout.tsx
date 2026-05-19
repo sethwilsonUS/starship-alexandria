@@ -12,6 +12,11 @@ export const metadata: Metadata = {
   title: 'Starship Alexandria',
   description:
     'A cozy roguelike web game — recover fragments of lost classic literature.',
+  icons: {
+    icon: '/favicon.png',
+    shortcut: '/favicon.png',
+    apple: '/favicon.png',
+  },
   openGraph: {
     type: 'website',
     siteName: 'Starship Alexandria',

@@ -41,6 +41,9 @@ export interface IControllablePlayer {
   setGridPosition(x: number, y: number): void;
   getDirection(): Direction;
   setDirection(dir: Direction): void;
+  /** Optional visual movement cue for implementations with animated sprites. */
+  beginStep?(durationMs: number): void;
+  endStep?(): void;
   getSprite(): Phaser.GameObjects.GameObject;
   /** Pixel position for UI placement (same as container/sprite position) */
   getPixelPosition(): { x: number; y: number };

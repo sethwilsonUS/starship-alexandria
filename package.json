@@ -1,7 +1,7 @@
 {
     "name": "starship-alexandria",
     "version": "0.1.0",
-    "description": "A cozy roguelike web game about recovering lost literature from post-apocalyptic Earth. Built with Phaser 3, Next.js, and TypeScript.",
+    "description": "A cozy roguelike web game about recovering lost literature from post-apocalyptic Earth. Built with Phaser 4, Next.js, and TypeScript.",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/sethwilsonUS/starship-alexandria.git"
@@ -14,7 +14,7 @@
     "homepage": "https://github.com/sethwilsonUS/starship-alexandria#readme",
     "keywords": [
         "phaser",
-        "phaser3",
+        "phaser4",
         "roguelike",
         "next",
         "nextjs",
@@ -29,11 +29,14 @@
         "test:watch": "vitest",
         "lint": "eslint src/",
         "typecheck": "tsc --noEmit",
-        "validate-content": "node scripts/validate-content.js"
+        "validate-content": "node scripts/validate-content.js",
+        "generate-assets": "npm run generate:game-assets",
+        "generate:game-assets": "node scripts/generate-game-assets.mjs",
+        "generate-voices:opening": "node scripts/generate-opening-voices.mjs"
     },
     "dependencies": {
         "next": "^16.1.6",
-        "phaser": "^3.90.0",
+        "phaser": "^4.1.0",
         "react": "19.2.5",
         "react-dom": "19.2.5",
         "rot-js": "^2.2.1",
@@ -48,6 +51,7 @@
         "@types/uuid": "^10.0.0",
         "eslint": "^9.39.4",
         "eslint-config-next": "^16.1.6",
+        "sharp": "^0.34.5",
         "ts-node": "^10.9.2",
         "typescript": "^5",
         "vitest": "^4.0.18"

@@ -293,6 +293,23 @@ function validateGameloop() {
   const data = loadYaml('gameloop.yaml');
   if (!data) return;
 
+  const voiceLineIds = new Map();
+
+  function validateVoiceLineId(line, location) {
+    if (!line.voiceLineId) return;
+
+    const existingLocation = voiceLineIds.get(line.voiceLineId);
+    if (existingLocation) {
+      addError(
+        'gameloop.yaml',
+        `${location}: Duplicate voiceLineId "${line.voiceLineId}" (already used at ${existingLocation})`
+      );
+      return;
+    }
+
+    voiceLineIds.set(line.voiceLineId, location);
+  }
+
   // Validate welcome
   if (!data.welcome) {
     addError('gameloop.yaml', 'Missing "welcome" section');
@@ -303,6 +320,7 @@ function validateGameloop() {
       if (!line.text) {
         addError('gameloop.yaml', `welcome.lines[${i}]: Missing required field "text"`);
       }
+      validateVoiceLineId(line, `welcome.lines[${i}]`);
     });
   }
 
@@ -316,6 +334,7 @@ function validateGameloop() {
       if (!line.text) {
         addError('gameloop.yaml', `victory.lines[${i}]: Missing required field "text"`);
       }
+      validateVoiceLineId(line, `victory.lines[${i}]`);
     });
   }
 
@@ -332,6 +351,7 @@ function validateGameloop() {
           if (!line.text) {
             addError('gameloop.yaml', `vault.${key}[${i}]: Missing required field "text"`);
           }
+          validateVoiceLineId(line, `vault.${key}[${i}]`);
         });
       }
     });

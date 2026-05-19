@@ -11,7 +11,8 @@ export default function InteractionPrompt() {
   const [prompt, setPrompt] = useState<{ type: string; label?: string } | null>(null);
 
   useEffect(() => {
-    const onInteractionAvailable = ({ type, label }: { type: string; label?: string }) => {
+    const onInteractionAvailable = (payload?: { type?: string; label?: string }) => {
+      const { type, label } = payload ?? {};
       if (type) {
         setPrompt({ type, label });
       } else {

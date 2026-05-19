@@ -2,6 +2,10 @@ import { Scene } from 'phaser';
 import { EventBridge } from '../EventBridge';
 import { useGameStore } from '@/store/gameStore';
 import { getBookCatalogSync } from '@/data/books';
+import { transitionGuard } from '@/game/input/gameInput';
+import { FxController } from '../systems/FxController';
+
+const BEAM_DOWN_INPUT_BLOCK_MS = 700;
 
 /**
  * ShipScene: The Starship Alexandria library deck.
@@ -10,7 +14,9 @@ import { getBookCatalogSync } from '@/data/books';
  */
 export default class ShipScene extends Scene {
   private beamDownListener: (() => void) | null = null;
+  private fx!: FxController;
   private hasShownVictory = false;
+  private isBeamingDown = false;
 
   constructor() {
     super({ key: 'ShipScene' });
@@ -18,6 +24,7 @@ export default class ShipScene extends Scene {
 
   create() {
     const { width, height } = this.cameras.main;
+    this.fx = new FxController(this);
     
     // Fade in from beam-up
     this.cameras.main.fadeIn(500, 30, 30, 46);
@@ -35,6 +42,7 @@ export default class ShipScene extends Scene {
       this.beamDown();
     };
     EventBridge.on('beam-down-requested', this.beamDownListener);
+    this.events.once('shutdown', () => this.cleanupOnShutdown());
     
     // Emit area-entered for accessibility
     EventBridge.emit('area-entered', { areaName: 'Starship Alexandria - Library Deck' });
@@ -142,29 +150,13 @@ export default class ShipScene extends Scene {
   }
   
   private beamDown(): void {
+    if (this.isBeamingDown) return;
+    this.isBeamingDown = true;
+    transitionGuard.beginTransition(Date.now(), BEAM_DOWN_INPUT_BLOCK_MS);
+
     // Beam-down animation
-    const { width, height } = this.cameras.main;
-    
-    const beamGraphics = this.add.graphics();
-    beamGraphics.setDepth(100);
-    
-    let progress = 0;
     const duration = 600;
-    
-    const animate = () => {
-      progress += 16;
-      const t = Math.min(progress / duration, 1);
-      
-      beamGraphics.clear();
-      beamGraphics.fillStyle(0x5cb3ff, 0.3 + t * 0.7);
-      beamGraphics.fillRect(0, 0, width, height);
-      
-      if (progress < duration) {
-        this.time.delayedCall(16, animate);
-      }
-    };
-    
-    animate();
+    this.fx.playScreenBeam(0x5cb3ff, duration);
     
     this.cameras.main.fadeOut(400, 92, 180, 255);
     
@@ -176,10 +168,12 @@ export default class ShipScene extends Scene {
     });
   }
 
-  shutdown() {
+  private cleanupOnShutdown(): void {
+    this.fx?.destroy();
     if (this.beamDownListener) {
       EventBridge.off('beam-down-requested', this.beamDownListener);
       this.beamDownListener = null;
     }
+    this.isBeamingDown = false;
   }
 }

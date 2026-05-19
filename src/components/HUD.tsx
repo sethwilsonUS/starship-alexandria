@@ -28,6 +28,7 @@ export default function HUD() {
   const exploredTiles = useGameStore((s) => s.session.exploredTiles);
   const explorableTileCount = useGameStore((s) => s.session.explorableTileCount);
   const currentMapId = useGameStore((s) => s.player.currentMapId);
+  const contentReady = useGameStore((s) => s.session.contentReady);
   const [areaName, setAreaName] = useState('Ruined Library Wing');
 
   const isOnShip = currentMapId === 'ship';
@@ -36,6 +37,7 @@ export default function HUD() {
     explorableTileCount > 0
       ? Math.round((exploredTiles.length / explorableTileCount) * 100)
       : 0;
+  const totalFragments = contentReady ? getTotalFragments() : null;
 
   useEffect(() => {
     const onAreaEntered = ({ areaName: name }: { areaName: string }) => {
@@ -79,7 +81,7 @@ export default function HUD() {
           {!isOnShip && booksOnThisMap > 0 && (
             <>📖 {booksRemainingOnThisMap} left here · </>
           )}
-          📚 {fragmentCount}/{getTotalFragments()} total
+          📚 {fragmentCount}/{totalFragments ?? '...'} total
         </span>
       </div>
     </header>

@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "generatedAt": "2026-05-19T10:18:44.537Z",
+  "clips": [
+    {
+      "lineId": "opening.welcome.01",
+      "textHash": "22fff01e4c3ea42e",
+      "path": "/audio/voices/opening/opening.welcome.01.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "marin",
+      "durationMs": null
+    },
+    {
+      "lineId": "opening.welcome.02",
+      "textHash": "e3c44b03c0df9bb2",
+      "path": "/audio/voices/opening/opening.welcome.02.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "marin",
+      "durationMs": null
+    },
+    {
+      "lineId": "opening.welcome.03",
+      "textHash": "783e8bdb3f4057f5",
+      "path": "/audio/voices/opening/opening.welcome.03.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "marin",
+      "durationMs": null
+    },
+    {
+      "lineId": "opening.welcome.04",
+      "textHash": "100edae3bc8c5662",
+      "path": "/audio/voices/opening/opening.welcome.04.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "marin",
+      "durationMs": null
+    }
+  ]
+}

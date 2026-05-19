@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { PhaserGame } from '@/PhaserGame';
 import { EventBridge } from '@/game/EventBridge';
+import { handleKeyboardInput } from '@/game/input/gameInput';
+import type { GameInputAction } from '@/game/input/InputActionRouter';
 import { useGameStore } from '@/store/gameStore';
 import { getFragmentById, getBookCatalogSync } from '@/data/books';
 import { getNPCById, getMarthaBookHint } from '@/data/npcs';
@@ -13,7 +15,12 @@ import { unlockInteractions } from '@/game/systems/Interaction';
 import HUD from './HUD';
 import AccessibleLog from './AccessibleLog';
 import LibraryShelf from './LibraryShelf';
+import MapOverlay from './MapOverlay';
 import { getTransporterDialogue as getTransporterDialogueFromContent } from '@/utils/contentLoader';
+import DialogueBox from './DialogueBox';
+import BookDetail from './BookDetail';
+import InteractionPrompt from './InteractionPrompt';
+import DebugPanel from './DebugPanel';
 
 function getTotalFragments(): number {
   try {
@@ -23,10 +30,76 @@ function getTotalFragments(): number {
     return 0;
   }
 }
-import DialogueBox from './DialogueBox';
-import BookDetail from './BookDetail';
-import InteractionPrompt from './InteractionPrompt';
-import DebugPanel from './DebugPanel';
+
+function handleUseBatteryAction(): void {
+  const { spareBatteries, flashlightBattery } = useGameStore.getState().player;
+
+  if (spareBatteries === 0) {
+    useGameStore.getState().actions.openDialogue([{ text: 'No spare batteries.' }]);
+    return;
+  }
+
+  if (flashlightBattery > 50) {
+    useGameStore.getState().actions.openDialogue([
+      { text: `Flashlight is at ${flashlightBattery} percent. Save the battery for when it drops below 50.` },
+    ]);
+    return;
+  }
+
+  if (useGameStore.getState().actions.useBattery()) {
+    EventBridge.emit('battery-used');
+    const newBattery = useGameStore.getState().player.flashlightBattery;
+    useGameStore.getState().actions.openDialogue([
+      { text: `Battery used. Flashlight recharged to ${newBattery} percent.` },
+    ]);
+  }
+}
+
+function handleHudSummaryAction(): void {
+  const state = useGameStore.getState();
+  const { flashlightBattery, spareBatteries } = state.player;
+  const { booksRemainingOnThisMap, exploredTiles, explorableTileCount } = state.session;
+  const fragmentCount = state.library.length;
+
+  const discoveryPercent =
+    explorableTileCount > 0
+      ? Math.round((exploredTiles.length / explorableTileCount) * 100)
+      : 0;
+
+  const parts: string[] = [];
+
+  if (flashlightBattery > 75) {
+    parts.push(`Flashlight at ${flashlightBattery} percent. Good condition.`);
+  } else if (flashlightBattery > 50) {
+    parts.push(`Flashlight at ${flashlightBattery} percent.`);
+  } else if (flashlightBattery > 25) {
+    parts.push(`Flashlight at ${flashlightBattery} percent. Getting low.`);
+  } else {
+    parts.push(`Flashlight at ${flashlightBattery} percent. Critically low.`);
+  }
+
+  if (spareBatteries === 0) {
+    parts.push('No spare batteries.');
+  } else if (spareBatteries === 1) {
+    parts.push('1 spare battery.');
+  } else {
+    parts.push(`${spareBatteries} spare batteries.`);
+  }
+
+  if (booksRemainingOnThisMap === 0) {
+    parts.push('No book fragments left in this area.');
+  } else if (booksRemainingOnThisMap === 1) {
+    parts.push('1 book fragment remaining.');
+  } else {
+    parts.push(`${booksRemainingOnThisMap} book fragments remaining.`);
+  }
+
+  const totalFragments = getTotalFragments();
+  parts.push(`Collection progress: ${fragmentCount} of ${totalFragments} total.`);
+  parts.push(`Area explored: ${discoveryPercent} percent.`);
+
+  useGameStore.getState().actions.openDialogue([{ text: parts.join(' ... ') }]);
+}
 
 /**
  * Mounts Phaser canvas + UI overlays.
@@ -34,138 +107,36 @@ import DebugPanel from './DebugPanel';
  */
 export default function GameContainer() {
   useEffect(() => {
-    const handleBatteryKey = (e: KeyboardEvent) => {
-      if (e.repeat) return;
-      if (e.code !== 'KeyB') return;
-      const { gamePhase } = useGameStore.getState().session;
-      if (gamePhase === 'dialogue' || gamePhase === 'reading') return;
-      e.preventDefault();
-      
-      const { spareBatteries, flashlightBattery } = useGameStore.getState().player;
-      
-      if (spareBatteries === 0) {
-        useGameStore.getState().actions.openDialogue([
-          { text: 'No spare batteries.' }
-        ]);
-        return;
-      }
-      
-      if (flashlightBattery > 50) {
-        useGameStore.getState().actions.openDialogue([
-          { text: `Flashlight is at ${flashlightBattery} percent. Save the battery for when it drops below 50.` }
-        ]);
-        return;
-      }
-      
-      // Use the battery
-      if (useGameStore.getState().actions.useBattery()) {
-        EventBridge.emit('battery-used');
-        const newBattery = useGameStore.getState().player.flashlightBattery;
-        useGameStore.getState().actions.openDialogue([
-          { text: `Battery used. Flashlight recharged to ${newBattery} percent.` }
-        ]);
-      }
-    };
-    window.addEventListener('keydown', handleBatteryKey);
-    return () => window.removeEventListener('keydown', handleBatteryKey);
-  }, []);
-
-  // I key: auditory HUD summary
-  useEffect(() => {
-    const handleInfoKey = (e: KeyboardEvent) => {
-      if (e.repeat) return;
-      if (e.code !== 'KeyI') return;
-      const { gamePhase } = useGameStore.getState().session;
-      if (gamePhase === 'dialogue' || gamePhase === 'reading') return;
-      e.preventDefault();
-
-      const state = useGameStore.getState();
-      const { flashlightBattery, spareBatteries } = state.player;
-      const { booksRemainingOnThisMap, exploredTiles, explorableTileCount } = state.session;
-      const fragmentCount = state.library.length;
-
-      const discoveryPercent = explorableTileCount > 0
-        ? Math.round((exploredTiles.length / explorableTileCount) * 100)
-        : 0;
-
-      // Build natural spoken summary with pauses (periods create TTS pauses)
-      const parts: string[] = [];
-      
-      // Flashlight status
-      if (flashlightBattery > 75) {
-        parts.push(`Flashlight at ${flashlightBattery} percent. Good condition.`);
-      } else if (flashlightBattery > 50) {
-        parts.push(`Flashlight at ${flashlightBattery} percent.`);
-      } else if (flashlightBattery > 25) {
-        parts.push(`Flashlight at ${flashlightBattery} percent. Getting low.`);
-      } else {
-        parts.push(`Flashlight at ${flashlightBattery} percent. Critically low.`);
-      }
-
-      // Spare batteries (no "press B" hint here - that's said on pickup)
-      if (spareBatteries === 0) {
-        parts.push('No spare batteries.');
-      } else if (spareBatteries === 1) {
-        parts.push('1 spare battery.');
-      } else {
-        parts.push(`${spareBatteries} spare batteries.`);
-      }
-
-      // Fragments remaining
-      if (booksRemainingOnThisMap === 0) {
-        parts.push('No book fragments left in this area.');
-      } else if (booksRemainingOnThisMap === 1) {
-        parts.push('1 book fragment remaining.');
-      } else {
-        parts.push(`${booksRemainingOnThisMap} book fragments remaining.`);
-      }
-
-      // Total collection progress
-      const totalFragments = getTotalFragments();
-      parts.push(`Collection progress: ${fragmentCount} of ${totalFragments} total.`);
-
-      // Discovery progress
-      parts.push(`Area explored: ${discoveryPercent} percent.`);
-
-      // Join with " ... " for extra pauses between sections
-      useGameStore.getState().actions.openDialogue([{ text: parts.join(' ... ') }]);
-    };
-    window.addEventListener('keydown', handleInfoKey);
-    return () => window.removeEventListener('keydown', handleInfoKey);
-  }, []);
-
-  // M key: open area map (if collected)
-  useEffect(() => {
-    const handleMapKey = (e: KeyboardEvent) => {
-      if (e.repeat) return;
-      if (e.code !== 'KeyM') return;
-      const { gamePhase, hasAreaMap } = useGameStore.getState().session;
-      if (gamePhase === 'dialogue' || gamePhase === 'reading' || gamePhase === 'viewing-map') return;
-      if (gamePhase !== 'exploring') return; // Only works while exploring
-      e.preventDefault();
-
-      if (!hasAreaMap) {
-        useGameStore.getState().actions.openDialogue([
-          { text: "You haven't found the map to this area yet." }
-        ]);
-        return;
-      }
-
-      // Tell ExploreScene to open the map (Phaser scene, not React overlay)
-      EventBridge.emit('open-map-scene');
-    };
-    window.addEventListener('keydown', handleMapKey);
-    return () => window.removeEventListener('keydown', handleMapKey);
+    window.addEventListener('keydown', handleKeyboardInput);
+    return () => window.removeEventListener('keydown', handleKeyboardInput);
   }, []);
 
   useEffect(() => {
-    const onInteractionTriggered = async ({
-      type,
-      id,
-    }: {
-      type: string;
+    const onInputAction = ({ action }: { action: GameInputAction }) => {
+      if (action === 'useBattery') {
+        handleUseBatteryAction();
+      } else if (action === 'hudSummary') {
+        handleHudSummaryAction();
+      }
+    };
+    EventBridge.on('input-action', onInputAction);
+    return () => {
+      EventBridge.off('input-action', onInputAction);
+    };
+  }, []);
+
+  useEffect(() => {
+    const onInteractionTriggered = async (payload?: {
+      type?: string;
       id?: string;
     }) => {
+      try {
+      const { type, id } = payload ?? {};
+      if (!type) {
+        unlockInteractions();
+        return;
+      }
+
       if (type === 'book' && id) {
         const fragment = await getFragmentById(id);
         if (fragment) {
@@ -297,6 +268,10 @@ export default function GameContainer() {
           unlockInteractions();
         }
       }
+      } catch (error) {
+        console.error('Failed to handle interaction', error);
+        unlockInteractions();
+      }
     };
     EventBridge.on('interaction-triggered', onInteractionTriggered);
     return () => {
@@ -322,7 +297,10 @@ export default function GameContainer() {
   useEffect(() => {
     const onShowWelcome = () => {
       const gameloop = getGameloopCacheSync();
-      const welcomeLines = gameloop.welcome.lines.map(line => ({ text: line.text }));
+      const welcomeLines = gameloop.welcome.lines.map(line => ({
+        text: line.text,
+        voiceLineId: line.voiceLineId,
+      }));
       useGameStore.getState().actions.openDialogue(welcomeLines);
       useGameStore.getState().actions.setHasSeenWelcome();
     };
@@ -351,6 +329,7 @@ export default function GameContainer() {
       <HUD />
       <AccessibleLog />
       <LibraryShelf />
+      <MapOverlay />
       <DialogueBox />
       <BookDetail />
       <InteractionPrompt />

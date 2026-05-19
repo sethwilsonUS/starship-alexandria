@@ -166,6 +166,40 @@ body {
   opacity: 0.7;
 }
 
+.dialogue-box__voice-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+  flex-wrap: wrap;
+}
+
+.dialogue-box__voice-btn {
+  padding: 0.4rem 0.85rem;
+  background: rgba(92, 179, 255, 0.14);
+  border: 1px solid rgba(125, 195, 255, 0.8);
+  border-radius: 4px;
+  color: #d8eeff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.dialogue-box__voice-btn:hover {
+  background: rgba(92, 179, 255, 0.24);
+  border-color: #a8d8ff;
+}
+
+.dialogue-box__voice-btn:focus {
+  outline: 2px solid #a8d8ff;
+  outline-offset: 2px;
+}
+
+.dialogue-box__voice-note {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.78);
+}
+
 .dialogue-box__cursor {
   display: inline-block;
   color: var(--hud-accent);
@@ -526,6 +560,13 @@ body {
   color: rgba(255, 255, 255, 0.5);
 }
 
+.library-shelf__voice-disclosure {
+  margin: 0.45rem auto 0;
+  max-width: 22rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
 .library-shelf__new-game-btn {
   margin-top: 1.5rem;
   padding: 0.5rem 1rem;
@@ -772,6 +813,14 @@ body {
   margin-top: -2px;
 }
 
+.map-overlay__corridor {
+  position: absolute;
+  display: block;
+  background: rgba(92, 82, 68, 0.45);
+  border-radius: 1px;
+  box-shadow: inset 0 0 0 1px rgba(101, 67, 33, 0.12);
+}
+
 .map-overlay__room {
   position: absolute;
   display: flex;
@@ -784,6 +833,18 @@ body {
   border-radius: 4px;
   transition: all 0.2s ease;
   animation: room-fade-in 0.4s ease backwards;
+}
+
+.map-overlay__room--visited {
+  background: rgba(205, 175, 125, 0.76);
+  border-color: #8b6914;
+}
+
+.map-overlay__room--unvisited {
+  background: rgba(160, 135, 100, 0.32);
+  border-color: rgba(91, 68, 46, 0.48);
+  border-style: dashed;
+  color: rgba(61, 41, 20, 0.7);
 }
 
 @keyframes room-fade-in {
@@ -918,6 +979,17 @@ body {
 .map-overlay__legend-swatch--player {
   background: rgba(92, 140, 92, 0.5);
   border-color: #3d6b3d;
+}
+
+.map-overlay__legend-swatch--visited {
+  background: rgba(205, 175, 125, 0.76);
+  border-color: #8b6914;
+}
+
+.map-overlay__legend-swatch--unvisited {
+  background: rgba(160, 135, 100, 0.32);
+  border-color: rgba(91, 68, 46, 0.65);
+  border-style: dashed;
 }
 
 .map-overlay__legend-swatch--room {

@@ -30,7 +30,7 @@ export default function BookDetail() {
     const intro = `Reading ${currentBookFragment.label}.`;
     speak(intro + ' ' + currentBookFragment.text);
     return () => cancelSpeech();
-  }, [isOpen, currentBookFragment?.id]);
+  }, [isOpen, currentBookFragment]);
 
   useEffect(() => {
     if (!isOpen) cancelSpeech();
