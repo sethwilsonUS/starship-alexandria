@@ -20,6 +20,7 @@ import { EventBridge } from '../EventBridge';
 import { Player } from '../entities/Player';
 import { GridMovement } from '../systems/GridMovement';
 import { InteractionSystem } from '../systems/Interaction';
+import { AnnouncementQueue, createSceneAnnouncementScheduler } from '../systems/AnnouncementQueue';
 import { createCpuTilemapLayer } from '../utils/tilemapLayers';
 import { playBumpSound, speak, playDiscoveryChime } from '@/utils/speech';
 import { transitionGuard } from '@/game/input/gameInput';
@@ -38,6 +39,7 @@ export default class ExploreScene extends Scene {
   private player!: Player;
   private gridMovement!: GridMovement;
   private interactionSystem!: InteractionSystem;
+  private announcementQueue!: AnnouncementQueue;
   private camera!: Phaser.Cameras.Scene2D.Camera;
   private mapData!: GeneratedMap;
   private lastRoomName: string | null = null;
@@ -144,6 +146,7 @@ export default class ExploreScene extends Scene {
     // Interaction system
     this.interactionSystem = new InteractionSystem();
     this.interactionSystem.attach(this, this.player);
+    this.announcementQueue = new AnnouncementQueue(createSceneAnnouncementScheduler(this));
     this.events.once('shutdown', () => this.cleanupOnShutdown());
 
     this.placeInteractives(rooms, spawnX, spawnY);
@@ -926,29 +929,25 @@ export default class ExploreScene extends Scene {
         this.announceRoomEntry(name, initialDelay);
       } else if (isInitialSpawn) {
         // Even if spawning in corridor, emit event so transporter can be announced
-        setTimeout(() => {
-          EventBridge.emit('room-announcements-complete');
-        }, 2000);
+        this.announcementQueue.play([
+          { delayMs: 2000, run: () => EventBridge.emit('room-announcements-complete') },
+        ]);
       }
     }
   }
 
   private announceRoomEntry(roomName: string, initialDelay: number): void {
-    // First: announce room name
-    setTimeout(() => {
-      speak(roomName);
-
-      // Then: announce room contents after a pause
-      setTimeout(() => {
-        this.announceRoomContents(roomName);
-        
-        // Finally: signal that initial announcements are done
-        // InteractionSystem will then announce current interactive (e.g., transporter)
-        setTimeout(() => {
+    this.announcementQueue.play(
+      [
+        { delayMs: initialDelay, run: () => speak(roomName) },
+        { delayMs: 1200, run: () => this.announceRoomContents(roomName) },
+      ],
+      () => {
+        this.time.delayedCall(1500, () => {
           EventBridge.emit('room-announcements-complete');
-        }, 1500);
-      }, 1200);
-    }, initialDelay);
+        });
+      }
+    );
   }
 
   private addRoomContent(roomName: string, type: 'book' | 'journal' | 'battery' | 'map', npcName?: string): void {
@@ -1250,6 +1249,7 @@ export default class ExploreScene extends Scene {
   }
 
   private cleanupOnShutdown(): void {
+    this.announcementQueue?.destroy();
     this.gridMovement?.detach();
     this.interactionSystem?.detach();
     EventBridge.emit('interaction-available', { type: '', label: undefined });
