@@ -4,19 +4,9 @@ import { useGameStore } from '@/store/gameStore';
 import type { MovementController, MovementContext, Direction } from '@/types/game';
 import type { IControllablePlayer } from '@/types/game';
 import { TILE_SIZE, PLAYER_MOVE_DURATION, PLAYER_MOVE_DURATION_SLOW } from '@/config/gameConfig';
+import type { GameInputAction } from '@/game/input/InputActionRouter';
 
 const MOVEMENT_BLOCKED_PHASES: readonly string[] = ['dialogue', 'reading', 'viewing-map'];
-
-const KEY_MAP: Record<string, Direction> = {
-  ArrowUp: 'up',
-  ArrowDown: 'down',
-  ArrowLeft: 'left',
-  ArrowRight: 'right',
-  KeyW: 'up',
-  KeyS: 'down',
-  KeyA: 'left',
-  KeyD: 'right',
-};
 
 /**
  * Grid-based movement controller.
@@ -28,7 +18,7 @@ export class GridMovement implements MovementController {
   private player: IControllablePlayer | null = null;
   private context: MovementContext | null = null;
   private isMoving = false;
-  private boundHandler: ((e: KeyboardEvent) => void) | null = null;
+  private boundHandler: (({ action }: { action: GameInputAction }) => void) | null = null;
 
   attach(
     scene: Scene,
@@ -40,13 +30,13 @@ export class GridMovement implements MovementController {
     this.context = context;
 
     this.boundHandler = this.handleKeyDown.bind(this);
-    scene.input.keyboard!.on('keydown', this.boundHandler);
+    EventBridge.on('input-action', this.boundHandler);
     scene.events.once('shutdown', () => this.detach());
   }
 
   detach(): void {
-    if (this.scene?.input?.keyboard && this.boundHandler) {
-      this.scene.input.keyboard.off('keydown', this.boundHandler);
+    if (this.boundHandler) {
+      EventBridge.off('input-action', this.boundHandler);
     }
     this.scene = null;
     this.player = null;
@@ -54,17 +44,16 @@ export class GridMovement implements MovementController {
     this.boundHandler = null;
   }
 
-  private handleKeyDown(event: KeyboardEvent): void {
+  private handleKeyDown({ action }: { action: GameInputAction }): void {
     if (!this.scene || !this.player || !this.context || this.isMoving) return;
 
     const gamePhase = useGameStore.getState().session.gamePhase;
     if (MOVEMENT_BLOCKED_PHASES.includes(gamePhase)) return;
 
-    const dir = KEY_MAP[event.code];
-    if (!dir) return;
-
-    event.preventDefault();
-    this.tryMove(dir);
+    if (action === 'move.up') this.tryMove('up');
+    if (action === 'move.down') this.tryMove('down');
+    if (action === 'move.left') this.tryMove('left');
+    if (action === 'move.right') this.tryMove('right');
   }
 
   private tryMove(direction: Direction): boolean {

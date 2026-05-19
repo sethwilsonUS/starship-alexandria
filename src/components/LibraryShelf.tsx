@@ -25,31 +25,12 @@ export default function LibraryShelf() {
 
   const isVisible = gamePhase === 'ship';
 
-  // Check if game is complete (need this early for keyboard handler)
-  const totalCollectedEarly = library.length;
-  const totalAvailableEarly = (() => {
-    try {
-      return getBookCatalogSync().reduce((sum: number, b: Book) => sum + b.fragments.length, 0);
-    } catch {
-      return 0;
-    }
-  })();
-  const isGameCompleteEarly = totalCollectedEarly >= totalAvailableEarly && totalAvailableEarly > 0;
-
   // Keyboard navigation
   useEffect(() => {
     if (!isVisible) return;
 
     const handleKey = (e: KeyboardEvent) => {
       if (e.repeat) return;
-
-      // Space/Enter on ship to beam down (unless game complete)
-      if (e.code === 'Space' || e.code === 'Enter') {
-        if (!selectedBookId && !isGameCompleteEarly) {
-          e.preventDefault();
-          EventBridge.emit('beam-down-requested');
-        }
-      }
 
       // Escape to deselect book or go back to library view
       if (e.code === 'Escape') {
@@ -73,7 +54,7 @@ export default function LibraryShelf() {
 
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [isVisible, selectedBookId, isGameCompleteEarly, viewMode, collectedArtifacts.length]);
+  }, [isVisible, selectedBookId, viewMode, collectedArtifacts.length]);
 
   if (!isVisible) return null;
 

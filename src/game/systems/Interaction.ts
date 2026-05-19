@@ -3,6 +3,7 @@ import { EventBridge } from '../EventBridge';
 import { useGameStore } from '@/store/gameStore';
 import type { IControllablePlayer, Interactive } from '@/types/game';
 import { speak, playDiscoveryChime } from '@/utils/speech';
+import type { GameInputAction } from '@/game/input/InputActionRouter';
 
 const INTERACTION_BLOCKED_PHASES: readonly string[] = ['dialogue', 'reading', 'viewing-map'];
 
@@ -22,7 +23,7 @@ export class InteractionSystem {
   private player: IControllablePlayer | null = null;
   private interactives: Interactive[] = [];
   private currentInteractive: Interactive | null = null;
-  private boundKeyHandler: ((e: KeyboardEvent) => void) | null = null;
+  private boundKeyHandler: (({ action }: { action: GameInputAction }) => void) | null = null;
   private isPlayerMoving = false;
   private lastInteractionTime = 0;
   private announcementsReady = false; // Wait for room announcements before announcing interactives
@@ -59,41 +60,25 @@ export class InteractionSystem {
     this.player = player;
     this.announcementsReady = false;
 
-    this.boundKeyHandler = (e: KeyboardEvent) => {
-      if (e.repeat) return; // Ignore key repeats
-      if (e.code === 'KeyE' || e.code === 'Space') {
-        // Cooldown: ignore interactions within 300ms of last one
-        const now = Date.now();
-        if (now - this.lastInteractionTime < 300) return;
-        
-        const gamePhase = useGameStore.getState().session.gamePhase;
-        if (INTERACTION_BLOCKED_PHASES.includes(gamePhase)) return;
-        
-        // Auto-unlock if we're in exploring phase (safeguard against stuck lock)
-        if (gamePhase === 'exploring') {
-          interactionLocked = false;
-        }
-        
-        // Check global lock (only blocks during state transitions)
-        if (interactionLocked) return;
-        
-        const target = this.currentInteractive;
-        if (!target) return;
-        
-        this.lastInteractionTime = now;
-        e.preventDefault();
-        
-        // Lock interactions before emitting
-        interactionLocked = true;
-        
-        // Emit immediately - the cooldown and lock prevent double-triggering
-        EventBridge.emit('interaction-triggered', {
-          type: target.type,
-          id: target.id,
-        });
-      }
+    this.boundKeyHandler = ({ action }: { action: GameInputAction }) => {
+      if (action !== 'interact') return;
+
+      const now = Date.now();
+      if (now - this.lastInteractionTime < 300) return;
+
+      const gamePhase = useGameStore.getState().session.gamePhase;
+      if (INTERACTION_BLOCKED_PHASES.includes(gamePhase)) return;
+
+      const target = this.currentInteractive;
+      if (!target) return;
+
+      this.lastInteractionTime = now;
+      EventBridge.emit('interaction-triggered', {
+        type: target.type,
+        id: target.id,
+      });
     };
-    scene.input.keyboard!.on('keydown', this.boundKeyHandler);
+    EventBridge.on('input-action', this.boundKeyHandler);
     EventBridge.on('player-moving', this.onPlayerMoving);
     EventBridge.on('player-moved', this.onPlayerMoved);
     EventBridge.on('room-announcements-complete', this.onAnnouncementsComplete);
@@ -107,8 +92,8 @@ export class InteractionSystem {
     EventBridge.off('player-moving', this.onPlayerMoving);
     EventBridge.off('player-moved', this.onPlayerMoved);
     EventBridge.off('room-announcements-complete', this.onAnnouncementsComplete);
-    if (this.scene?.input?.keyboard && this.boundKeyHandler) {
-      this.scene.input.keyboard.off('keydown', this.boundKeyHandler);
+    if (this.boundKeyHandler) {
+      EventBridge.off('input-action', this.boundKeyHandler);
     }
     this.scene = null;
     this.player = null;

@@ -2,6 +2,7 @@ import { Scene } from 'phaser';
 import { EventBridge } from '../EventBridge';
 import { useGameStore } from '@/store/gameStore';
 import { getBookCatalogSync } from '@/data/books';
+import { transitionGuard } from '@/game/input/gameInput';
 
 /**
  * ShipScene: The Starship Alexandria library deck.
@@ -142,6 +143,8 @@ export default class ShipScene extends Scene {
   }
   
   private beamDown(): void {
+    transitionGuard.beginTransition();
+
     // Beam-down animation
     const { width, height } = this.cameras.main;
     

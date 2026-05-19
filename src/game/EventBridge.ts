@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import type { GameInputAction } from './input/InputActionRouter';
 
 /**
  * Typed event names for Phaser ↔ React communication.
@@ -30,6 +31,8 @@ export type EventBridgeEvents = {
   'room-announcements-complete': void;
   /** Show victory message when all fragments collected */
   'show-victory': void;
+  /** Semantic gameplay input routed from browser/React to game systems */
+  'input-action': { action: GameInputAction };
   /** Debug: despawn all books on current map */
   'debug-despawn-all-books': void;
   /** Vault interaction - player attempts to open vault */

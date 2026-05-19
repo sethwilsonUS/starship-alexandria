@@ -22,6 +22,7 @@ import { GridMovement } from '../systems/GridMovement';
 import { InteractionSystem } from '../systems/Interaction';
 import { createCpuTilemapLayer } from '../utils/tilemapLayers';
 import { playBumpSound, speak, playDiscoveryChime } from '@/utils/speech';
+import { transitionGuard } from '@/game/input/gameInput';
 
 /**
  * ExploreScene: Main exploration gameplay.
@@ -1155,6 +1156,8 @@ export default class ExploreScene extends Scene {
   }
 
   private playBeamUpAnimation(): void {
+    transitionGuard.beginTransition();
+
     // Disable player input during animation
     this.gridMovement?.detach();
     this.interactionSystem?.detach();
