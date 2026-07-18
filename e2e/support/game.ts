@@ -35,7 +35,7 @@ const themeTitles: Record<ThemeId, string> = {
 
 export async function expectAxeClean(page: Page, surface: string): Promise<void> {
   const result = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .analyze();
   const details = result.violations.map((violation) => {
     const targets = violation.nodes.flatMap((node) => node.target).join(', ');
@@ -99,7 +99,7 @@ export async function openMissionPicker(page: Page): Promise<Locator> {
 export async function chooseTheme(page: Page, picker: Locator, themeId: ThemeId): Promise<E2ESnapshot> {
   const heading = picker.getByRole('heading', { name: themeTitles[themeId] });
   await expect(heading).toBeVisible();
-  const card = heading.locator('..');
+  const card = picker.getByRole('article').filter({ hasText: themeTitles[themeId] });
   const depart = card.getByRole('button', { name: /Lock coordinates/ });
   await expect(depart).toBeVisible();
   await depart.focus();

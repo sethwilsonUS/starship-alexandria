@@ -86,8 +86,8 @@ test('an exhausted catalog still allows expeditions and grants the vault supply 
 async function advanceDialogueUntil(dialog: import('@playwright/test').Locator, target: RegExp): Promise<void> {
   const text = dialog.locator('#dialogue-text');
   for (let line = 0; line < 6; line += 1) {
-    if (target.test((await text.textContent()) ?? '')) return;
     const before = (await text.textContent()) ?? '';
+    if (target.test(before)) return;
     await expect.poll(async () => {
       const current = (await text.textContent()) ?? '';
       if (current !== before) return true;

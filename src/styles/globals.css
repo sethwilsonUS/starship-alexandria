@@ -7,8 +7,8 @@
   --archive-muted: #c6c2b4;
   --signal-cyan: #7fd9dc;
   --danger-red: #ff9b8c;
-  --font-ui: var(--font-atkinson), Atkinson Hyperlegible, Verdana, sans-serif;
-  --font-reading: var(--font-literata), Literata, Georgia, serif;
+  --font-ui: var(--font-atkinson), "Atkinson Hyperlegible", verdana, sans-serif;
+  --font-reading: var(--font-literata), "Literata", georgia, serif;
   --hud-bg: rgba(26, 26, 46, 0.92);
   --hud-border: rgba(212, 175, 55, 0.4);
   --hud-text: rgba(255, 255, 255, 0.92);
@@ -250,7 +250,7 @@ input:focus-visible,
   line-height: 1.35;
 }
 
-.launch-gate__motion {
+.launch-gate__preference-group {
   display: flex;
   flex-wrap: wrap;
   gap: 0.65rem 1.25rem;
@@ -259,16 +259,21 @@ input:focus-visible,
   border: 1px solid rgba(214, 185, 104, 0.28);
 }
 
-.launch-gate__motion legend {
+.launch-gate__preference-group legend {
   padding: 0 0.4rem;
   color: var(--archive-brass-bright);
   font-weight: 700;
 }
 
-.launch-gate__motion label {
+.launch-gate__preference-group label {
   display: flex;
   gap: 0.45rem;
   align-items: center;
+}
+
+.launch-gate__preference-group--audio > .launch-gate__settings {
+  flex-basis: 100%;
+  margin: 0;
 }
 
 .launch-gate__actions {

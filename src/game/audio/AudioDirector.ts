@@ -87,6 +87,7 @@ export function startAmbience(scene: Phaser.Scene, key: string): void {
   }
 
   const previous = currentAmbience;
+  const previousKey = currentAmbienceKey;
   let next: VolumeSound;
   try {
     next = scene.sound.add(key, { loop: true, volume: 0 }) as VolumeSound;
@@ -99,14 +100,14 @@ export function startAmbience(scene: Phaser.Scene, key: string): void {
   try {
     if (!next.play()) {
       safelyDestroy(next);
-      currentAmbience = null;
-      currentAmbienceKey = null;
+      currentAmbience = previous;
+      currentAmbienceKey = previousKey;
       return;
     }
   } catch {
     safelyDestroy(next);
-    currentAmbience = null;
-    currentAmbienceKey = null;
+    currentAmbience = previous;
+    currentAmbienceKey = previousKey;
     return;
   }
   fadeSound(scene, next, targetVolume, 700);
@@ -305,10 +306,20 @@ function installVisibilityListener(): void {
   visibilityListenerInstalled = true;
   document.addEventListener('visibilitychange', () => {
     const sound = currentAmbience;
-    if (!sound) return;
     if (document.hidden) {
+      if (!sound) return;
       pausedForVisibility = sound.isPlaying;
       if (pausedForVisibility) sound.pause();
+      return;
+    }
+    if (requestedAmbience && requestedAmbience.key !== currentAmbienceKey) {
+      pausedForVisibility = false;
+      const { scene, key } = requestedAmbience;
+      startAmbience(scene, key);
+      return;
+    }
+    if (!sound) {
+      syncCurrentAmbiencePolicy();
       return;
     }
     if (pausedForVisibility && currentPolicy().ambienceVolume > 0) sound.resume();

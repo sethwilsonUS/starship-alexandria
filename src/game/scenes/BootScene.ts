@@ -1,7 +1,7 @@
 import { Scene } from 'phaser';
 import { useGameStore } from '@/store/gameStore';
 import { preloadAllContent, loadArtifacts, loadGameloop } from '@/utils/contentLoader';
-import { preloadGameAssets } from '@/game/assets/assetManifest';
+import { AUDIO_ASSETS, IMAGE_ASSETS, preloadGameAssets } from '@/game/assets/assetManifest';
 import { ensureProceduralFallbackTextures } from '@/game/assets/proceduralFallbacks';
 import { loadNPCCatalog, setCachedNPCCatalog } from '@/data/npcs';
 import { loadBookCatalog, setCachedBookCatalog } from '@/data/books';
@@ -31,13 +31,15 @@ export default class BootScene extends Scene {
   }
 
   async create() {
-    if (this.assetFailures.length > 0) {
-      const failedKeys = [...new Set(this.assetFailures)].join(', ');
+    const unresolvedFailures = this.getUnresolvedAssetFailures();
+    if (unresolvedFailures.length > 0) {
+      const failedKeys = unresolvedFailures.join(', ');
       useGameStore.getState().actions.setContentError(`Required game assets did not load: ${failedKeys}`);
       return;
     }
     // Load all content from YAML files before starting game
-    await this.loadContent();
+    const contentLoaded = await this.loadContent();
+    if (!contentLoaded) return;
     
     // Ensure scene is still active after async operation
     if (!this.scene || !this.scene.manager) {
@@ -63,7 +65,17 @@ export default class BootScene extends Scene {
     }
   }
 
-  private async loadContent(): Promise<void> {
+  private getUnresolvedAssetFailures(): string[] {
+    const imageKeys = new Set(IMAGE_ASSETS.map((asset) => asset.key));
+    const audioKeys = new Set(AUDIO_ASSETS.map((asset) => asset.key));
+    return [...new Set(this.assetFailures)].filter((key) => {
+      if (imageKeys.has(key)) return !this.textures.exists(key);
+      if (audioKeys.has(key)) return !this.cache.audio.exists(key);
+      return true;
+    });
+  }
+
+  private async loadContent(): Promise<boolean> {
     try {
       // Preload all YAML content
       await preloadAllContent();
@@ -92,10 +104,12 @@ export default class BootScene extends Scene {
 
       // Signal to React components that content is ready
       useGameStore.getState().actions.setContentReady();
+      return true;
     } catch (error) {
       console.error('Failed to load content:', error);
       const message = error instanceof Error ? error.message : 'Unknown content error';
       useGameStore.getState().actions.setContentError(message);
+      return false;
     }
   }
 }

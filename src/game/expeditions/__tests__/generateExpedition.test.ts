@@ -48,6 +48,10 @@ function hasReachableNeighbor(point: Point, reached: Set<string>): boolean {
   );
 }
 
+function areCardinallyAdjacent(left: Point, right: Point): boolean {
+  return Math.abs(left.x - right.x) + Math.abs(left.y - right.y) === 1;
+}
+
 describe('expedition theme registry', () => {
   it('describes the four mission-picker destinations', () => {
     expect(EXPEDITION_THEME_IDS).toEqual([
@@ -305,12 +309,28 @@ function assertExpeditionContract(expedition: GeneratedExpedition, themeId: Them
   const fragments = expedition.entities.filter((entity) => entity.kind === 'fragment');
   expect(fragments.length).toBeGreaterThanOrEqual(2);
   expect(fragments.length).toBeLessThanOrEqual(4);
+  const npcZoneIds = new Set(npcs.map((npc) => npc.zoneId));
+  expect(
+    fragments.every((fragment) => !npcZoneIds.has(fragment.zoneId)),
+    'NPCs and fragments occupy separate zones'
+  ).toBe(true);
   expect(expedition.entities.filter((entity) => entity.kind === 'map')).toHaveLength(1);
   expect(expedition.entities.filter((entity) => entity.kind === 'clue')).toHaveLength(1);
   expect(expedition.entities.filter((entity) => entity.kind === 'journal')).toHaveLength(1);
   const batteries = expedition.entities.filter((entity) => entity.kind === 'battery');
   expect(batteries.length).toBeGreaterThanOrEqual(1);
   expect(batteries.length).toBeLessThanOrEqual(2);
+
+  const spacedKinds = new Set(['fragment', 'npc', 'journal', 'battery']);
+  const spacingAnchors: Point[] = [expedition.spawn, expedition.extraction];
+  for (const entity of expedition.entities) {
+    if (!spacedKinds.has(entity.kind)) continue;
+    expect(
+      spacingAnchors.some((anchor) => areCardinallyAdjacent(entity.position, anchor)),
+      `${entity.kind} ${entity.id} at ${pointKey(entity.position)} is cardinally adjacent to another protected position`
+    ).toBe(false);
+    spacingAnchors.push(entity.position);
+  }
 
   const reached = reachableWithoutBlockers(expedition);
   expect(reached.has(pointKey(expedition.extraction))).toBe(true);

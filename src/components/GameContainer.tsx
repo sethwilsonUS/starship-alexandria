@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { PhaserGame } from '@/PhaserGame';
+import { PhaserGame } from './PhaserGame';
 import { EventBridge } from '@/game/EventBridge';
 import { handleKeyboardInput } from '@/game/input/gameInput';
 import type { GameInputAction } from '@/game/input/InputActionRouter';

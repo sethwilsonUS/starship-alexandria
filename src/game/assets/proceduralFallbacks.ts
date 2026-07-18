@@ -1,8 +1,10 @@
 import { TILE_SIZE } from '@/config/gameConfig';
-import { ASSET_KEYS } from './assetManifest';
+import { ASSET_KEYS, THEME_TILESET_KEYS } from './assetManifest';
 
 export function ensureProceduralFallbackTextures(scene: Phaser.Scene): void {
-  if (!scene.textures.exists(ASSET_KEYS.tileset)) createTileset(scene);
+  for (const tilesetKey of Object.values(THEME_TILESET_KEYS)) {
+    if (!scene.textures.exists(tilesetKey)) createTileset(scene, tilesetKey);
+  }
   if (!scene.textures.exists(ASSET_KEYS.sprites.book)) createBook(scene);
   if (!scene.textures.exists(ASSET_KEYS.sprites.transporter)) createTransporter(scene);
   if (!scene.textures.exists(ASSET_KEYS.sprites.player)) createPlayer(scene);
@@ -16,7 +18,7 @@ export function ensureProceduralFallbackTextures(scene: Phaser.Scene): void {
   if (!scene.textures.exists(ASSET_KEYS.sprites.shipTerminalProp)) createShipTerminalProp(scene);
 }
 
-function createTileset(scene: Phaser.Scene): void {
+function createTileset(scene: Phaser.Scene, key: string): void {
   // Generate procedural tileset (post-apocalyptic palette)
   // 4 columns x 3 rows = 12 tiles @ 32x32 each
   const cols = 4;
@@ -64,7 +66,7 @@ function createTileset(scene: Phaser.Scene): void {
     }
   }
 
-  graphics.generateTexture(ASSET_KEYS.tileset, width, height);
+  graphics.generateTexture(key, width, height);
   graphics.destroy();
 }
 

@@ -26,4 +26,25 @@ describe('EventBridge subscriptions', () => {
 
     expect(listener).toHaveBeenCalledOnce();
   });
+
+  it('carries a dedicated location card without impersonating a room transition', () => {
+    const locationListener = vi.fn();
+    const areaListener = vi.fn();
+    const cleanupLocation = EventBridge.subscribe('location-card', locationListener);
+    const cleanupArea = EventBridge.subscribe('area-entered', areaListener);
+
+    EventBridge.emit('location-card', {
+      title: 'The Overgrown Athenaeum',
+      kicker: 'Every path remembers a gardener',
+    });
+
+    expect(locationListener).toHaveBeenCalledWith({
+      title: 'The Overgrown Athenaeum',
+      kicker: 'Every path remembers a gardener',
+    });
+    expect(areaListener).not.toHaveBeenCalled();
+
+    cleanupLocation();
+    cleanupArea();
+  });
 });

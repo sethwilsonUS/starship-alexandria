@@ -5,6 +5,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
+import {
+  PINNED_FFMPEG_VERSION,
+  validateAudioFormatGroups,
+} from './lib/asset-validation.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, '..');
@@ -70,13 +74,17 @@ async function validateSprite(filePath, record) {
 async function main() {
   const manifest = JSON.parse(await fs.readFile(MANIFEST_PATH, 'utf8'));
   if (manifest.schemaVersion !== 1) fail(`Unsupported asset manifest schema: ${manifest.schemaVersion}`);
+  if (manifest.toolchain?.ffmpeg !== PINNED_FFMPEG_VERSION) {
+    fail(`Asset manifest must pin ffmpeg ${PINNED_FFMPEG_VERSION}`);
+  }
   if (!Array.isArray(manifest.assets) || manifest.assets.length === 0) fail('Asset manifest has no assets');
 
   const opaqueIndices = new Set(
     manifest.tileSchema.opaqueRoles.map((role) => manifest.tileSchema.roles.indexOf(role))
   );
   const seenPaths = new Set();
-  const audioPairs = new Map();
+  const audioFormats = validateAudioFormatGroups(manifest.assets);
+  for (const error of audioFormats.errors) fail(error);
 
   for (const record of manifest.assets) {
     if (seenPaths.has(record.path)) fail(`Duplicate manifest path: ${record.path}`);
@@ -118,15 +126,6 @@ async function main() {
         fail(`${record.path}: invalid OGG signature`);
       }
       if (extension === 'mp3' && !isMp3(buffer)) fail(`${record.path}: invalid MP3 signature`);
-      const formats = audioPairs.get(record.logicalName) ?? new Set();
-      formats.add(extension);
-      audioPairs.set(record.logicalName, formats);
-    }
-  }
-
-  for (const [logicalName, formats] of audioPairs) {
-    if (!formats.has('ogg') || !formats.has('mp3') || formats.size !== 2) {
-      fail(`${logicalName}: audio must provide exactly one OGG and one MP3`);
     }
   }
 
@@ -191,7 +190,7 @@ async function main() {
     process.exitCode = 1;
     return;
   }
-  console.log(`Validated ${manifest.assets.length} assets, ${audioPairs.size} audio pairs, ${themeNames.size} theme atlases, and ${conceptManifest.outputs?.length ?? 0} concept-art outputs.`);
+  console.log(`Validated ${manifest.assets.length} assets, ${audioFormats.pairCount} audio pairs, ${themeNames.size} theme atlases, and ${conceptManifest.outputs?.length ?? 0} concept-art outputs.`);
 }
 
 main().catch((error) => {

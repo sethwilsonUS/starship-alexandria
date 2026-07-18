@@ -4,7 +4,8 @@
  * These functions provide sync access for use in Phaser scenes.
  */
 
-import { getBookCatalogSync, type FragmentDef } from '@/data/books';
+import { getBookCatalogSync } from '@/data/books';
+import type { FragmentDef } from '@/types/books';
 import type { JournalEntryDef } from '@/data/journalEntries';
 import type { Artifact } from '@/data/artifacts';
 

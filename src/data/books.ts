@@ -3,8 +3,7 @@
  * Content is loaded from the canonical public/content/books.yaml and public/content/texts/.
  */
 
-import type { BookFragment } from '@/types/books';
-import type { ContentThemeId, PublicDomainSource } from '@/types/content';
+import type { Book, BookFragment, FragmentDef } from '@/types/books';
 import {
   getAllBooks,
   getBookById as getContentBookById,
@@ -15,25 +14,7 @@ import {
   type FragmentWithText,
 } from '@/utils/contentLoader';
 
-export interface Book {
-  id: string;
-  title: string;
-  author: string;
-  source: PublicDomainSource;
-  includedFragmentCount: number;
-  fragments: FragmentDef[];
-}
-
-export interface FragmentDef {
-  id: string;
-  bookId: string;
-  label: string;
-  order: number;
-  text: string;
-  sourceLocation: string;
-  themeAffinities: ContentThemeId[];
-  editorialContext?: string;
-}
+export type { Book, FragmentDef } from '@/types/books';
 
 export function fragmentWithTextToFragmentDef(f: FragmentWithText): FragmentDef {
   return {

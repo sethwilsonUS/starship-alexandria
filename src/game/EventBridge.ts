@@ -21,6 +21,8 @@ export type EventBridgeEvents = {
   'npc-dialogue': { npcId: string; lines: string[] };
   'area-entered': { areaName: string };
   'area-discovered': { areaName: string };
+  /** Accessible DOM counterpart for the destination title card rendered on canvas. */
+  'location-card': { title: string; kicker: string };
   'close-dialogue': void;
   'open-inventory': void;
   /** Ship scene events */

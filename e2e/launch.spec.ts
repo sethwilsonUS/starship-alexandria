@@ -52,12 +52,14 @@ test('@cross-browser @smoke launch gate honors preferences and returns focus to 
 test('@cross-browser @smoke reaches a themed surface without relying on the E2E bridge', async ({ page }) => {
   await launchToShip(page, { seed: 'remote-smoke' });
   const picker = await openMissionPicker(page);
-  const cathedral = picker.getByRole('heading', { name: 'Cathedral of the Last Canticle' }).locator('..');
+  const cathedral = picker.getByRole('article').filter({ hasText: 'Cathedral of the Last Canticle' });
   const depart = cathedral.getByRole('button', { name: /Lock coordinates/ });
   await depart.focus();
   await page.keyboard.press('Enter');
   await expect(picker).toBeHidden();
-  await expect(page.getByRole('banner', { name: 'Game status' })).toContainText('Cathedral of the Last Canticle');
+  await expect(page.getByRole('log', { name: 'Game event log' })).toContainText(
+    'Arrived at Cathedral of the Last Canticle',
+  );
 });
 
 test('mission picker traps focus, is data-driven, and restores focus on Escape', async ({ page }) => {
@@ -79,6 +81,46 @@ test('mission picker traps focus, is data-driven, and restores focus on Escape',
     });
     expect(focusInside).toBe(true);
   }
+
+  const repeatProtection = await picker.evaluate((dialog) => {
+    const controls = Array.from(dialog.querySelectorAll<HTMLElement>('button, [href], input, summary'));
+    const first = controls[0];
+    const last = controls.at(-1);
+    if (!first || !last) throw new Error('Mission picker has no focusable controls');
+
+    last.focus();
+    const forward = new KeyboardEvent('keydown', {
+      key: 'Tab',
+      repeat: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    document.dispatchEvent(forward);
+    const forwardStayedInside = dialog.contains(document.activeElement);
+
+    first.focus();
+    const backward = new KeyboardEvent('keydown', {
+      key: 'Tab',
+      shiftKey: true,
+      repeat: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    document.dispatchEvent(backward);
+
+    return {
+      forwardPrevented: forward.defaultPrevented,
+      forwardStayedInside,
+      backwardPrevented: backward.defaultPrevented,
+      backwardStayedInside: dialog.contains(document.activeElement),
+    };
+  });
+  expect(repeatProtection).toEqual({
+    forwardPrevented: true,
+    forwardStayedInside: true,
+    backwardPrevented: true,
+    backwardStayedInside: true,
+  });
 
   await page.keyboard.press('Escape');
   await expect(picker).toBeHidden();

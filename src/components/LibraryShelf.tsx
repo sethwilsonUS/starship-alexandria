@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { getBookCatalogSync, type Book, type FragmentDef } from '@/data/books';
+import { getBookCatalogSync } from '@/data/books';
+import type { Book, FragmentDef } from '@/types/books';
 import { getAllArtifacts, getTotalArtifacts, type Artifact } from '@/data/artifacts';
 import type { BookFragment } from '@/types/books';
 
@@ -130,6 +131,7 @@ export default function LibraryShelf() {
             role="tablist"
             aria-label="Archive sections"
             onKeyDown={(event) => {
+              if (event.repeat) return;
               if (collectedArtifacts.length === 0) return;
               if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
                 event.preventDefault();

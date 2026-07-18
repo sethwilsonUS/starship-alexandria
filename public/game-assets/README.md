@@ -24,5 +24,9 @@ node scripts/validate-assets.mjs
 
 The importer defaults to `~/dev/kenney` and `~/dev/beowulf`. Override those
 locations with `KENNEY_ROOT` and `BEOWULF_ROOT`. It verifies every input hash
-before writing outputs; `ffmpeg` is needed only to build MP3 fallbacks from
-Kenney's OGG originals.
+before writing outputs. `PINNED_FFMPEG_VERSION` in
+`scripts/lib/asset-validation.mjs` is the authoritative encoder release; the
+generated manifest records that enforced value. Refreshes fail before writing
+if the configured `FFMPEG` executable reports another version. ffmpeg
+transcodes only the trimmed ambience loop and Kenney MP3 fallbacks from pinned
+OGG originals; non-ambience Beowulf OGG/MP3 pairs are copied directly.

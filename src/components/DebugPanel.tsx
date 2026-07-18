@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { EventBridge } from '@/game/EventBridge';
-import { getBookCatalogSync, toBookFragment, type Book } from '@/data/books';
+import { getBookCatalogSync, toBookFragment } from '@/data/books';
+import type { Book } from '@/types/books';
 
 /**
  * Debug panel for development/testing.

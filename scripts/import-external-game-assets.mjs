@@ -16,6 +16,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import sharp from 'sharp';
+import {
+  assertFfmpegVersion,
+  PINNED_FFMPEG_VERSION,
+} from './lib/asset-validation.mjs';
 
 const execFile = promisify(execFileCallback);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -25,6 +29,7 @@ const BEOWULF_ROOT = path.resolve(process.env.BEOWULF_ROOT ?? path.join(os.homed
 const PUBLIC_ROOT = path.join(PROJECT_ROOT, 'public');
 const OUTPUT_ROOT = path.join(PUBLIC_ROOT, 'game-assets');
 const MANIFEST_PATH = path.join(OUTPUT_ROOT, 'manifest.json');
+const FFMPEG_COMMAND = process.env.FFMPEG ?? 'ffmpeg';
 
 const TILE_SIZE = 32;
 const SOURCE_TILE_SIZE = 16;
@@ -34,6 +39,11 @@ const CC0 = 'CC0-1.0';
 const OFL = 'OFL-1.1';
 
 const sha256 = (buffer) => crypto.createHash('sha256').update(buffer).digest('hex');
+
+async function validateToolchain() {
+  const { stdout } = await execFile(FFMPEG_COMMAND, ['-version'], { maxBuffer: 1024 * 1024 });
+  assertFfmpegVersion(stdout);
+}
 
 const SOURCE_CATALOG = {
   kenneyRoguelike: {
@@ -539,7 +549,7 @@ async function copyPinnedAudio() {
       const oggRelativePath = 'game-assets/audio/ambience/ambience-ruins.ogg';
       const mp3RelativePath = 'game-assets/audio/ambience/ambience-ruins.mp3';
       await execFile(
-        process.env.FFMPEG ?? 'ffmpeg',
+        FFMPEG_COMMAND,
         [
           '-hide_banner', '-loglevel', 'error', '-y', '-i', inputPath,
           '-filter_complex', filter, '-map', '[out]', '-map_metadata', '-1',
@@ -549,7 +559,7 @@ async function copyPinnedAudio() {
         { maxBuffer: 1024 * 1024 }
       );
       await execFile(
-        process.env.FFMPEG ?? 'ffmpeg',
+        FFMPEG_COMMAND,
         [
           '-hide_banner', '-loglevel', 'error', '-y', '-i', inputPath,
           '-filter_complex', filter, '-map', '[out]', '-map_metadata', '-1',
@@ -608,7 +618,7 @@ async function transcodeKenneyAudio() {
     const mp3OutputPath = path.join(PUBLIC_ROOT, mp3RelativePath);
     await fs.writeFile(oggOutputPath, ogg);
     await execFile(
-      process.env.FFMPEG ?? 'ffmpeg',
+      FFMPEG_COMMAND,
       [
         '-hide_banner', '-loglevel', 'error', '-y', '-i', inputPath,
         '-map_metadata', '-1', '-codec:a', 'libmp3lame', '-q:a', '4', '-write_xing', '0', mp3OutputPath,
@@ -677,6 +687,7 @@ async function cleanLegacyOutputs() {
 }
 
 async function main() {
+  await validateToolchain();
   await fs.mkdir(path.join(OUTPUT_ROOT, 'tiles'), { recursive: true });
   await fs.mkdir(path.join(OUTPUT_ROOT, 'sprites'), { recursive: true });
   await fs.mkdir(path.join(OUTPUT_ROOT, 'audio', 'footsteps'), { recursive: true });
@@ -696,6 +707,7 @@ async function main() {
   const manifest = {
     schemaVersion: 1,
     runtimePolicy: 'All runtime assets are local. Network access is maintainer-only.',
+    toolchain: { ffmpeg: PINNED_FFMPEG_VERSION },
     tileSchema: {
       sourceTileSize: 16,
       runtimeTileSize: TILE_SIZE,

@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { EventBridge } from '@/game/EventBridge';
 import { useGameStore } from '@/store/gameStore';
-import { getBookCatalogSync, type Book } from '@/data/books';
+import { getBookCatalogSync } from '@/data/books';
+import type { Book } from '@/types/books';
 
 function getTotalFragments(): number {
   try {

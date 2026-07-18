@@ -284,15 +284,25 @@ function validateBooks() {
           } else if (!fileExists(textPath)) {
             addError('books.yaml', `${fragPrefix}: Text file not found: ${frag.textFile}`);
           } else {
-            const text = fs.readFileSync(textPath, 'utf8');
-            if (!isNonEmptyString(text)) {
-              addError('books.yaml', `${fragPrefix}: Text file is empty: ${frag.textFile}`);
-            }
-            if (/START OF THE PROJECT GUTENBERG|END OF THE PROJECT GUTENBERG/i.test(text)) {
-              addError(
-                'books.yaml',
-                `${fragPrefix}: Text file contains Project Gutenberg boilerplate: ${frag.textFile}`
-              );
+            try {
+              const realTextsDir = fs.realpathSync(TEXTS_DIR);
+              const realTextPath = fs.realpathSync(textPath);
+              if (!realTextPath.startsWith(`${realTextsDir}${path.sep}`)) {
+                addError('books.yaml', `${fragPrefix}: textFile must stay inside content/texts`);
+              } else {
+                const text = fs.readFileSync(realTextPath, 'utf8');
+                if (!isNonEmptyString(text)) {
+                  addError('books.yaml', `${fragPrefix}: Text file is empty: ${frag.textFile}`);
+                }
+                if (/START OF THE PROJECT GUTENBERG|END OF THE PROJECT GUTENBERG/i.test(text)) {
+                  addError(
+                    'books.yaml',
+                    `${fragPrefix}: Text file contains Project Gutenberg boilerplate: ${frag.textFile}`
+                  );
+                }
+              }
+            } catch {
+              addError('books.yaml', `${fragPrefix}: Text file not found: ${frag.textFile}`);
             }
           }
         }

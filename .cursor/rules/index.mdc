@@ -3,142 +3,100 @@ description: Project rules for Starship Alexandria
 alwaysApply: true
 ---
 
-# Starship Alexandria - Project Context for AI
+# Starship Alexandria project context
 
-## Project Overview
-Starship Alexandria is a casual, cozy roguelike web game built with Phaser 3 and TypeScript.
-The premise: After a cataclysmic event, Earth is barely habitable. You play as a crew member
-aboard the Starship Alexandria, a library ship. Your mission is to beam down to Earth's surface
-and recover fragments of lost classic literature from ruins, overgrown universities, collapsed
-libraries, and the wild. When you find book fragments (cantos, acts, chapters), you beam back
-to the ship and add them to the Alexandria's growing library.
+Starship Alexandria is a cozy, keyboard-first roguelike about recovering public-domain literature from a post-collapse Earth. It is a desktop web game with no combat, player death, timer, backend, multiplayer, touch controls, or mid-expedition resume.
 
-## Tech Stack
-- **Game Engine**: Phaser 3 (latest stable, currently 3.90.x) with TypeScript
-- **App Shell**: Next.js 15 (App Router)
-- **Roguelike Utilities**: rot.js (procedural generation, FOV, pathfinding)
-- **Map Editor**: Tiled (JSON export consumed by Phaser's tilemap loader)
-- **State Management**: Zustand for client game state (architected for future Convex migration)
-- **Persistence**: localStorage for now (Convex backend planned for future phase)
-- **Mobile (future)**: Capacitor.js wrapper
-- **Art Assets**: Free 32x32 tilesets from itch.io (placeholder)
-- **Book Text**: Public domain texts from Project Gutenberg
+## Current stack
 
-## Architecture Principles
-1. **Separation of concerns**: Game logic (Phaser scenes) is decoupled from UI (React components) and data (state store). The Phaser game emits events; React listens and renders UI.
-2. **Convex-ready data model**: All game state flows through a centralized store with a schema that maps directly to future Convex tables. Mutations go through action functions, not direct state manipulation.
-3. **Accessibility-first structure**: All React UI uses semantic HTML, ARIA landmarks, and proper heading hierarchy. Game events that convey important info also emit to an ARIA live region. The canvas is supplemented by DOM-based UI for all critical information. **Visual accessibility**: The project has a legally blind user; keep the player and key UI elements high-contrast and visually distinct (highlight rings, strong outlines, bright colors on dark backgrounds).
-4. **Grid-based but abstractable**: Movement is tile-to-tile on a grid, but the movement system is behind an interface so it can be swapped for free movement later.
-5. **Component-based Phaser architecture**: Game entities use a composition pattern (not deep inheritance). Each entity has a sprite, a grid position, and optional behavior components.
+- Next.js 16 App Router and React 19 provide the application shell and accessible HTML UI.
+- Phaser 4.1 renders the 1024×768 spatial world with `FIT` scaling.
+- Zustand 5 owns progression, settings, and modal/game-phase state.
+- rot.js supports selected deterministic topology builders.
+- `public/content/` is the sole narrative-content source.
+- Runtime art, fonts, narration, and audio are committed under `public/`; gameplay never downloads remote media.
 
-## Visual Style
-- Top-down perspective (Zelda / early Final Fantasy style)
-- 32x32 pixel tiles
-- Post-apocalyptic environments: overgrown ruins, crumbling universities, flooded streets, wild forests reclaiming cities
-- Warm, inviting color palette despite the setting (cozy apocalypse, not grimdark)
-- **Brightness rules (accessibility)**: Floor tiles (walkable) keep minimum luminance; wall tiles stay darker. Ensures floor vs wall is always distinguishable. Wall outline is light (0xe8e4dc), 4px — no per-tile grid borders.
+The authoritative design references are `README.md`, `docs/ARCHITECTURE.md`, `docs/CONTENT_AUTHORING.md`, and `docs/THEME_AUTHORING.md`.
 
-## Game Design Constraints
-- **No player death**. The player cannot die. Stakes come from discovery, narrative engagement, and collection progress—not survival.
-- **Turn-based / untimed**. No real-time pressure. The player moves at their own pace.
-- **Low-stakes mechanics are okay**: things like a flashlight with limited battery (dims but never kills), rubble that blocks paths and must be routed around, weather that limits visibility. Nothing punishing.
-- **Narrative-driven engagement**: Journal entries, NPC dialogue with Earth survivors, environmental storytelling, artifact descriptions, and the books themselves are the primary reward.
+## Ownership boundaries
 
-## Code Conventions
-- TypeScript strict mode enabled
-- Functional React components with hooks
-- Phaser scenes in `src/game/scenes/`
-- React components in `src/components/`
-- Game state store in `src/store/`
-- Type definitions in `src/types/`
-- Game data (book catalog, NPC dialogue, item definitions) in `src/data/`
-- Utility functions in `src/utils/`
-- Constants and config in `src/config/`
-- Use EventEmitter pattern for Phaser-to-React communication
-- Prefer composition over inheritance for game entities
-- All text content that conveys game information must also be accessible via DOM (not canvas-only)
+### React
 
-### Contrast & Distinguishability
-- **UI (tooltips, HUD, dialogue, menus)**: Follow WCAG 2.2 Level AA — 4.5:1 for normal text, 3:1 for large. Solid backgrounds. White on near-black or black on light.
-- **Game environment**: Not full WCAG (would limit palette/biome variety). But **added elements** (player, book pickups, interactives) must have good contrast and be distinguishable — thick outlines, highlight rings, distinct colors. Same accessibility mindset as UI.
+React owns document-like UI: the launch gate, settings, destination picker, dialogue, library/reader, visual and textual maps, focus management, tabs, and DOM/ARIA equivalents for canvas information. Every modal has an explicit Close control, traps and restores focus, and makes the background inert.
 
-## Important Patterns
+### Phaser
 
-### Phaser-React Bridge
-The Phaser game instance communicates with React via a shared EventEmitter:
-- Phaser emits events like 'book-found', 'npc-dialogue', 'area-entered'
-- React components subscribe to these events and render UI overlays
-- React can send commands back via the same bridge (e.g., 'close-dialogue', 'open-inventory')
+Phaser owns rendering, visibility, collision presentation, spatial movement effects, interaction markers, footsteps, and ambience. The active scenes are `BootScene`, `ShipScene`, and `ExploreScene`. Phaser must not parse narrative YAML or decide durable progression.
 
-### Game State Store (Zustand)
-The store is the single source of truth for persistent game state:
-- Player inventory (collected book fragments)
-- Library contents (all recovered texts)
-- Player position and current map
-- Exploration progress (visited areas, discovered NPCs)
-- The store shape mirrors planned Convex schema for easy migration
+### Zustand
 
-### Map Generation Pipeline
-1. rot.js generates a dungeon/cave/ruin layout (2D array)
-2. A transformer converts this to Phaser-compatible tilemap data
-3. Object placement (books, NPCs, items) happens on a separate layer
-4. The Phaser scene loads the generated tilemap and places entities
+Zustand is the source of truth for progression, preferences, and modal/game-phase state. Mutate it only through actions. Save schema v5 persists fragment IDs and compact progress/preferences, never excerpt bodies, coordinates, an active map, or expedition clues. Reloads safely recall the player to the ship.
 
-### rot-js Imports
-- Map: `import { Map } from 'rot-js'` → `new Map.Digger(...)`
-- FOV: `import { FOV } from 'rot-js'` → `new FOV.PreciseShadowcasting(lightPasses)`
-- lightPasses(x, y) returns true when tile is walkable (not a wall)
+### Typed bridge and input
 
-### Player Entity (IControllablePlayer)
-- Uses a Phaser **Container** containing: highlight ring (Graphics) + sprite. Camera and GridMovement target the container via `getSprite()`.
-- `getPixelPosition()` for UI placement (e.g. interaction prompt above player). Don't assume `getSprite()` has `.x`/`.y` — use `getPixelPosition()`.
-- Highlight ring is for accessibility; keep it when iterating on player visuals.
+`src/game/EventBridge.ts` is the only React ↔ Phaser event bus. Add or change a channel in its typed contract and update producers, consumers, and tests together; do not maintain an informal fixed event list elsewhere. React subscriptions must remove the exact listener and remain safe under Strict Mode remounts.
 
-### Interaction System
-- Prompts show **only when standing ON the interactive tile**, not when adjacent and facing. Avoid re-adding "tile in front" logic — it caused false prompts.
-- **Battery pickups**: Stored as inventory (`spareBatteries`). Press **B** to use one (restores 50%). No waste when picking up at high battery.
+Browser keyboard input is translated to semantic actions by `InputActionRouter`. Native HTML controls are excluded from global game input. Ignore repeated keydown events before routing any action, including movement, so one physical press means one turn.
 
-### Depth Ordering (ExploreScene)
-- Ground 0, wall 1, decoration 2, wall outline 2.5, fog overlay 4, interactives 5, player 10, prompt 100. New visuals should slot into this order.
+## Expedition domain
 
-### Book Pickup Visibility
-- Books and their gold rings stay **full brightness** through fog — never dim. Makes them easy to spot when in FOV. Subtle scale pulse (1 ↔ 1.08) draws the eye.
+`generateExpedition` in `src/game/expeditions/` is synchronous and must remain free of Phaser, React, Zustand, I/O, wall-clock time, and `Math.random()`. It returns semantic cells, zones, spawn/extraction, entities, and a clue-linked vault.
 
-### NPC Torchlight
-- NPCs have a warm glow (torchlight) when in view — they look lit, but don't extend FOV (would spoil exploration).
+- Use the named deterministic streams `layout`, `content`, `npc`, `vault`, and `decor`.
+- Save and restore rot.js RNG state around every ROT builder.
+- Validate at most 20 deterministic candidates, then use the theme-specific fallback.
+- Cosmetic/decor changes must not reshuffle layout or gameplay placement.
+- Consume `walkable`, `opaque`, `surface`, and `renderRole` as meanings; never infer game rules from atlas frame numbers.
 
-### Object Placement
-- **No adjacent placement**: Books, NPCs, journals, and batteries must not be placed on tiles directly adjacent (cardinal directions) to each other, the spawn, or the transporter. Filter candidates with `!isAdjacentToUsed(x, y)` before placing.
-- **NPCs and books**: NPCs are never placed in the same room as a book fragment. Use `roomsWithBooks` to exclude those rooms from `npcRoomData`.
+Themes are topology contracts, not palettes:
 
-### BootScene Procedural Textures
-- Placeholder sprites (player, book-pickup, transporter-pad, npc) are created with `add.graphics()`, drawn, `generateTexture(key, w, h)`, then `destroy()`. Replace with asset loading when tilesets are ready.
-- **Book/scroll assets**: itch.io has free packs (e.g. "Book & Scroll Set" by TrulyMalicious). Use for book-pickup when moving from procedural to asset-based.
+- `scriptorium`: Digger rooms and corridors.
+- `cathedral`: ruined cross-plan, chapels, cloister, and crypt.
+- `university`: academic rooms around a connected courtyard loop.
+- `gardens`: cellular clearings joined by paths.
 
-### Session vs Persisted State
-- **Persisted** (localStorage): player, library, exploration. **Session-only**: currentDialogue, gamePhase, exploredTiles, etc. exploredTiles resets on new map; addExploredTiles/clearExploredTiles in store actions.
+### Placement covenant
 
-### EventBridge Events
-- `player-moving`, `player-moved` { x, y }, `interaction-available` { type, label }, `interaction-triggered` { type, id }, `interactive-consumed` { type, id }, `area-entered` { areaName }
+Fragments, NPCs, journals, and batteries may not overlap or sit cardinally adjacent to one another, the spawn, or extraction. NPCs and fragments must occupy disjoint zones. The map, clue, props, and vault still obey their own reachability/collision contracts. Validate the finished output independently of the allocator.
 
-### Consumable Interactions (books, journals, batteries)
-- **GameContainer** handles `interaction-triggered` and emits `interactive-consumed` only **after** successfully updating state (openDialogue, collectFragment, etc.).
-- **ExploreScene** listens to `interactive-consumed` (not `interaction-triggered`) to destroy/remove map objects. Never destroy on `interaction-triggered`.
-- This ordering prevents race conditions where the object despawns before dialogue renders.
+## Interaction behavior
 
-### Keyboard Handlers
-- **Always check `e.repeat`** — All keydown handlers should `if (e.repeat) return;` early to ignore key repeats. Without this, holding a key briefly causes multiple events that can instantly close single-line dialogues or trigger duplicate interactions.
+Walkable pickups use on-tile interaction. NPCs and vaults intentionally block their occupied cell and therefore use an adjacent interaction target; keep prompts, collision, BFS tests, and accessible instructions aligned with that representation. The clue is discovered through ordinary interaction and the vault never requires typed code entry.
 
-### Phaser Tilemap Gotchas (reduce debug cycles)
-- **Avoid `forEachTile` / `getTileAt` on layers from separate tilemaps.** Layers created via `make.tilemap({ data })` from different tilemap instances can have incompatible internal structure; Phaser may throw `undefined is not an object (evaluating 'layer.width')` when iterating.
-- **Prefer fog overlays over per-tile alpha.** Instead of modifying each tile's alpha for fog of war, draw a Graphics overlay with `fillRect` per tile. Uses raw coordinates, no tilemap API.
-- **Use raw map data when iterating.** For wall outlines, FOV lightPasses, etc., use `mapData.walls` (2D array from MapGenerator) rather than Phaser tilemap layers.
-- **Single tilemap, multiple layers** works reliably. Multiple `make.tilemap()` calls for ground/walls/decoration are convenient but brittle for tile iteration — use an overlay or raw map data when you need to touch tiles.
+`GameContainer` handles an interaction before emitting `interactive-consumed`; `ExploreScene` removes consumables only after that success event. This ordering prevents an object disappearing before its React dialogue/progression update succeeds.
 
-## Do NOT
-- Use Phaser 2 or Phaser CE APIs. This project uses Phaser 3 only.
-- Put game-critical information only on the canvas with no DOM equivalent.
-- Create deep class inheritance hierarchies for game entities.
-- Use `any` type unless absolutely unavoidable (and add a TODO comment).
-- Mutate game state directly—always go through store actions.
-- Add multiplayer networking code yet—that's a future phase.
+## Accessibility and presentation
+
+- Essential information may never exist only through canvas pixels, color, motion, or sound.
+- UI follows WCAG 2.2 AA contrast. The game world prioritizes strong floor/wall separation and high-contrast player/interactable silhouettes.
+- Retain the player highlight ring and full-brightness collectible markers through fog.
+- Wall edges use the shared light outline (`0xe8e4dc`, 4px) without per-tile grid borders.
+- ExploreScene depth order is ground 0, wall 1, decoration 2, wall outline 2.5, fog 4, interactives 5, player 10, prompt 100.
+- Iterate raw semantic/map arrays for outlines and fog; avoid cross-tilemap `forEachTile`/`getTileAt` calls.
+- The textual map reports current location, discovered rooms, approximate directions/distances, and known contents.
+- `system | reduce | full` motion settings apply to both CSS and Phaser; reduced-motion paths communicate the same state.
+- Audio remains locked on every page load until the launch-gate gesture. Footsteps follow successful movement and the destination cell's semantic surface; ambience pauses while hidden.
+
+## Content and assets
+
+- Edit only `public/content/`; a root `content/` tree is forbidden.
+- Preserve the stated Project Gutenberg edition wording and punctuation, strip Gutenberg boilerplate, and retain source/territory metadata.
+- Keep runtime media local and provenance-complete. Asset refresh recipes pin source hashes, transformations, licenses, and encoding toolchain requirements.
+- Runtime audio requires exactly one OGG and one MP3 per logical sound.
+- Keep the visible AI disclosure and model/voice/text-hash manifest for generated opening narration.
+
+## Verification
+
+- Add behavior tests at public seams and use deterministic seeds.
+- Generator fuzz coverage runs 250 seeds per theme and checks topology, connectivity, reachability, placement, references, retries, and fallback behavior.
+- Playwright derives paths independently with BFS, sends real keyboard input, and does not warp the player or use fixed sleeps.
+- `window.__STARSHIP_E2E__` is read-only and build-flagged; it must be absent from production.
+- Run `npm run check` and `npm run test:e2e` before showcase release. Visual baseline updates are intentional review actions, never incidental cleanup.
+
+## Do not
+
+- Use Phaser 2/3/CE APIs or reintroduce deleted starter scenes/entities.
+- Add another event bus, root content tree, remote runtime URL, or direct store mutation.
+- Put critical text or state only on the canvas.
+- Introduce paid assets, a backend, multiplayer, combat, mobile controls, or mid-expedition persistence in this refresh.
+- Move stable modules or shared types solely to satisfy folder aesthetics; make structural changes when they improve an actual boundary.

@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { getBookCatalogSync, type Book } from '@/data/books';
+import { getBookCatalogSync } from '@/data/books';
+import type { Book } from '@/types/books';
 import { speak, cancelSpeech } from '@/utils/speech';
 import { unlockInteractions } from '@/game/systems/Interaction';
 import { isNativeInteractiveTarget } from '@/utils/domEvents';

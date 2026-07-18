@@ -349,8 +349,7 @@ export default class ExploreScene extends Scene {
   }
 
   private placeTransporter(): void {
-    const container = this.addMarkedSprite(this.expedition.extraction, ASSET_KEYS.sprites.transporter, 0x5cb3ff);
-    container.setDepth(4);
+    this.addMarkedSprite(this.expedition.extraction, ASSET_KEYS.sprites.transporter, 0x5cb3ff);
     this.interactionSystem.register({
       id: `transporter-${this.expedition.seed}`,
       type: 'transporter',
@@ -518,7 +517,7 @@ export default class ExploreScene extends Scene {
   }
 
   private showLocationCard(): void {
-    EventBridge.emit('area-entered', { areaName: this.theme.title });
+    EventBridge.emit('location-card', { title: this.theme.title, kicker: this.theme.kicker });
     const { width, height } = this.cameras.main;
     const container = this.add.container(width / 2, height / 2 - 20).setDepth(500).setScrollFactor(0);
     const background = this.add.graphics();

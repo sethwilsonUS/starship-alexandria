@@ -299,6 +299,72 @@ describe('active ambience policy', () => {
       session: { ...state.session, audioUnlocked: originalAudioUnlocked },
     }));
   });
+
+  it('keeps the current loop active when its replacement cannot start', () => {
+    const originalSettings = useGameStore.getState().settings;
+    const originalAudioUnlocked = useGameStore.getState().session.audioUnlocked;
+    const { scene, sounds } = createAudioHarness({ soundCount: 2 });
+    sounds[1].play.mockReturnValue(false);
+    useGameStore.setState((state) => ({
+      settings: {
+        ...state.settings,
+        ambienceEnabled: true,
+        masterVolume: 0.8,
+      },
+      session: { ...state.session, audioUnlocked: true },
+    }));
+
+    startAmbience(scene, 'ambience-one');
+    startAmbience(scene, 'ambience-two');
+    startAmbience(scene, 'ambience-one');
+
+    expect(scene.sound.add).toHaveBeenCalledTimes(2);
+    expect(sounds[0].destroy).not.toHaveBeenCalled();
+    expect(sounds[0].setVolume).toHaveBeenLastCalledWith(0.144);
+
+    stopAmbience(scene);
+    useGameStore.setState((state) => ({
+      settings: originalSettings,
+      session: { ...state.session, audioUnlocked: originalAudioUnlocked },
+    }));
+  });
+
+  it('starts newly requested ambience when a hidden page becomes visible', () => {
+    const originalSettings = useGameStore.getState().settings;
+    const originalAudioUnlocked = useGameStore.getState().session.audioUnlocked;
+    const browserDocument = Object.assign(new EventTarget(), { hidden: false });
+    const { scene, sounds } = createAudioHarness({ soundCount: 2 });
+    vi.stubGlobal('document', browserDocument);
+    useGameStore.setState((state) => ({
+      settings: {
+        ...state.settings,
+        ambienceEnabled: true,
+        masterVolume: 0.7,
+      },
+      session: { ...state.session, audioUnlocked: true },
+    }));
+
+    startAmbience(scene, 'ambience-visible');
+    browserDocument.hidden = true;
+    browserDocument.dispatchEvent(new Event('visibilitychange'));
+    startAmbience(scene, 'ambience-hidden');
+    expect(scene.sound.add).toHaveBeenCalledTimes(1);
+
+    browserDocument.hidden = false;
+    browserDocument.dispatchEvent(new Event('visibilitychange'));
+    const addCallCount = vi.mocked(scene.sound.add).mock.calls.length;
+    const replacementPlayCallCount = sounds[1].play.mock.calls.length;
+
+    stopAmbience(scene);
+    vi.unstubAllGlobals();
+    useGameStore.setState((state) => ({
+      settings: originalSettings,
+      session: { ...state.session, audioUnlocked: originalAudioUnlocked },
+    }));
+
+    expect(addCallCount).toBe(2);
+    expect(replacementPlayCallCount).toBe(1);
+  });
 });
 
 describe('surface-aware footsteps', () => {

@@ -1,6 +1,9 @@
 {
   "schemaVersion": 1,
   "runtimePolicy": "All runtime assets are local. Network access is maintainer-only.",
+  "toolchain": {
+    "ffmpeg": "8.1"
+  },
   "tileSchema": {
     "sourceTileSize": 16,
     "runtimeTileSize": 32,

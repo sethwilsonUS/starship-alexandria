@@ -1,4 +1,11 @@
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'fs';
+import {
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'fs';
 import { tmpdir } from 'os';
 import path from 'path';
 import { spawnSync } from 'child_process';
@@ -324,6 +331,20 @@ books:
     const result = runValidator(root);
     expect(result.status).toBe(1);
     expect(result.stdout).toContain('contains Project Gutenberg boilerplate');
+  });
+
+  it('rejects excerpt symlinks that resolve outside public/content/texts', () => {
+    const root = createValidContentTree(validGameloop);
+    const outsideExcerpt = path.join(root, 'outside-excerpt.txt');
+    const excerptPath = path.join(root, 'public', 'content', 'texts', 'sample.txt');
+    writeFileSync(outsideExcerpt, 'text outside the canonical content tree');
+    rmSync(excerptPath);
+    symlinkSync(outsideExcerpt, excerptPath);
+
+    const result = runValidator(root);
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('textFile must stay inside content/texts');
   });
 
   it('rejects destination pools that do not contain exactly two NPCs', () => {

@@ -495,7 +495,9 @@ const createActions = (
     set((s) => ({ settings: { ...s.settings, ambienceEnabled: enabled } })),
 
   setMasterVolume: (volume: number) => {
-    const normalizedVolume = Math.min(1, Math.max(0, volume));
+    const normalizedVolume = Number.isFinite(volume)
+      ? Math.min(1, Math.max(0, volume))
+      : 0;
     setMasterVolumeGlobal(normalizedVolume);
     set((s) => ({
       settings: {

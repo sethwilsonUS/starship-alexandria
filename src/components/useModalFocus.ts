@@ -12,6 +12,24 @@ const FOCUSABLE = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
+type ModalTabTarget = 'dialog' | 'first' | 'last' | null;
+
+export function resolveModalTabTarget({
+  focusableCount,
+  activeIndex,
+  shiftKey,
+}: {
+  focusableCount: number;
+  activeIndex: number;
+  shiftKey: boolean;
+}): ModalTabTarget {
+  if (focusableCount === 0) return 'dialog';
+  if (activeIndex < 0) return shiftKey ? 'last' : 'first';
+  if (shiftKey && activeIndex === 0) return 'last';
+  if (!shiftKey && activeIndex === focusableCount - 1) return 'first';
+  return null;
+}
+
 /** Native-feeling focus entry, containment, Escape handling, and focus return. */
 export function useModalFocus(
   open: boolean,
@@ -29,6 +47,13 @@ export function useModalFocus(
     const frame = requestAnimationFrame(() => preferred.focus());
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if (event.repeat) {
+        // A repeated Tab still performs the browser's default focus movement;
+        // cancel it so a held key cannot walk out of the modal.
+        if (event.key === 'Tab') event.preventDefault();
+        return;
+      }
+
       if (event.key === 'Escape' && onEscape) {
         event.preventDefault();
         event.stopPropagation();
@@ -38,20 +63,17 @@ export function useModalFocus(
       if (event.key !== 'Tab') return;
 
       const items = focusables();
-      if (items.length === 0) {
-        event.preventDefault();
-        dialog.focus();
-        return;
-      }
-      const first = items[0];
-      const last = items[items.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
+      const target = resolveModalTabTarget({
+        focusableCount: items.length,
+        activeIndex: items.indexOf(document.activeElement as HTMLElement),
+        shiftKey: event.shiftKey,
+      });
+      if (!target) return;
+
+      event.preventDefault();
+      if (target === 'dialog') dialog.focus();
+      if (target === 'first') items[0].focus();
+      if (target === 'last') items[items.length - 1].focus();
     };
 
     document.addEventListener('keydown', onKeyDown, true);

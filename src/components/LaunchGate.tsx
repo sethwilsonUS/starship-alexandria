@@ -52,34 +52,37 @@ export default function LaunchGate() {
 
         <details className="launch-gate__preferences" open={!returning}>
           <summary>{returning ? 'Review audio and motion settings' : 'Audio and motion settings'}</summary>
-          <div className="launch-gate__settings" aria-label="Audio settings">
-            <label className="launch-toggle">
-              <input
-                type="checkbox"
-                checked={settings.narrationEnabled}
-                onChange={(event) => actions.setNarrationEnabled(event.target.checked)}
-              />
-              <span><strong>Narration</strong><small>Read dialogue and discoveries aloud</small></span>
-            </label>
-            <label className="launch-toggle">
-              <input
-                type="checkbox"
-                checked={settings.sfxEnabled}
-                onChange={(event) => actions.setSfxEnabled(event.target.checked)}
-              />
-              <span><strong>Sound effects</strong><small>Footsteps, relics, and transporter cues</small></span>
-            </label>
-            <label className="launch-toggle">
-              <input
-                type="checkbox"
-                checked={settings.ambienceEnabled}
-                onChange={(event) => actions.setAmbienceEnabled(event.target.checked)}
-              />
-              <span><strong>Ambience</strong><small>Quiet environmental sound beds</small></span>
-            </label>
-          </div>
+          <fieldset className="launch-gate__preference-group launch-gate__preference-group--audio">
+            <legend>Audio</legend>
+            <div className="launch-gate__settings">
+              <label className="launch-toggle">
+                <input
+                  type="checkbox"
+                  checked={settings.narrationEnabled}
+                  onChange={(event) => actions.setNarrationEnabled(event.target.checked)}
+                />
+                <span><strong>Narration</strong><small>Read dialogue and discoveries aloud</small></span>
+              </label>
+              <label className="launch-toggle">
+                <input
+                  type="checkbox"
+                  checked={settings.sfxEnabled}
+                  onChange={(event) => actions.setSfxEnabled(event.target.checked)}
+                />
+                <span><strong>Sound effects</strong><small>Footsteps, relics, and transporter cues</small></span>
+              </label>
+              <label className="launch-toggle">
+                <input
+                  type="checkbox"
+                  checked={settings.ambienceEnabled}
+                  onChange={(event) => actions.setAmbienceEnabled(event.target.checked)}
+                />
+                <span><strong>Ambience</strong><small>Quiet environmental sound beds</small></span>
+              </label>
+            </div>
+          </fieldset>
 
-          <fieldset className="launch-gate__motion">
+          <fieldset className="launch-gate__preference-group">
             <legend>Motion</legend>
             {(['system', 'reduce', 'full'] as const).map((preference) => (
               <label key={preference}>

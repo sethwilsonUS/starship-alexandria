@@ -137,6 +137,10 @@ function populateExpedition(options: {
   const contentIdRandom = new SeededRandom(`${attemptSeed}|content:ids`);
   const decorPropRandom = new SeededRandom(`${attemptSeed}|decor:props`);
   const reserved = new Set<string>([pointKey(layout.spawn)]);
+  const protectedInteractivePositions = new Set<string>([
+    pointKey(layout.spawn),
+    pointKey(layout.extraction),
+  ]);
 
   const preferredVaultZone =
     layout.zones.find((zone) => zone.name === theme.vault.preferredZoneName) ??
@@ -208,9 +212,18 @@ function populateExpedition(options: {
   const npcZones = npcRandom.shuffle(
     layout.zones.filter((zone) => zone.id !== vaultSlot.zoneId && zone.id !== clueSlot.zoneId)
   );
+  const npcZoneIds = new Set<string>();
   for (let index = 0; index < npcIds.length; index += 1) {
-    const slot = takeSlot(layout, rotate(npcZones, index), npcRandom, reserved, true);
+    const slot = takeProtectedSlot(
+      layout,
+      rotate(npcZones, index),
+      npcRandom,
+      reserved,
+      protectedInteractivePositions,
+      true
+    );
     if (!slot) return null;
+    npcZoneIds.add(slot.zoneId);
     entities.push({
       id: `npc-${index}`,
       kind: 'npc',
@@ -224,9 +237,10 @@ function populateExpedition(options: {
   const fragmentTargetCount = 2 + contentPositionRandom.int(0, 2);
   const fragmentSlots = takeSlotsAcrossZones(
     layout,
-    contentPositionRandom.shuffle(layout.zones),
+    contentPositionRandom.shuffle(layout.zones.filter((zone) => !npcZoneIds.has(zone.id))),
     contentPositionRandom,
     reserved,
+    protectedInteractivePositions,
     fragmentTargetCount
   );
   const fragmentPool = orderFragmentPool(
@@ -250,12 +264,21 @@ function populateExpedition(options: {
   }
   // Slots with no content should remain available for batteries/maps rather than becoming ghost pickups.
   for (let index = fragmentsToPlace.length; index < fragmentSlots.length; index += 1) {
-    reserved.delete(pointKey(fragmentSlots[index].position));
+    const key = pointKey(fragmentSlots[index].position);
+    reserved.delete(key);
+    protectedInteractivePositions.delete(key);
   }
 
   const journalIds = contentIdRandom.shuffle(catalog.journalIds).slice(0, 1);
   for (let index = 0; index < journalIds.length; index += 1) {
-    const slot = takeSlot(layout, contentPositionRandom.shuffle(layout.zones), contentPositionRandom, reserved, false);
+    const slot = takeProtectedSlot(
+      layout,
+      contentPositionRandom.shuffle(layout.zones),
+      contentPositionRandom,
+      reserved,
+      protectedInteractivePositions,
+      false
+    );
     if (!slot) return null;
     entities.push({
       id: `journal-${index}`,
@@ -269,7 +292,14 @@ function populateExpedition(options: {
 
   const batteryCount = 1 + contentPositionRandom.int(0, 1);
   for (let index = 0; index < batteryCount; index += 1) {
-    const slot = takeSlot(layout, contentPositionRandom.shuffle(layout.zones), contentPositionRandom, reserved, false);
+    const slot = takeProtectedSlot(
+      layout,
+      contentPositionRandom.shuffle(layout.zones),
+      contentPositionRandom,
+      reserved,
+      protectedInteractivePositions,
+      false
+    );
     if (!slot) return null;
     entities.push({
       id: `battery-${index}`,
@@ -349,15 +379,43 @@ function takeSlotsAcrossZones(
   zones: readonly Zone[],
   random: SeededRandom,
   reserved: Set<string>,
+  protectedInteractivePositions: Set<string>,
   count: number
 ): PositionedSlot[] {
   const slots: PositionedSlot[] = [];
   for (let index = 0; index < count; index += 1) {
-    const slot = takeSlot(layout, rotate(zones, index), random, reserved, false);
+    const slot = takeProtectedSlot(
+      layout,
+      rotate(zones, index),
+      random,
+      reserved,
+      protectedInteractivePositions,
+      false
+    );
     if (!slot) break;
     slots.push(slot);
   }
   return slots;
+}
+
+function takeProtectedSlot(
+  layout: LayoutCandidate,
+  zones: readonly Zone[],
+  random: SeededRandom,
+  reserved: Set<string>,
+  protectedInteractivePositions: Set<string>,
+  blocksMovement: boolean
+): PositionedSlot | null {
+  const slot = takeSlot(
+    layout,
+    zones,
+    random,
+    reserved,
+    blocksMovement,
+    protectedInteractivePositions
+  );
+  if (slot) protectedInteractivePositions.add(pointKey(slot.position));
+  return slot;
 }
 
 function takeSlot(
@@ -365,7 +423,8 @@ function takeSlot(
   zones: readonly Zone[],
   random: SeededRandom,
   reserved: Set<string>,
-  blocksMovement: boolean
+  blocksMovement: boolean,
+  avoidAdjacentTo?: ReadonlySet<string>
 ): PositionedSlot | null {
   const seenZones = new Set<string>();
   for (const zone of zones) {
@@ -378,6 +437,12 @@ function takeSlot(
         const point = { x, y };
         if (!cell?.walkable || cell.zoneId !== zone.id || reserved.has(pointKey(point))) continue;
         if (manhattan(point, layout.spawn) < 3) continue;
+        if (
+          avoidAdjacentTo &&
+          cardinalNeighbors(point).some((neighbor) => avoidAdjacentTo.has(pointKey(neighbor)))
+        ) {
+          continue;
+        }
         if (blocksMovement && walkableNeighborCount(layout.cells, point) < 3) continue;
         candidates.push(point);
       }
@@ -467,11 +532,31 @@ function isValidExpedition(
   const occupied = new Set<string>([pointKey(expedition.spawn)]);
   const ids = new Set<string>();
   const collected = new Set(collectedFragmentIds);
+  const protectedInteractivePositions = new Set<string>([
+    pointKey(expedition.spawn),
+    pointKey(expedition.extraction),
+  ]);
+  const npcZoneIds = new Set(
+    expedition.entities
+      .filter((entity) => entity.kind === 'npc')
+      .map((entity) => entity.zoneId)
+  );
   for (const entity of expedition.entities) {
     const key = pointKey(entity.position);
     if (ids.has(entity.id) || occupied.has(key)) return false;
     if (!expedition.cells[entity.position.y]?.[entity.position.x]?.walkable) return false;
     if (entity.kind === 'fragment' && collected.has(entity.fragmentId)) return false;
+    if (entity.kind === 'fragment' && npcZoneIds.has(entity.zoneId)) return false;
+    if (isProtectedInteractive(entity)) {
+      if (
+        cardinalNeighbors(entity.position).some((neighbor) =>
+          protectedInteractivePositions.has(pointKey(neighbor))
+        )
+      ) {
+        return false;
+      }
+      protectedInteractivePositions.add(key);
+    }
     ids.add(entity.id);
     occupied.add(key);
   }
@@ -522,6 +607,15 @@ function isValidExpedition(
     if (!reachable) return false;
   }
   return true;
+}
+
+function isProtectedInteractive(entity: PlacedEntity): boolean {
+  return (
+    entity.kind === 'fragment' ||
+    entity.kind === 'npc' ||
+    entity.kind === 'journal' ||
+    entity.kind === 'battery'
+  );
 }
 
 function computeReachable(

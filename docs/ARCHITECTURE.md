@@ -133,7 +133,7 @@ The Zustand persistence key is `starship-alexandria-save`; schema version 5 stor
 
 - player identity, flashlight charge, and spare-battery count;
 - collected fragment IDs;
-- visited maps, discovered NPCs, read non-vault journals, total fragments found, and collected artifacts;
+- visited maps, discovered NPCs, read non-vault journals, and collected artifacts;
 - whether the narrative welcome has been seen;
 - narration, SFX, ambience, master-volume, and motion preferences;
 - the previously selected destination.
