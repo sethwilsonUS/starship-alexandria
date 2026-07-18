@@ -399,7 +399,9 @@ const createActions = (
 
   resetGame: () => {
     // Clear localStorage and reset all state
-    localStorage.removeItem(STORAGE_KEY);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEY);
+    }
     set(() => ({
       player: createInitialPlayer(),
       library: [],

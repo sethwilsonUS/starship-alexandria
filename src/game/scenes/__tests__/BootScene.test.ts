@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('phaser', () => ({
   Scene: class {
@@ -9,6 +9,12 @@ vi.mock('phaser', () => ({
 import { ASSET_KEYS } from '@/game/assets/assetManifest';
 import { useGameStore } from '@/store/gameStore';
 import BootScene from '../BootScene';
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+  useGameStore.getState().actions.resetGame();
+});
 
 type LoaderCallback = (value?: { key: string; src?: string }) => void;
 
@@ -55,54 +61,37 @@ function createBootHarness(
 
 describe('BootScene loading lifecycle', () => {
   it('continues to content loading when a failed image has a generated fallback', async () => {
-    const originalSession = useGameStore.getState().session;
     const fetchMock = vi.fn().mockRejectedValue(new Error('content unavailable'));
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
     vi.stubGlobal('fetch', fetchMock);
     const { bootScene } = createBootHarness(ASSET_KEYS.tilesets.cathedral);
 
     await bootScene.create();
-    const fetchCallCount = fetchMock.mock.calls.length;
 
-    vi.unstubAllGlobals();
-    consoleError.mockRestore();
-    useGameStore.setState({ session: originalSession });
-
-    expect(fetchCallCount).toBeGreaterThan(0);
+    expect(fetchMock).toHaveBeenCalled();
   });
 
   it('keeps content loading blocked when a failed asset has no fallback', async () => {
-    const originalSession = useGameStore.getState().session;
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
     const failedAudioKey = ASSET_KEYS.audio.ambience.ship;
     const { bootScene } = createBootHarness(failedAudioKey, 'audio');
 
     await bootScene.create();
-    const fetchCallCount = fetchMock.mock.calls.length;
 
-    vi.unstubAllGlobals();
-    useGameStore.setState({ session: originalSession });
-
-    expect(fetchCallCount).toBe(0);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('does not start a playable scene when content loading fails', async () => {
-    const originalSession = useGameStore.getState().session;
     const fetchMock = vi.fn().mockRejectedValue(new Error('content unavailable'));
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const sceneStart = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
     const bootScene = new BootScene();
     Object.assign(bootScene, { scene: { manager: {}, start: sceneStart } });
 
     await bootScene.create();
-    const startCallCount = sceneStart.mock.calls.length;
 
-    vi.unstubAllGlobals();
-    consoleError.mockRestore();
-    useGameStore.setState({ session: originalSession });
-
-    expect(startCallCount).toBe(0);
+    expect(sceneStart).not.toHaveBeenCalled();
   });
 });

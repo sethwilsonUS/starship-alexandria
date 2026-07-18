@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   assertFfmpegVersion,
+  PINNED_FFMPEG_VERSION,
   validateAudioFormatGroups,
 } from '../../../../scripts/lib/asset-validation.mjs';
 
@@ -38,12 +39,16 @@ describe('asset manifest audio format validation', () => {
 });
 
 describe('asset refresh toolchain validation', () => {
-  it('accepts only the exact pinned ffmpeg release', () => {
-    expect(() => assertFfmpegVersion('ffmpeg version 8.1 Copyright', '8.1')).not.toThrow();
-    expect(() => assertFfmpegVersion('ffmpeg version 8.1.1 Copyright', '8.1')).toThrow(
-      'Asset refresh requires ffmpeg 8.1; received 8.1.1',
+  it('uses the production pin and accepts only that exact ffmpeg release', () => {
+    expect(() => assertFfmpegVersion(
+      `ffmpeg version ${PINNED_FFMPEG_VERSION} Copyright`,
+    )).not.toThrow();
+    expect(() => assertFfmpegVersion(
+      `ffmpeg version ${PINNED_FFMPEG_VERSION}.1 Copyright`,
+    )).toThrow(
+      `Asset refresh requires ffmpeg ${PINNED_FFMPEG_VERSION}; received ${PINNED_FFMPEG_VERSION}.1`,
     );
-    expect(() => assertFfmpegVersion('unexpected banner', '8.1')).toThrow(
+    expect(() => assertFfmpegVersion('unexpected banner')).toThrow(
       'Unable to determine ffmpeg version',
     );
   });
