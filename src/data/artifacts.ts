@@ -2,7 +2,7 @@
  * Artifacts: Optional collectibles found in vaults.
  * Personal treasures that tell stories of the people who lived before.
  * 
- * Content is loaded from content/artifacts.yaml
+ * Content is loaded from the canonical public/content/artifacts.yaml.
  */
 
 import { getArtifactCacheSync } from '@/utils/contentLoaderSync';

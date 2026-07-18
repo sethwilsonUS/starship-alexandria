@@ -1,4 +1,4 @@
-# Game loop dialogue: welcome, victory, vault interactions, etc.
+# Ship-level game loop dialogue. Destination vault copy lives in vaults.yaml.
 
 welcome:
   lines:
@@ -18,24 +18,3 @@ victory:
     - text: "The Alexandria's archives are complete. Future generations will read these words and know that we endured."
     - text: "Thank you, Librarian. Your mission is complete."
     - text: "You may continue to explore your collection. When you're ready, start a New Game to begin again."
-
-vault:
-  alreadyOpened:
-    - text: "The vault stands open. Whatever secrets it held have already been claimed."
-  
-  # These templates use placeholders: {code} for the formatted code, {artifactName} and {artifactDescription} for artifact details
-  openWithArtifact:
-    - text: "You recall the code from the note you found. Your fingers find the dial: {code}."
-    - text: "The lock clicks open with a satisfying thunk."
-    - text: "Inside, nestled in faded velvet, you find something unexpected: {artifactName}."
-    - text: "{artifactDescription}"
-    - text: "You pocket it carefully. Some things are worth saving."
-  
-  openEmpty:
-    - text: "You recall the code from the note you found. Your fingers find the dial: {code}."
-    - text: "The lock clicks open with a satisfying thunk."
-    - text: "The vault is empty. Someone else got here first."
-  
-  locked:
-    - text: "A sturdy vault, sealed tight. A mechanical dial shows four digits."
-    - text: "You try the handle, but it won't budge. Someone around here might know the combination..."

@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { EventBridge } from '@/game/EventBridge';
-import { getBookCatalogSync, type Book } from '@/data/books';
-import type { BookFragment } from '@/types/books';
+import { getBookCatalogSync, toBookFragment, type Book } from '@/data/books';
 
 /**
  * Debug panel for development/testing.
@@ -23,7 +22,7 @@ export default function DebugPanel() {
   const exploration = useGameStore((s) => s.exploration);
   const hasAreaMap = useGameStore((s) => s.session.hasAreaMap);
   const gamePhase = useGameStore((s) => s.session.gamePhase);
-  const ttsEnabled = useGameStore((s) => s.settings.ttsEnabled);
+  const ttsEnabled = useGameStore((s) => s.settings.narrationEnabled);
 
   if (!isVisible) return null;
 
@@ -56,14 +55,7 @@ export default function DebugPanel() {
       catalog.forEach((book: Book) => {
         book.fragments.forEach((fragDef) => {
           if (!collectedIds.has(fragDef.id)) {
-            const fragment: BookFragment = {
-              id: fragDef.id,
-              bookId: book.id,
-              label: fragDef.label,
-              order: fragDef.order,
-              text: fragDef.text || `[Text for ${fragDef.label}]`,
-            };
-            collectFragment(fragment);
+            collectFragment(toBookFragment(fragDef));
           }
         });
       });
@@ -96,9 +88,6 @@ export default function DebugPanel() {
       <h3 style={{ margin: '0 0 0.5rem', color: '#ff6b6b' }}>Debug Panel</h3>
       <p style={{ margin: '0.25rem 0', color: '#aaa' }}>
         Library: {library.length} fragments
-      </p>
-      <p style={{ margin: '0.25rem 0', color: '#aaa' }}>
-        Total found: {exploration.totalFragmentsFound}
       </p>
       <p style={{ margin: '0.25rem 0', color: '#aaa' }}>
         NPCs met: {exploration.discoveredNPCs.length}

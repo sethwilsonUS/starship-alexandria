@@ -1,22 +1,62 @@
 journals:
   - id: journal-diary-1
-    title: Water-damaged diary page
+    title: Water-damaged librarian’s diary
+    themeIds: [scriptorium]
     lines:
-      - text: "March 14. The power's been out for three days. We're moving the rare books to the basement. Martha says it's temporary. I hope she's right."
-      - text: "March 15. The evacuation order came. We can't take them all. I took a copy of Donne. Small. Fits in my pocket. It feels like a crime to choose."
-
-  - id: journal-diary-2
-    title: Faded note
-    lines:
-      - text: "If anyone finds this: the rotunda vault code was 7-3-9-1. The director's birthday. They sealed it before they left. There's nothing down there worth dying for, they said. I think they were wrong."
+      - text: "March 14. The power has been out for three days. We’re moving the rare books to the basement. Martha says it’s temporary. I hope she’s right."
+      - text: "March 15. The evacuation order came. We can’t take them all. I chose a little Donne that fits in my pocket. It feels like a crime to choose."
 
   - id: journal-memo
-    title: Library memo
+    title: Scriptorium extraction memo
+    themeIds: [scriptorium]
     lines:
-      - text: "STAFF MEMO: All personnel. The Alexandria extraction is scheduled for dawn. Priority items: Gutenberg Bibles, first folios, illuminated manuscripts. Personal effects will not be accommodated. Report to the north entrance."
-      - text: "They took 400 volumes. They left 400,000. We did what we could."
+      - text: "STAFF MEMO: Alexandria extraction is scheduled for dawn. Priority items: early printed Bibles, first folios, illuminated manuscripts. Report to the north entrance."
+      - text: "They took four hundred volumes. They left four hundred thousand. We did what we could."
 
   - id: journal-child
-    title: Child's drawing
+    title: Child’s drawing
+    themeIds: [scriptorium]
     lines:
-      - text: "A crude drawing of a tall ship in the sky. Written underneath in messy script: 'The library ship is coming back. Dad said. I drew it so I remember.'"
+      - text: "A tall silver ship floats above a crooked building. Beneath it, in uneven letters: “THE LIBRARY SHIP IS COMING BACK. DAD SAID. I DREW IT SO I REMEMBER.”"
+
+  - id: journal-cathedral-hymnal
+    title: Choir rehearsal slip
+    themeIds: [cathedral]
+    lines:
+      - text: "Processional rehearsal moved to the north transept. The nave leaks in B-flat and the organ has developed opinions."
+      - text: "Imani: preserve the pencilled hymnal. The marginal names belong to people, not merely to the memorial."
+
+  - id: journal-cathedral-memorial
+    title: Conservator’s memorial survey
+    themeIds: [cathedral]
+    lines:
+      - text: "West wall stable. Rose window failing. Names in bays three through seven photographed before evacuation."
+      - text: "Stone forgets more slowly than paper, but it forgets. Copy every inscription while there is still light."
+
+  - id: journal-university-memo
+    title: Registrar’s closure memorandum
+    themeIds: [university]
+    lines:
+      - text: "All departments are closed indefinitely. Faculty must surrender laboratory keys; students should take only what they can carry."
+      - text: "Special Collections remains under manual seal. The phrase “indefinitely” is not to be interpreted as “forever.”"
+
+  - id: journal-university-notes
+    title: Lecture notes on forbidden knowledge
+    themeIds: [university]
+    lines:
+      - text: "Week eight: discovery does not excuse the discoverer from consequence. Add Shelley, Douglass, and Wollstonecraft to the reading list."
+      - text: "Final question for discussion: who is allowed to learn, who is prevented, and who benefits from calling the distinction natural?"
+
+  - id: journal-garden-log
+    title: Greenhouse field log
+    themeIds: [gardens]
+    lines:
+      - text: "Ventilation failed at 03:20. Opened the eastern glasshouse by hand. The night-blooming cereus flowered anyway."
+      - text: "If the archive team returns, tell them the field notebooks are dry inside the pavilion wall."
+
+  - id: journal-garden-specimens
+    title: Specimen keeper’s notebook
+    themeIds: [gardens]
+    lines:
+      - text: "Seeds are not tiny promises. Promises expect fulfillment; seeds wait without demanding it."
+      - text: "Packet 41: milkweed. Packet 88: amaranth. Packet 103: lavender from the old reading court. Plant when there is somewhere safe to bloom."

@@ -1,36 +1,4 @@
-/**
- * Zustand game store — Convex-shaped schema
- *
- * PLANNED CONVEX SCHEMA (for reference when migrating):
- * ─────────────────────────────────────────────────────────────
- * tables: {
- *   players: defineTable({
- *     id: v.id("players"),
- *     name: v.string(),
- *     position: v.object({ x: v.number(), y: v.number() }),
- *     currentMapId: v.string(),
- *     flashlightBattery: v.number(),
- *   }),
- *   library: defineTable({
- *     id: v.id("library"),
- *     bookId: v.string(),
- *     label: v.string(),
- *     order: v.number(),
- *     text: v.string(),
- *     playerId: v.id("players"),
- *   }),
- *   exploration: defineTable({
- *     playerId: v.id("players"),
- *     visitedMaps: v.array(v.string()),
- *     discoveredNPCs: v.array(v.string()),
- *     readJournals: v.array(v.string()),
- *     totalFragmentsFound: v.number(),
- *   }),
- * }
- * Actions become Convex mutations; use useQuery for player, library, exploration.
- * Session state stays client-only.
- * ─────────────────────────────────────────────────────────────
- */
+/** Runtime game state plus the deliberately small, versioned local save. */
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
@@ -43,11 +11,25 @@ import type {
   ExplorationState,
   DialogueLine,
   SettingsState,
+  SessionVaultInfo,
 } from '@/types/store';
 import type { BookFragment } from '@/types/books';
 import type { Position } from '@/types/game';
 import type { MapRoom } from '@/types/store';
-import { setTTSEnabledGlobal } from '@/utils/speech';
+import {
+  setAudioUnlockedGlobal,
+  setMasterVolumeGlobal,
+  setSfxEnabledGlobal,
+  setTTSEnabledGlobal,
+} from '@/utils/speech';
+import { getBookCatalogSync } from '@/data/books';
+import {
+  DEFAULT_SAVED_SETTINGS,
+  migratePersistedSave,
+  resolveSavedFragments,
+  type MotionPreference,
+  type SavedThemeId,
+} from './saveMigration';
 
 const STORAGE_KEY = 'starship-alexandria-save';
 
@@ -64,12 +46,11 @@ const initialExploration: ExplorationState = {
   visitedMaps: [],
   discoveredNPCs: [],
   readJournals: [],
-  totalFragmentsFound: 0,
   collectedArtifacts: [],
 };
 
 const initialSettings: SettingsState = {
-  ttsEnabled: true, // On by default for accessibility
+  ...DEFAULT_SAVED_SETTINGS,
 };
 
 const createInitialSession = () => ({
@@ -91,9 +72,16 @@ const createInitialSession = () => ({
   mapRooms: [] as MapRoom[],
   mapWalls: [] as number[][],
   mapSpawn: { x: 0, y: 0 },
+  currentZoneId: null as string | null,
   visitedRooms: [] as string[],
-  vaultInfo: null as { roomName: string; code: string; artifactId: string | null } | null,
+  vaultInfo: null as SessionVaultInfo | null,
   vaultOpened: false,
+  activeThemeId: null as SavedThemeId | null,
+  activeExpeditionId: null as string | null,
+  discoveredClueIds: [] as string[],
+  launchGateOpen: true,
+  audioUnlocked: false,
+  contentError: null as string | null,
 });
 
 type GameStore = GameState;
@@ -167,10 +155,7 @@ const createActions = (
       }
       return {
         library: [...s.library, fragment],
-        exploration: {
-          ...s.exploration,
-          totalFragmentsFound: s.exploration.totalFragmentsFound + 1,
-        },
+        savedFragmentIds: [...new Set([...s.savedFragmentIds, fragment.id])],
         session: {
           ...s.session,
           currentDialogue: null,
@@ -290,14 +275,19 @@ const createActions = (
         mapRooms: [],
         mapWalls: [],
         mapSpawn: { x: 0, y: 0 },
+        currentZoneId: null,
         visitedRooms: [],
         vaultInfo: null,
         vaultOpened: false,
+        activeThemeId: null,
+        activeExpeditionId: null,
+        discoveredClueIds: [],
       },
     })),
 
-  beamToSurface: (mapId: string) =>
+  beamToSurface: (mapId: string, themeId?: SavedThemeId) =>
     set((s) => ({
+      previousThemeId: themeId ?? s.previousThemeId,
       player: {
         ...s.player,
         currentMapId: mapId,
@@ -314,17 +304,19 @@ const createActions = (
         mapRooms: [],
         mapWalls: [],
         mapSpawn: { x: 0, y: 0 },
+        currentZoneId: null,
         visitedRooms: [],
         vaultInfo: null,
         vaultOpened: false,
+        activeThemeId: themeId ?? s.session.activeThemeId,
+        activeExpeditionId: mapId,
+        discoveredClueIds: [],
       },
     })),
 
   saveToLocalStorage: () => {
-    // Persist middleware auto-saves on every setState. This action exists for:
-    // 1) Explicit API / "save checkpoint" semantics (e.g. after beam-up)
-    // 2) Future Convex: replace with sync mutation call
-    // No-op for localStorage—persist handles it. Replace with Convex sync when ready.
+    // Persist already saves every mutation. This named checkpoint keeps scene
+    // transitions explicit without serializing the active expedition.
   },
 
   addExploredTiles: (coords: string[]) =>
@@ -388,9 +380,22 @@ const createActions = (
     })),
 
   setContentReady: () =>
-    set((s) => ({
-      session: { ...s.session, contentReady: true },
-    })),
+    set((s) => {
+      let library = s.library;
+      let savedFragmentIds = s.savedFragmentIds;
+      try {
+        const fragments = getBookCatalogSync().flatMap((book) => book.fragments);
+        library = resolveSavedFragments(savedFragmentIds, fragments);
+        savedFragmentIds = library.map((fragment) => fragment.id);
+      } catch {
+        // BootScene owns the visible load failure/retry state. Keep IDs intact.
+      }
+      return {
+        library,
+        savedFragmentIds,
+        session: { ...s.session, contentReady: true, contentError: null },
+      };
+    }),
 
   resetGame: () => {
     // Clear localStorage and reset all state
@@ -398,16 +403,17 @@ const createActions = (
     set(() => ({
       player: createInitialPlayer(),
       library: [],
+      savedFragmentIds: [],
       exploration: initialExploration,
       hasSeenWelcome: false,
+      previousThemeId: null,
       settings: initialSettings,
       session: createInitialSession(),
     }));
   },
 
   loadFromLocalStorage: () => {
-    // Persist middleware auto-hydrates on app init. This allows explicit reload
-    // (e.g. "Continue" / "Load Game" button). Future Convex: trigger refetch.
+    // Persist auto-hydrates on app init; this action allows an explicit retry.
     useGameStore.persist?.rehydrate();
   },
 
@@ -419,6 +425,11 @@ const createActions = (
         mapWalls: walls,
         mapSpawn: spawn,
       },
+    })),
+
+  setCurrentZone: (zoneId: string | null) =>
+    set((s) => ({
+      session: { ...s.session, currentZoneId: zoneId },
     })),
 
   collectMap: () =>
@@ -437,9 +448,13 @@ const createActions = (
         mapRooms: [],
         mapWalls: [],
         mapSpawn: { x: 0, y: 0 },
+        currentZoneId: null,
         visitedRooms: [],
         vaultInfo: null,
         vaultOpened: false,
+        activeThemeId: null,
+        activeExpeditionId: null,
+        discoveredClueIds: [],
       },
     })),
 
@@ -459,12 +474,86 @@ const createActions = (
       },
     })),
 
-  setTTSEnabled: (enabled: boolean) => {
+  setNarrationEnabled: (enabled: boolean) => {
     setTTSEnabledGlobal(enabled); // Sync with global state for speech module
     set((s) => ({
-      settings: { ...s.settings, ttsEnabled: enabled },
+      settings: { ...s.settings, narrationEnabled: enabled },
     }));
   },
+
+  setTTSEnabled: (enabled: boolean) => {
+    setTTSEnabledGlobal(enabled);
+    set((s) => ({ settings: { ...s.settings, narrationEnabled: enabled } }));
+  },
+
+  setSfxEnabled: (enabled: boolean) => {
+    setSfxEnabledGlobal(enabled);
+    set((s) => ({ settings: { ...s.settings, sfxEnabled: enabled } }));
+  },
+
+  setAmbienceEnabled: (enabled: boolean) =>
+    set((s) => ({ settings: { ...s.settings, ambienceEnabled: enabled } })),
+
+  setMasterVolume: (volume: number) => {
+    const normalizedVolume = Math.min(1, Math.max(0, volume));
+    setMasterVolumeGlobal(normalizedVolume);
+    set((s) => ({
+      settings: {
+        ...s.settings,
+        masterVolume: normalizedVolume,
+      },
+    }));
+  },
+
+  setMotionPreference: (preference: MotionPreference) =>
+    set((s) => ({ settings: { ...s.settings, motionPreference: preference } })),
+
+  acceptLaunchGate: () => {
+    setAudioUnlockedGlobal(true);
+    set((s) => ({
+      session: { ...s.session, launchGateOpen: false, audioUnlocked: true },
+    }));
+  },
+
+  reopenLaunchGate: () => {
+    setAudioUnlockedGlobal(false);
+    set((s) => ({
+      session: { ...s.session, launchGateOpen: true, audioUnlocked: false },
+    }));
+  },
+
+  setContentError: (message: string | null) =>
+    set((s) => ({
+      session: {
+        ...s.session,
+        contentReady: message ? false : s.session.contentReady,
+        contentError: message,
+      },
+    })),
+
+  openMissionPicker: () =>
+    set((s) => ({ session: { ...s.session, gamePhase: 'mission-select' } })),
+
+  closeMissionPicker: () =>
+    set((s) => ({ session: { ...s.session, gamePhase: 'ship' } })),
+
+  selectExpeditionTheme: (themeId: SavedThemeId) =>
+    set((s) => ({
+      session: { ...s.session, activeThemeId: themeId, gamePhase: 'ship' },
+    })),
+
+  discoverVaultClue: (clueId: string) =>
+    set((s) => ({
+      session: {
+        ...s.session,
+        discoveredClueIds: s.session.discoveredClueIds.includes(clueId)
+          ? s.session.discoveredClueIds
+          : [...s.session.discoveredClueIds, clueId],
+      },
+    })),
+
+  hasDiscoveredVaultClue: (clueId: string) =>
+    get().session.discoveredClueIds.includes(clueId),
 
   visitRoom: (roomName: string) =>
     set((s) => ({
@@ -476,7 +565,7 @@ const createActions = (
       },
     })),
 
-  setVaultInfo: (info: { roomName: string; code: string; artifactId: string | null } | null) =>
+  setVaultInfo: (info: SessionVaultInfo | null) =>
     set((s) => ({
       session: {
         ...s.session,
@@ -508,8 +597,10 @@ export const useGameStore = create<GameStore>()(
     (set, get) => ({
       player: createInitialPlayer(),
       library: [],
+      savedFragmentIds: [],
       exploration: initialExploration,
       hasSeenWelcome: false,
+      previousThemeId: null,
       settings: initialSettings,
       session: createInitialSession(),
       actions: createActions(set as (fn: (s: GameStore) => Partial<GameStore>) => void, get),
@@ -518,39 +609,52 @@ export const useGameStore = create<GameStore>()(
       name: STORAGE_KEY,
       storage: createJSONStorage(() => localStorage),
       partialize: (state): PersistedState => ({
-        player: state.player,
-        library: state.library,
+        schemaVersion: 5,
+        player: {
+          id: state.player.id,
+          name: state.player.name,
+          flashlightBattery: state.player.flashlightBattery,
+          spareBatteries: state.player.spareBatteries,
+        },
+        collectedFragmentIds: state.savedFragmentIds,
         exploration: state.exploration,
         hasSeenWelcome: state.hasSeenWelcome,
         settings: state.settings,
+        previousThemeId: state.previousThemeId,
       }),
-      version: 4,
+      version: 5,
       onRehydrateStorage: () => (state) => {
-        // Sync TTS global state when store rehydrates from localStorage
-        if (state?.settings?.ttsEnabled !== undefined) {
-          setTTSEnabledGlobal(state.settings.ttsEnabled);
+        if (state?.settings?.narrationEnabled !== undefined) {
+          setTTSEnabledGlobal(state.settings.narrationEnabled);
         }
+        if (state?.settings?.sfxEnabled !== undefined) {
+          setSfxEnabledGlobal(state.settings.sfxEnabled);
+        }
+        if (state?.settings?.masterVolume !== undefined) {
+          setMasterVolumeGlobal(state.settings.masterVolume);
+        }
+        // A persisted save never counts as a fresh browser audio gesture.
+        setAudioUnlockedGlobal(false);
       },
-      migrate: (persisted: unknown, version: number) => {
-        const s = persisted as PersistedState;
-        // v3 → v4: add settings
-        if (version < 4) {
-          if (s && !s.settings) {
-            s.settings = initialSettings;
-          }
-        }
-        // v2 → v3: add hasSeenWelcome
-        if (version < 3) {
-          if (s && typeof s.hasSeenWelcome !== 'boolean') {
-            // Existing saves have seen welcome (they've played before)
-            s.hasSeenWelcome = true;
-          }
-        }
-        // v1 → v2: add spareBatteries
-        if (s?.player && typeof s.player.spareBatteries !== 'number') {
-          s.player = { ...s.player, spareBatteries: 0 };
-        }
-        return s;
+      migrate: (persisted: unknown, version: number) => migratePersistedSave(persisted, version),
+      merge: (persisted, current) => {
+        const save = migratePersistedSave(persisted, 5);
+        return {
+          ...current,
+          player: {
+            ...current.player,
+            ...save.player,
+            position: { x: 0, y: 0 },
+            currentMapId: 'ship',
+          },
+          library: [],
+          savedFragmentIds: save.collectedFragmentIds,
+          exploration: save.exploration,
+          hasSeenWelcome: save.hasSeenWelcome,
+          previousThemeId: save.previousThemeId,
+          settings: save.settings,
+          session: createInitialSession(),
+        };
       },
     }
   )

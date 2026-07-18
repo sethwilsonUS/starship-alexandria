@@ -2,83 +2,239 @@ books:
   - id: inferno
     title: "The Divine Comedy: Inferno"
     author: Dante Alighieri
-    totalFragments: 34
+    source:
+      provider: Project Gutenberg
+      ebookNumber: 1001
+      edition: Henry Wadsworth Longfellow translation
+      url: https://www.gutenberg.org/ebooks/1001
+      publicDomainNote: Public domain in the USA
     fragments:
       - id: inferno-canto-1
-        label: Canto I
+        label: Canto I — The Dark Forest
         order: 1
         textFile: inferno/canto-1.txt
+        sourceLocation: Canto I, lines 1–18
+        themeAffinities: [gardens, scriptorium]
       - id: inferno-canto-3
-        label: Canto III
+        label: Canto III — The Gate of Hell
         order: 3
         textFile: inferno/canto-3.txt
+        sourceLocation: Canto III, inscription over the gate
+        themeAffinities: [cathedral]
 
   - id: tempest
     title: The Tempest
     author: William Shakespeare
-    totalFragments: 5
+    source:
+      provider: Project Gutenberg
+      ebookNumber: 23042
+      edition: Cambridge text edited by William George Clark and John Glover
+      url: https://www.gutenberg.org/ebooks/23042
+      publicDomainNote: Public domain in the USA
     fragments:
       - id: tempest-act-1
-        label: Act I, Scene 1
+        label: Act I, Scene 1 — The Storm
         order: 1
         textFile: tempest/act-1.txt
+        sourceLocation: Act I, Scene 1, opening
+        themeAffinities: [gardens]
       - id: tempest-act-4
-        label: Act IV, Scene 1
+        label: Act IV, Scene 1 — Our Revels
         order: 4
         textFile: tempest/act-4.txt
+        sourceLocation: Act IV, Scene 1, Prospero’s speech beginning “Our revels now are ended”
+        themeAffinities: [university, cathedral]
 
   - id: canterbury
     title: The Canterbury Tales
     author: Geoffrey Chaucer
-    totalFragments: 24
+    source:
+      provider: Project Gutenberg
+      ebookNumber: 2383
+      edition: D. Laing Purves edition for popular perusal
+      url: https://www.gutenberg.org/ebooks/2383
+      publicDomainNote: Public domain in the USA
     fragments:
-      - id: canterbury-knights-tale
-        label: "The Knight's Tale (opening)"
+      - id: canterbury-general-prologue
+        label: General Prologue — April
         order: 1
+        textFile: canterbury/general-prologue.txt
+        sourceLocation: General Prologue, opening 18 lines
+        themeAffinities: [gardens, cathedral]
+      - id: canterbury-knights-tale
+        label: The Knight’s Tale — Opening
+        order: 2
         textFile: canterbury/knights-tale.txt
+        sourceLocation: The Knight’s Tale, opening 13 lines
+        themeAffinities: [scriptorium, cathedral]
+      - id: canterbury-wife-of-bath
+        label: The Wife of Bath’s Prologue — Experience
+        order: 3
+        textFile: canterbury/wife-of-bath-prologue.txt
+        sourceLocation: The Wife of Bath’s Prologue, opening 28 lines
+        themeAffinities: [university, scriptorium]
 
   - id: faerie-queene
-    title: The Faerie Queene
+    title: The Faerie Queene, Book I
     author: Edmund Spenser
-    totalFragments: 6
+    source:
+      provider: Project Gutenberg
+      ebookNumber: 15272
+      edition: Book I, edited by George Armstrong Wauchope
+      url: https://www.gutenberg.org/ebooks/15272
+      publicDomainNote: Public domain in the USA
     fragments:
       - id: faerie-queene-1-1
-        label: Book I, Canto 1
+        label: Book I, Canto I — The Redcrosse Knight
         order: 1
         textFile: faerie-queene/book-1-canto-1.txt
+        sourceLocation: Book I, Canto I, stanza I
+        themeAffinities: [gardens, cathedral]
+      - id: faerie-queene-1-2
+        label: Book I, Canto II — The Enchanter’s Book
+        order: 2
+        textFile: faerie-queene/book-1-canto-2.txt
+        sourceLocation: Book I, Canto II, stanzas II–III
+        themeAffinities: [scriptorium, university]
+      - id: faerie-queene-1-12
+        label: Book I, Canto XII — The Dragon’s Fall
+        order: 12
+        textFile: faerie-queene/book-1-canto-12.txt
+        sourceLocation: Book I, Canto XII, stanzas I–III
+        themeAffinities: [cathedral, gardens]
 
   - id: dickinson
-    title: Selected Poems
+    title: Poems by Emily Dickinson
     author: Emily Dickinson
-    totalFragments: 1
+    source:
+      provider: Project Gutenberg
+      ebookNumber: 12242
+      edition: Three Series, edited by Mabel Loomis Todd and T. W. Higginson
+      url: https://www.gutenberg.org/ebooks/12242
+      publicDomainNote: Public domain in the USA
     fragments:
       - id: dickinson-hope
-        label: '"Hope" is the thing with feathers'
+        label: Hope
         order: 1
         textFile: dickinson/hope.txt
+        sourceLocation: First Series, Part I, poem VI
+        themeAffinities: [gardens]
 
   - id: bible-kjv
     title: The Holy Bible (King James Version)
     author: Anonymous
-    totalFragments: 1189
+    source:
+      provider: Project Gutenberg
+      ebookNumber: 10
+      edition: King James Version
+      url: https://www.gutenberg.org/ebooks/10
+      publicDomainNote: Public domain in the USA
     fragments:
       - id: bible-genesis-1
-        label: Genesis 1
+        label: Genesis 1 — Let There Be Light
         order: 1
         textFile: bible-kjv/genesis-1.txt
+        sourceLocation: Genesis 1:1–5
+        themeAffinities: [cathedral, gardens]
       - id: bible-psalm-23
         label: Psalm 23
         order: 23
         textFile: bible-kjv/psalm-23.txt
+        sourceLocation: Psalm 23:1–6
+        themeAffinities: [gardens, cathedral]
       - id: bible-matthew-5
-        label: Matthew 5 (Beatitudes)
-        order: 5
+        label: Matthew 5 — The Beatitudes
+        order: 5005
         textFile: bible-kjv/matthew-5.txt
+        sourceLocation: Matthew 5:1–10
+        themeAffinities: [cathedral]
       - id: bible-1corinthians-13
-        label: 1 Corinthians 13
-        order: 13
+        label: 1 Corinthians 13 — Charity
+        order: 4613
         textFile: bible-kjv/1corinthians-13.txt
+        sourceLocation: 1 Corinthians 13:1–8
+        themeAffinities: [cathedral, scriptorium]
       - id: bible-revelation-21
-        label: Revelation 21:1-7
-        order: 21
+        label: Revelation 21 — A New Heaven and Earth
+        order: 6621
         textFile: bible-kjv/revelation-21.txt
+        sourceLocation: Revelation 21:1–7
+        themeAffinities: [cathedral, gardens]
+
+  - id: paradise-lost
+    title: Paradise Lost
+    author: John Milton
+    source:
+      provider: Project Gutenberg
+      ebookNumber: 26
+      edition: Twelve-book edition prepared from the Joseph Raben etext
+      url: https://www.gutenberg.org/ebooks/26
+      publicDomainNote: Public domain in the USA
+    fragments:
+      - id: paradise-lost-book-1
+        label: Book I — The Invocation
+        order: 1
+        textFile: paradise-lost/book-1-invocation.txt
+        sourceLocation: Book I, opening invocation
+        themeAffinities: [cathedral, scriptorium]
+      - id: paradise-lost-book-9
+        label: Book IX — The Fall
+        order: 9
+        textFile: paradise-lost/book-9-fall.txt
+        sourceLocation: Book IX, Eve takes the fruit
+        themeAffinities: [gardens, cathedral]
+
+  - id: frankenstein
+    title: Frankenstein; Or, The Modern Prometheus
+    author: Mary Wollstonecraft Shelley
+    source:
+      provider: Project Gutenberg
+      ebookNumber: 42324
+      edition: 1831 edition published by Henry Colburn and Richard Bentley
+      url: https://www.gutenberg.org/ebooks/42324
+      publicDomainNote: Public domain in the USA
+    fragments:
+      - id: frankenstein-chapter-4
+        label: Chapter IV — Dangerous Knowledge
+        order: 4
+        textFile: frankenstein/chapter-4-dangerous-knowledge.txt
+        sourceLocation: Chapter IV, Victor’s warning to Walton
+        themeAffinities: [university]
+
+  - id: vindication
+    title: A Vindication of the Rights of Woman
+    author: Mary Wollstonecraft
+    source:
+      provider: Project Gutenberg
+      ebookNumber: 3420
+      edition: Project Gutenberg English text of the 1792 work
+      url: https://www.gutenberg.org/ebooks/3420
+      publicDomainNote: Public domain in the USA
+    fragments:
+      - id: vindication-national-education
+        label: Chapter XII — National Education
+        order: 12
+        textFile: vindication/chapter-12-national-education.txt
+        sourceLocation: Chapter XII, proposal for free coeducational day schools
+        themeAffinities: [university]
+
+  - id: douglass-narrative
+    title: Narrative of the Life of Frederick Douglass, an American Slave
+    author: Frederick Douglass
+    source:
+      provider: Project Gutenberg
+      ebookNumber: 23
+      edition: 1845 Anti-Slavery Office edition
+      url: https://www.gutenberg.org/ebooks/23
+      publicDomainNote: Public domain in the USA
+    fragments:
+      - id: douglass-bread-of-knowledge
+        label: Chapter VII — The Bread of Knowledge
+        order: 7
+        textFile: douglass/chapter-7-bread-of-knowledge.txt
+        sourceLocation: Chapter VII, Douglass exchanges bread for reading lessons
+        themeAffinities: [scriptorium, university]
+        editorialContext: >-
+          Frederick Douglass recounts how, while enslaved as a child in Baltimore,
+          he created opportunities to learn from local boys despite deliberate efforts
+          to deny him literacy.

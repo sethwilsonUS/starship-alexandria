@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "generatedAt": "2026-07-17",
+  "tool": "OpenAI image generation via Codex",
+  "model": "Model identifier was not exposed by the image-generation tool",
+  "disclosure": "AI-generated concept key art; not used for collision, sprites, or tilemaps",
+  "prompt": "Create a wide 16:9 cinematic key-art illustration for an original literary science-fiction exploration game. View from inside the observation library of an elegant archival starship: midnight-blue metal, warm brass instrument rails, dark wood bookcases, softly glowing vellum pages, and a huge window full of cold starlight above a wounded blue-green Earth. In the foreground, one small gender-ambiguous archivist in a practical space suit stands at a circular transporter dais holding a recovered book, seen mostly in silhouette. Around the transporter glow, subtly suggest four distinct expedition memories as atmospheric reflected vignettes, not separate panels: a roofless ruined cathedral with a broken rose window, a monastic scriptorium with leaning stacks, a shattered university courtyard and laboratory, and an overgrown glass conservatory with shallow water and wild plants. Mood: hopeful after catastrophe, contemplative, handcrafted, premium indie game key art. Visual style: richly textured editorial illustration with crisp readable shapes, restrained painterly detail, a slight 16-bit pixel-art influence in the geometry but high-resolution finish, deep navy and ink-blue shadows, parchment cream, aged brass gold, touches of cyan transporter light and garden green. Strong central composition, generous dark negative space near the upper-left for optional title placement, no lettering, no logos, no UI, no watermark, no recognizable franchise designs, no weapons, no combat.",
+  "outputs": [
+    {
+      "path": "/images/starship-alexandria-key-art.png",
+      "width": 1672,
+      "height": 941,
+      "sha256": "bfa6408cfe779af63ca38e8fbdf2885f882e98bab07c4007a1a3e6ad54e38dae",
+      "transformation": "Original generated PNG, losslessly recompressed"
+    },
+    {
+      "path": "/images/og.png",
+      "width": 1200,
+      "height": 630,
+      "sha256": "ac57035ece31b4f708dd15bf4a44fbb4db4e37265ae5bb5460e66cecc124662b",
+      "transformation": "Center-cropped to 1200×630 and losslessly encoded as PNG"
+    }
+  ]
+}

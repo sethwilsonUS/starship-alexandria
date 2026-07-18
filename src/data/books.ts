@@ -1,11 +1,10 @@
 /**
  * Book catalog: titles, fragments, Gutenberg text.
- * Phase 2.3 — book fragment placement & collection.
- * 
- * Content is now loaded from content/books.yaml and content/texts/
+ * Content is loaded from the canonical public/content/books.yaml and public/content/texts/.
  */
 
 import type { BookFragment } from '@/types/books';
+import type { ContentThemeId, PublicDomainSource } from '@/types/content';
 import {
   getAllBooks,
   getBookById as getContentBookById,
@@ -20,7 +19,8 @@ export interface Book {
   id: string;
   title: string;
   author: string;
-  totalFragments: number;
+  source: PublicDomainSource;
+  includedFragmentCount: number;
   fragments: FragmentDef[];
 }
 
@@ -30,6 +30,9 @@ export interface FragmentDef {
   label: string;
   order: number;
   text: string;
+  sourceLocation: string;
+  themeAffinities: ContentThemeId[];
+  editorialContext?: string;
 }
 
 export function fragmentWithTextToFragmentDef(f: FragmentWithText): FragmentDef {
@@ -39,6 +42,9 @@ export function fragmentWithTextToFragmentDef(f: FragmentWithText): FragmentDef 
     label: f.label,
     order: f.order,
     text: f.text,
+    sourceLocation: f.sourceLocation,
+    themeAffinities: [...f.themeAffinities],
+    editorialContext: f.editorialContext,
   };
 }
 
@@ -49,6 +55,9 @@ export function toBookFragment(f: FragmentDef): BookFragment {
     label: f.label,
     order: f.order,
     text: f.text,
+    sourceLocation: f.sourceLocation,
+    themeAffinities: [...f.themeAffinities],
+    editorialContext: f.editorialContext,
   };
 }
 
@@ -60,7 +69,8 @@ export async function loadBookCatalog(): Promise<Book[]> {
     id: book.id,
     title: book.title,
     author: book.author,
-    totalFragments: book.totalFragments,
+    source: book.source,
+    includedFragmentCount: book.fragments.length,
     fragments: allFragments
       .filter((f) => f.bookId === book.id)
       .map(fragmentWithTextToFragmentDef),

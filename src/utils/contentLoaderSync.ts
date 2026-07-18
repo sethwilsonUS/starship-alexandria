@@ -45,12 +45,6 @@ interface GameloopDialogueLine {
 export interface GameloopContent {
   welcome: { lines: GameloopDialogueLine[] };
   victory: { lines: GameloopDialogueLine[] };
-  vault: {
-    alreadyOpened: GameloopDialogueLine[];
-    openWithArtifact: GameloopDialogueLine[];
-    openEmpty: GameloopDialogueLine[];
-    locked: GameloopDialogueLine[];
-  };
 }
 
 let _gameloopCache: GameloopContent | null = null;

@@ -1,0 +1,92 @@
+vaults:
+  - id: vault-scriptorium-archive-safe
+    themeId: scriptorium
+    name: Archive Safe
+    clue:
+      id: clue-scriptorium-catalog-card
+      title: Misfiled catalog card
+      lines:
+        - text: "A catalog card for a shelf that never existed. Four pencilled figures have been underlined twice: {code}."
+        - text: "Below them, Martha’s hand adds: “Order is a kind of memory.”"
+    dialogue:
+      locked:
+        - text: "The archive safe is sealed. Its four mechanical dials will not move without the missing catalog reference."
+        - text: "A nearby label reads: “Consult the catalogue before requesting restricted material.”"
+      opening:
+        - text: "You recall the misfiled card and set the archive dials to {code}."
+        - text: "The mechanism answers with four soft clicks, then a deep brass sigh."
+      opened:
+        - text: "The archive safe stands open, its empty shelves ready to gather dust again."
+    exhaustedReward:
+      journalTitle: The final accession
+      journalText: "No rare volume remained, only a librarian’s note: “A complete catalogue is not an ending. Leave room for what comes next.”"
+      batteries: 2
+
+  - id: vault-cathedral-reliquary
+    themeId: cathedral
+    name: Memorial Reliquary
+    clue:
+      id: clue-cathedral-hymnal
+      title: Annotated processional hymnal
+      lines:
+        - text: "Four memorial numerals are copied into the hymn’s margin: {code}."
+        - text: "An inked hand points toward the reliquary with the words: “What we remember, we carry.”"
+    dialogue:
+      locked:
+        - text: "The stone reliquary remains sealed. Four brass numerals sit beneath a worn choir emblem."
+        - text: "The inscription repeats a fragment of a processional hymn, but its memorial reference is missing."
+      opening:
+        - text: "You follow the hymnal’s memorial numerals—{code}—without needing to enter them by hand."
+        - text: "Hidden counterweights stir. The reliquary opens on a breath of cool, incense-scented air."
+      opened:
+        - text: "The reliquary remains open beneath the broken rose window."
+    exhaustedReward:
+      journalTitle: A rest between verses
+      journalText: "The choir director’s final note reads: “Silence is part of the music, but it must not have the last measure.”"
+      batteries: 2
+
+  - id: vault-university-special-collections
+    themeId: university
+    name: Special Collections Lockbox
+    clue:
+      id: clue-university-registrar-memo
+      title: Registrar’s emergency memo
+      lines:
+        - text: "The memo’s retention code is circled in red: {code}."
+        - text: "A final instruction reads: “Do not store this document with the lockbox.” Someone obeyed."
+    dialogue:
+      locked:
+        - text: "The Special Collections lockbox is sealed behind a university inventory plate."
+        - text: "Its display asks for a retention code, but the keypad has long since failed."
+      opening:
+        - text: "The registrar’s memo supplies {code}. You align the lock’s manual tumblers to match."
+        - text: "The lid releases with the prim click of an administrator approving a form."
+      opened:
+        - text: "The Special Collections lockbox is open. Its inventory light blinks patiently at nobody."
+    exhaustedReward:
+      journalTitle: Minutes of the last faculty meeting
+      journalText: "One motion passed unanimously: “Whatever survives us must remain available to students we will never meet.”"
+      batteries: 2
+
+  - id: vault-gardens-seed-bank
+    themeId: gardens
+    name: Seed-Bank Cache
+    clue:
+      id: clue-gardens-greenhouse-log
+      title: Water-stained greenhouse log
+      lines:
+        - text: "Four specimen tags are transcribed beside the cache entry: {code}."
+        - text: "The next line has blurred, except for two words: “plant” and “remember.”"
+    dialogue:
+      locked:
+        - text: "The seed-bank cache is sealed against floodwater and time. Four numbered specimen slots ring the latch."
+        - text: "The labels are intact, but their intended order belongs in the missing greenhouse log."
+      opening:
+        - text: "You match the greenhouse log’s sequence—{code}—to the specimen slots."
+        - text: "The gasket releases. Damp soil, old paper, and a trace of green life scent the air."
+      opened:
+        - text: "The seed-bank cache rests open among roots that have begun to explore it."
+    exhaustedReward:
+      journalTitle: Germination record
+      journalText: "The final entry reads: “Not every seed wakes in our season. Preserve it anyway.”"
+      batteries: 2

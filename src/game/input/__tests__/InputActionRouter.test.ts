@@ -14,7 +14,6 @@ function context(overrides: Partial<InputActionContext> = {}): InputActionContex
   return {
     phase: 'exploring',
     hasAreaMap: true,
-    isGameComplete: false,
     now: 1000,
     ...overrides,
   };

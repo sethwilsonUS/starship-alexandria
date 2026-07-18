@@ -4,6 +4,7 @@ import { useGameStore } from '@/store/gameStore';
 import type { IControllablePlayer, Interactive } from '@/types/game';
 import { speak, playDiscoveryChime } from '@/utils/speech';
 import type { GameInputAction } from '@/game/input/InputActionRouter';
+import { resolveInteractionTarget } from '@/game/player/playerContract';
 
 const INTERACTION_BLOCKED_PHASES: readonly string[] = ['dialogue', 'reading', 'viewing-map'];
 
@@ -129,16 +130,19 @@ export class InteractionSystem {
 
     const pos = this.player.getGridPosition();
 
-    const found = this.interactives.find((i) => {
-      const range = i.interactionRange ?? 'on';
-      if (range === 'on') {
-        return i.gridX === pos.x && i.gridY === pos.y;
-      }
-      // adjacent: manhattan distance 1 (standing next to NPC)
-      const dx = Math.abs(pos.x - i.gridX);
-      const dy = Math.abs(pos.y - i.gridY);
-      return (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
-    });
+    const targetResult = resolveInteractionTarget(
+      pos,
+      this.interactives.map((interactive) => ({
+        id: interactive.id,
+        type: interactive.type,
+        label: interactive.label,
+        position: { x: interactive.gridX, y: interactive.gridY },
+        range: interactive.interactionRange ?? 'on',
+      })),
+    );
+    const found = targetResult.type === 'interaction.available'
+      ? this.interactives.find((interactive) => interactive.id === targetResult.target.id)
+      : undefined;
 
     if (found && found.id !== this.currentInteractive?.id) {
       this.currentInteractive = found;

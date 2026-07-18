@@ -4,6 +4,10 @@ import { useGameStore } from '@/store/gameStore';
 import { getBookCatalogSync } from '@/data/books';
 import { transitionGuard } from '@/game/input/gameInput';
 import { FxController } from '../systems/FxController';
+import { ASSET_KEYS } from '@/game/assets/assetManifest';
+import type { SavedThemeId } from '@/store/saveMigration';
+import { playCue, startAmbience } from '@/game/audio/AudioDirector';
+import { shouldUseMotion } from '@/game/motionPolicy';
 
 const BEAM_DOWN_INPUT_BLOCK_MS = 700;
 
@@ -13,7 +17,8 @@ const BEAM_DOWN_INPUT_BLOCK_MS = 700;
  * The library shelf UI is rendered via React (LibraryShelf.tsx).
  */
 export default class ShipScene extends Scene {
-  private beamDownListener: (() => void) | null = null;
+  private beamDownListener: ((payload: { themeId: SavedThemeId }) => void) | null = null;
+  private launchAcceptedListener: (() => void) | null = null;
   private fx!: FxController;
   private hasShownVictory = false;
   private isBeamingDown = false;
@@ -26,20 +31,19 @@ export default class ShipScene extends Scene {
     const { width, height } = this.cameras.main;
     this.fx = new FxController(this);
     
-    // Fade in from beam-up
-    this.cameras.main.fadeIn(500, 30, 30, 46);
+    // Fade in from beam-up when decorative motion is enabled.
+    if (this.shouldAnimate()) this.cameras.main.fadeIn(500, 30, 30, 46);
     
     // Draw ship interior background (procedural for now)
     this.drawShipInterior(width, height);
+    this.placeShipProps(width, height);
     
     // Listen for beam-down request from React UI
-    this.beamDownListener = () => {
+    this.beamDownListener = ({ themeId }) => {
       // Only beam down if not in reading phase
       const gamePhase = useGameStore.getState().session.gamePhase;
       if (gamePhase === 'reading' || gamePhase === 'dialogue') return;
-      // Don't allow beam down if game is complete
-      if (this.isGameComplete()) return;
-      this.beamDown();
+      this.beamDown(themeId);
     };
     EventBridge.on('beam-down-requested', this.beamDownListener);
     this.events.once('shutdown', () => this.cleanupOnShutdown());
@@ -48,19 +52,14 @@ export default class ShipScene extends Scene {
     EventBridge.emit('area-entered', { areaName: 'Starship Alexandria - Library Deck' });
     
     // Check if first-time player and show welcome
-    const hasSeenWelcome = useGameStore.getState().hasSeenWelcome;
-    if (!hasSeenWelcome) {
-      // Delay slightly so UI is ready
-      this.time.delayedCall(300, () => {
-        EventBridge.emit('show-welcome');
-      });
-    } else if (this.isGameComplete() && !this.hasShownVictory) {
-      // Show victory dialogue if all fragments collected
-      this.hasShownVictory = true;
-      this.time.delayedCall(500, () => {
-        EventBridge.emit('show-victory');
-      });
-    }
+    this.launchAcceptedListener = () => this.beginShipExperience();
+    EventBridge.on('launch-accepted', this.launchAcceptedListener);
+    if (!useGameStore.getState().session.launchGateOpen) this.beginShipExperience();
+  }
+
+  private beginShipExperience(): void {
+    startAmbience(this, ASSET_KEYS.audio.ambience.ship);
+    this.showArrivalDialogue();
   }
   
   private isGameComplete(): boolean {
@@ -112,9 +111,9 @@ export default class ShipScene extends Scene {
     // Stars
     bg.fillStyle(0xffffff, 0.8);
     for (let i = 0; i < 30; i++) {
-      const sx = viewportX + 10 + Math.random() * (viewportW - 20);
-      const sy = viewportY + 10 + Math.random() * (viewportH - 20);
-      const size = Math.random() < 0.3 ? 2 : 1;
+      const sx = viewportX + 10 + ((i * 73 + 29) % (viewportW - 20));
+      const sy = viewportY + 10 + ((i * 47 + 11) % (viewportH - 20));
+      const size = i % 4 === 0 ? 2 : 1;
       bg.fillCircle(sx, sy, size);
     }
     
@@ -148,24 +147,71 @@ export default class ShipScene extends Scene {
     
     bg.setDepth(-1);
   }
+
+  private placeShipProps(width: number, height: number): void {
+    const leftShelf = this.add.image(70, height / 2 + 20, ASSET_KEYS.sprites.bookshelfProp);
+    leftShelf.setScale(2.8);
+    leftShelf.setDepth(0);
+    leftShelf.setAlpha(0.88);
+
+    const rightShelf = this.add.image(width - 70, height / 2 + 20, ASSET_KEYS.sprites.bookshelfProp);
+    rightShelf.setScale(2.8);
+    rightShelf.setDepth(0);
+    rightShelf.setAlpha(0.88);
+
+    const terminal = this.add.image(width / 2, 165, ASSET_KEYS.sprites.shipTerminalProp);
+    terminal.setScale(2.2);
+    terminal.setDepth(1);
+    terminal.setAlpha(0.95);
+
+    if (this.shouldAnimate()) {
+      this.tweens.add({
+        targets: terminal,
+        alpha: 0.74,
+        duration: 1400,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
+    }
+  }
   
-  private beamDown(): void {
+  private showArrivalDialogue(): void {
+    const hasSeenWelcome = useGameStore.getState().hasSeenWelcome;
+    if (!hasSeenWelcome) {
+      this.time.delayedCall(180, () => EventBridge.emit('show-welcome'));
+    } else if (this.isGameComplete() && !this.hasShownVictory) {
+      this.hasShownVictory = true;
+      this.time.delayedCall(300, () => EventBridge.emit('show-victory'));
+    }
+  }
+
+  private beamDown(themeId: SavedThemeId): void {
     if (this.isBeamingDown) return;
     this.isBeamingDown = true;
     transitionGuard.beginTransition(Date.now(), BEAM_DOWN_INPUT_BLOCK_MS);
+    playCue(this, ASSET_KEYS.audio.cues.transporter, 0.55);
 
-    // Beam-down animation
-    const duration = 600;
-    this.fx.playScreenBeam(0x5cb3ff, duration);
-    
-    this.cameras.main.fadeOut(400, 92, 180, 255);
-    
-    this.time.delayedCall(duration, () => {
+    const finish = () => {
       // Generate new map ID
       const mapId = `earth-expedition-${Date.now()}`;
-      useGameStore.getState().actions.beamToSurface(mapId);
+      useGameStore.getState().actions.beamToSurface(mapId, themeId);
       this.scene.start('ExploreScene');
-    });
+    };
+
+    if (!this.shouldAnimate()) {
+      finish();
+      return;
+    }
+
+    const duration = 600;
+    this.fx.playScreenBeam(0x5cb3ff, duration);
+    this.cameras.main.fadeOut(400, 92, 180, 255);
+    this.time.delayedCall(duration, finish);
+  }
+
+  private shouldAnimate(): boolean {
+    return shouldUseMotion(useGameStore.getState().settings.motionPreference);
   }
 
   private cleanupOnShutdown(): void {
@@ -173,6 +219,10 @@ export default class ShipScene extends Scene {
     if (this.beamDownListener) {
       EventBridge.off('beam-down-requested', this.beamDownListener);
       this.beamDownListener = null;
+    }
+    if (this.launchAcceptedListener) {
+      EventBridge.off('launch-accepted', this.launchAcceptedListener);
+      this.launchAcceptedListener = null;
     }
     this.isBeamingDown = false;
   }

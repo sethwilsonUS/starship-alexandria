@@ -27,6 +27,9 @@ export default function AccessibleLog() {
     const onAreaEntered = ({ areaName }: { areaName: string }) => {
       addEntry(`You entered ${areaName}`);
     };
+    const onAreaDiscovered = ({ areaName }: { areaName: string }) => {
+      addEntry(`Discovered ${areaName}`);
+    };
     let lastFacingId: string | null = null;
     const onInteractionAvailable = (payload?: {
       type?: string;
@@ -96,6 +99,7 @@ export default function AccessibleLog() {
 
     EventBridge.on('player-moved', onPlayerMoved);
     EventBridge.on('area-entered', onAreaEntered);
+    EventBridge.on('area-discovered', onAreaDiscovered);
     EventBridge.on('battery-found', onBatteryFound);
     EventBridge.on('battery-used', onBatteryUsed);
     EventBridge.on('interaction-available', onInteractionAvailable);
@@ -105,6 +109,7 @@ export default function AccessibleLog() {
     return () => {
       EventBridge.off('player-moved', onPlayerMoved);
       EventBridge.off('area-entered', onAreaEntered);
+      EventBridge.off('area-discovered', onAreaDiscovered);
       EventBridge.off('battery-found', onBatteryFound);
       EventBridge.off('battery-used', onBatteryUsed);
       EventBridge.off('interaction-available', onInteractionAvailable);

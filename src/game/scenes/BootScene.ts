@@ -1,13 +1,12 @@
 import { Scene } from 'phaser';
 import { useGameStore } from '@/store/gameStore';
-import { preloadAllContent, loadRoomNames, loadBooks, loadJournals, loadArtifacts, loadGameloop, getAllNPCs, getAllFragments } from '@/utils/contentLoader';
+import { preloadAllContent, loadArtifacts, loadGameloop } from '@/utils/contentLoader';
 import { preloadGameAssets } from '@/game/assets/assetManifest';
 import { ensureProceduralFallbackTextures } from '@/game/assets/proceduralFallbacks';
-import { setRoomNamesCache } from '../systems/MapGenerator';
-import { setCachedNPCCatalog, type NPC } from '@/data/npcs';
-import { setCachedBookCatalog, type Book } from '@/data/books';
+import { loadNPCCatalog, setCachedNPCCatalog } from '@/data/npcs';
+import { loadBookCatalog, setCachedBookCatalog } from '@/data/books';
+import { loadJournalCatalog } from '@/data/journalEntries';
 import { setJournalCache, setArtifactCache, setGameloopCache } from '@/utils/contentLoaderSync';
-import type { JournalEntryDef } from '@/data/journalEntries';
 import type { Artifact } from '@/data/artifacts';
 
 /**
@@ -15,19 +14,28 @@ import type { Artifact } from '@/data/artifacts';
  * Procedural textures are generated only when manifest assets are unavailable.
  */
 export default class BootScene extends Scene {
+  private assetFailures: string[] = [];
+
   constructor() {
     super({ key: 'BootScene' });
   }
 
   preload() {
+    this.assetFailures = [];
     preloadGameAssets(this);
     this.load.once('complete', () => ensureProceduralFallbackTextures(this));
     this.load.on('loaderror', (file: { key: string; src?: string }) => {
+      this.assetFailures.push(file.key);
       console.warn(`Asset failed to load: ${file.key}`, file.src);
     });
   }
 
   async create() {
+    if (this.assetFailures.length > 0) {
+      const failedKeys = [...new Set(this.assetFailures)].join(', ');
+      useGameStore.getState().actions.setContentError(`Required game assets did not load: ${failedKeys}`);
+      return;
+    }
     // Load all content from YAML files before starting game
     await this.loadContent();
     
@@ -60,48 +68,14 @@ export default class BootScene extends Scene {
       // Preload all YAML content
       await preloadAllContent();
       
-      // Cache room names for MapGenerator
-      const roomNames = await loadRoomNames();
-      setRoomNamesCache(roomNames);
-      
       // Cache NPCs for sync access
-      const npcs = await getAllNPCs();
-      const npcsCasted: NPC[] = npcs.map((n) => ({
-        id: n.id,
-        name: n.name,
-        firstMeet: n.firstMeet.map((line) => ({ speaker: line.speaker, text: line.text })),
-        return: n.return.map((line) => ({ speaker: line.speaker, text: line.text })),
-      }));
-      setCachedNPCCatalog(npcsCasted);
+      setCachedNPCCatalog(await loadNPCCatalog());
       
       // Cache books for sync access
-      const books = await loadBooks();
-      const allFragments = await getAllFragments();
-      const booksCasted: Book[] = books.map((b) => ({
-        id: b.id,
-        title: b.title,
-        author: b.author,
-        totalFragments: b.totalFragments,
-        fragments: allFragments
-          .filter((f) => f.bookId === b.id)
-          .map((f) => ({
-            id: f.id,
-            bookId: f.bookId,
-            label: f.label,
-            order: f.order,
-            text: f.text,
-          })),
-      }));
-      setCachedBookCatalog(booksCasted);
+      setCachedBookCatalog(await loadBookCatalog());
       
       // Cache journals for sync access
-      const journals = await loadJournals();
-      const journalsCasted: JournalEntryDef[] = journals.map((j) => ({
-        id: j.id,
-        title: j.title,
-        lines: j.lines.map((line) => ({ speaker: line.speaker, text: line.text })),
-      }));
-      setJournalCache(journalsCasted);
+      setJournalCache(await loadJournalCatalog());
       
       // Cache artifacts for sync access
       const artifacts = await loadArtifacts();
@@ -120,9 +94,8 @@ export default class BootScene extends Scene {
       useGameStore.getState().actions.setContentReady();
     } catch (error) {
       console.error('Failed to load content:', error);
-      // Game can still run with defaults if content loading fails
-      // Still mark content as ready so UI doesn't wait forever
-      useGameStore.getState().actions.setContentReady();
+      const message = error instanceof Error ? error.message : 'Unknown content error';
+      useGameStore.getState().actions.setContentError(message);
     }
   }
 }

@@ -1,51 +1,178 @@
 npcs:
   - id: martha
-    name: Martha
+    name: Martha Penrose
+    role: Head librarian
+    themeIds: [scriptorium]
     firstMeet:
       - speaker: Martha
-        text: "Oh! A visitor. I didn't think anyone would find this place."
+        text: "Oh! A visitor. I didn’t think anyone would find this place."
       - speaker: Martha
-        text: "I was the head librarian here. Before... well. Before everything."
+        text: "I was head librarian here before the roof learned to imitate the floor."
       - speaker: Martha
-        text: "The Alexandria still flies. I see it sometimes, a speck in the sky. They're preserving what we couldn't."
+        text: "The Alexandria still flies. I see it sometimes, a silver comma in the sky, preserving what we could not."
       - speaker: Martha
-        text: "If you're collecting fragments—and you must be—keep looking. The old texts are still here. Buried, scattered, but here."
+        text: "Loose gatherings survived in the reading room and manuscript workshop. Mind the damp; paper remembers every indignity."
     return:
       - speaker: Martha
-        text: "Back again? I hope you're finding what you need."
+        text: "Back again? Good. A library improves the moment someone returns to it."
       - speaker: Martha
-        text: "The archives had the rarest editions. If any room survived intact, it would be there."
+        text: "The archive safe followed the old cataloguing system. Look for a card filed where no card ought to be."
+    postVault:
+      - speaker: Martha
+        text: "You opened the archive safe. I had almost forgotten the sound of that lock conceding an argument."
+      - speaker: Martha
+        text: "Whatever was inside belongs aboard the Alexandria now. Let it be read, not merely guarded."
 
   - id: eli
-    name: Eli
+    name: Eli Ward
+    role: Scavenger and book runner
+    themeIds: [scriptorium]
     firstMeet:
       - speaker: Eli
-        text: "Hey. You with the Alexandria? Saw the beam."
+        text: "You with the Alexandria? Saw the beam. Hard entrance to miss."
       - speaker: Eli
-        text: "I scavenge. Old books sell—well, traded. People still want stories. Something to read when the power's out."
+        text: "I trade batteries and canned peaches. Books I carry for free. People still want stories when the power’s out."
       - speaker: Eli
-        text: "I've found fragments in the scriptorium. Copyists used to work there. Lots of loose pages."
-      - speaker: Eli
-        text: "Rumor is there's a vault under the rotunda. Sealed before the collapse. Could be nothing. Could be gold."
+        text: "The copyists left loose pages all through the scriptorium. Check under the desks, not only on them."
     return:
       - speaker: Eli
-        text: "Still hunting? Check the corners. People hid things when they fled."
+        text: "Still hunting? Good. Check the corners; frightened people hide precious things badly."
       - speaker: Eli
-        text: "The courtyard's overgrown, but I've pulled whole volumes from under the vines."
+        text: "If you find a catalog card with four figures, don’t toss it. Around here, paperwork opens doors."
+    postVault:
+      - speaker: Eli
+        text: "So the old safe finally opened. Martha owes me half a peach; I said someone stubborn would manage it."
+      - speaker: Eli
+        text: "Take the words upstairs. Treasure gets lonely when nobody shares it."
+
+  - id: imani
+    name: Imani Vale
+    role: Choral historian
+    themeIds: [cathedral]
+    firstMeet:
+      - speaker: Imani
+        text: "Careful on the nave stones. The rain has been rehearsing here longer than the choir ever did."
+      - speaker: Imani
+        text: "I catalogued the cathedral’s music: processionals, laments, the little hymns people wrote in the margins."
+      - speaker: Imani
+        text: "The reliquary was sealed during the evacuation. Its memorial numerals survive, if you know which voices to follow."
+    return:
+      - speaker: Imani
+        text: "Listen at the side chapel. Even ruined buildings tell you where they keep their secrets."
+      - speaker: Imani
+        text: "The hymnal’s pencilled figures are not a page number. Brother Anselm always did prefer clues to labels."
+    postVault:
+      - speaker: Imani
+        text: "The reliquary is open? Then the last note resolved after all."
+      - speaker: Imani
+        text: "Carry its words gently. A text can be sacred without ever having stood on an altar."
+
+  - id: anselm
+    name: Brother Anselm
+    role: Stone-and-manuscript conservator
+    themeIds: [cathedral]
+    firstMeet:
+      - speaker: Anselm
+        text: "Welcome, Librarian. Forgive the dust; the west window has become enthusiastic about ventilation."
+      - speaker: Anselm
+        text: "I repaired bindings and stonework. Both endure by yielding in precisely the right places."
+      - speaker: Anselm
+        text: "A memorial inscription and the old processional hymnal share four numerals. Together they wake the reliquary."
+    return:
+      - speaker: Anselm
+        text: "The crypt is sound enough, provided you distrust every third step."
+      - speaker: Anselm
+        text: "Read the memorial as a conservator would: record what remains, and never invent what is missing."
+    postVault:
+      - speaker: Anselm
+        text: "You have opened what we sealed in fear. May it remain open in courage."
+      - speaker: Anselm
+        text: "Preservation is not burial. You have reminded this old place of the difference."
 
   - id: cora
-    name: Cora
+    name: Cora Bell
+    role: Former student guide
+    themeIds: [university]
     firstMeet:
       - speaker: Cora
-        text: "You're not one of the scavengers. You have that look—like you actually care about the books."
+        text: "You’re not campus security. Better posture, less clipboard."
       - speaker: Cora
-        text: "I was a grad student. Medieval literature. My thesis was on Spenser. Ironic, isn't it?"
+        text: "I was a graduate student in medieval literature and gave tours to pay rent. I can still recite the fire exits; most are now just fire."
       - speaker: Cora
-        text: "The reading room had a special collection. Faerie Queene, Canterbury Tales. If the shelves didn't collapse..."
-      - speaker: Cora
-        text: "Good luck. Someone has to remember."
+        text: "Special Collections used a separate lockbox. The registrar’s office kept the access memo because bureaucracy survives everything."
     return:
       - speaker: Cora
-        text: "Still at it. I admire that."
+        text: "Still at it. I admire that—and resent how much it resembles thesis research."
       - speaker: Cora
-        text: "I heard Martha's still in the archives. She knows where everything used to be."
+        text: "Try the lecture hall before the laboratory. The faculty hid answers in the place students were least likely to look: the syllabus."
+    postVault:
+      - speaker: Cora
+        text: "You cracked Special Collections. Somewhere, a registrar has felt a disturbance in the paperwork."
+      - speaker: Cora
+        text: "Please take the books. A collection that excludes every reader is only an expensive tomb."
+
+  - id: rowan
+    name: Dr. Rowan Reyes
+    role: Former lecturer in experimental cognition
+    themeIds: [university]
+    firstMeet:
+      - speaker: Rowan
+        text: "The laboratory is closed. That statement is twenty years late, but I find it comforting."
+      - speaker: Rowan
+        text: "I taught cognition and machine ethics. We were very good at asking whether we could proceed, usually just after proceeding."
+      - speaker: Rowan
+        text: "When the alarms began, I moved the dangerous research into the lockbox with the irreplaceable books. One category was easier to define."
+    return:
+      - speaker: Rowan
+        text: "The registrar memo contains the lock sequence. I left it outside the archive so no single frightened person held both halves."
+      - speaker: Rowan
+        text: "If a terminal wakes, do not accept its invitation to continue the experiment. It has always been terribly persuasive."
+    postVault:
+      - speaker: Rowan
+        text: "The lockbox is open. Good. Let the Alexandria keep the books—and let the failed proposals stay buried."
+      - speaker: Rowan
+        text: "Knowledge is not absolution, but honest records are a beginning."
+
+  - id: noor
+    name: Noor Sen
+    role: Botanical archivist
+    themeIds: [gardens]
+    firstMeet:
+      - speaker: Noor
+        text: "Stay on the pale stones unless you enjoy negotiating with nettles."
+      - speaker: Noor
+        text: "This was a botanical archive: seed histories, field journals, poems pressed beside the plants that inspired them."
+      - speaker: Noor
+        text: "The seed-bank cache still seals. Its specimen tags carry the access figures, but the wind has rearranged nearly everything else."
+    return:
+      - speaker: Noor
+        text: "The flooded pavilion is passable. Step slowly; water makes a poor librarian and a worse electrician."
+      - speaker: Noor
+        text: "Match the greenhouse log to the numbered specimen tags. The old gardeners trusted cross-references more than keys."
+    postVault:
+      - speaker: Noor
+        text: "You opened the seed bank. Then two kinds of future survived today."
+      - speaker: Noor
+        text: "Take the pages. I’ll tend what can still put down roots here."
+
+  - id: theo
+    name: Theo Moss
+    role: Ecological groundskeeper
+    themeIds: [gardens]
+    firstMeet:
+      - speaker: Theo
+        text: "Mind that vine. It has annexed three benches and is considering a fourth."
+      - speaker: Theo
+        text: "I kept the conservatory systems running until the systems became a pond. Now I mostly keep paths negotiable."
+      - speaker: Theo
+        text: "The seed cache uses numbers from the specimen tags. Noor wrote them into the greenhouse log before the evacuation."
+    return:
+      - speaker: Theo
+        text: "If the path vanishes, follow the drainage channels. Water remembers the original plan better than I do."
+      - speaker: Theo
+        text: "Don’t let the pretty labels fool you. The poisonous specimens got the best penmanship."
+    postVault:
+      - speaker: Theo
+        text: "Cache is open? Excellent. I was running out of dignified ways to call it a very stubborn cupboard."
+      - speaker: Theo
+        text: "Send the writing skyward. The garden can keep revising itself down here."

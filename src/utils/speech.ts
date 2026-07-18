@@ -1,12 +1,18 @@
 /**
- * Browser/local TTS + simple sound effects.
- * TTS can be toggled via setTTSEnabled() - called by the game store.
+ * Browser/local narration + lightweight sound effects.
+ *
+ * The module starts locked on every page load. `unlockAudioSystem()` must be
+ * called from the launch button's user gesture before any browser audio API is
+ * created or used.
  */
 
 import { findVoiceClip, loadVoiceManifest } from './voiceManifest';
 
 // Global TTS state - avoids circular import with store
 let ttsEnabled = true;
+let sfxEnabled = true;
+let audioUnlocked = false;
+let masterVolume = 0.7;
 let browserTtsFallbackEnabled = false;
 let activeVoiceAudio: HTMLAudioElement | null = null;
 let speechRequestId = 0;
@@ -17,6 +23,33 @@ export function setTTSEnabledGlobal(enabled: boolean): void {
 
 export function getTTSEnabled(): boolean {
   return ttsEnabled;
+}
+
+export function setSfxEnabledGlobal(enabled: boolean): void {
+  sfxEnabled = enabled;
+}
+
+export function setMasterVolumeGlobal(volume: number): void {
+  masterVolume = Number.isFinite(volume)
+    ? Math.min(1, Math.max(0, volume))
+    : 0;
+  if (activeVoiceAudio) activeVoiceAudio.volume = masterVolume;
+}
+
+export function setAudioUnlockedGlobal(unlocked: boolean): void {
+  audioUnlocked = unlocked;
+  if (!unlocked) cancelSpeech();
+}
+
+/**
+ * Unlock audio from a real pointer/keyboard gesture. Existing Web Audio
+ * contexts are resumed here; none are constructed before this call.
+ */
+export function unlockAudioSystem(): void {
+  audioUnlocked = true;
+  if (audioContext?.state === 'suspended') {
+    void audioContext.resume();
+  }
 }
 
 export function setBrowserTtsFallbackEnabled(enabled: boolean): void {
@@ -34,7 +67,7 @@ function getSynth(): SpeechSynthesis | null {
 }
 
 export function speak(text: string, options: SpeakOptions = {}): void {
-  if (!ttsEnabled) return;
+  if (!audioUnlocked || !ttsEnabled) return;
   const trimmedText = text.trim();
   if (!trimmedText) return;
 
@@ -62,7 +95,7 @@ async function speakLocalVoiceLine(
   requestId: number
 ): Promise<void> {
   const manifest = await loadVoiceManifest();
-  if (requestId !== speechRequestId) return;
+  if (!audioUnlocked || !ttsEnabled || requestId !== speechRequestId) return;
 
   const clip = manifest ? findVoiceClip(manifest, lineId) : null;
   if (!clip) {
@@ -72,6 +105,7 @@ async function speakLocalVoiceLine(
 
   try {
     const audio = new Audio(clip.path);
+    audio.volume = masterVolume;
     activeVoiceAudio = audio;
     audio.addEventListener(
       'ended',
@@ -92,6 +126,7 @@ async function speakLocalVoiceLine(
 }
 
 function speakWithBrowserTts(text: string): void {
+  if (!audioUnlocked || !ttsEnabled) return;
   const synth = getSynth();
   if (!synth || !text.trim()) return;
 
@@ -99,6 +134,7 @@ function speakWithBrowserTts(text: string): void {
   const utterance = new SpeechSynthesisUtterance(text.trim());
   utterance.rate = 0.95;
   utterance.pitch = 1;
+  utterance.volume = masterVolume;
   synth.speak(utterance);
 }
 
@@ -120,9 +156,12 @@ function cancelCurrentPlayback(): void {
 let audioContext: AudioContext | null = null;
 
 function getAudioContext(): AudioContext | null {
-  if (typeof window === 'undefined') return null;
+  if (!audioUnlocked || !sfxEnabled || masterVolume <= 0 || typeof window === 'undefined') return null;
   if (!audioContext) {
-    audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    const AudioContextConstructor = window.AudioContext
+      || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextConstructor) return null;
+    audioContext = new AudioContextConstructor();
   }
   return audioContext;
 }
@@ -151,8 +190,9 @@ export function playBumpSound(): void {
   oscillator.frequency.setValueAtTime(80, ctx.currentTime);
   oscillator.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.1);
   
-  gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+  gainNode.gain.cancelScheduledValues(ctx.currentTime);
+  gainNode.gain.setValueAtTime(0.3 * masterVolume, ctx.currentTime);
+  gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.1);
   
   oscillator.start(ctx.currentTime);
   oscillator.stop(ctx.currentTime + 0.1);
@@ -181,9 +221,10 @@ export function playDiscoveryChime(): void {
   oscillator.frequency.setValueAtTime(554, ctx.currentTime + 0.1);
   oscillator.frequency.setValueAtTime(659, ctx.currentTime + 0.2);
   
-  gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
-  gainNode.gain.setValueAtTime(0.2, ctx.currentTime + 0.2);
-  gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+  gainNode.gain.cancelScheduledValues(ctx.currentTime);
+  gainNode.gain.setValueAtTime(0.2 * masterVolume, ctx.currentTime);
+  gainNode.gain.setValueAtTime(0.2 * masterVolume, ctx.currentTime + 0.2);
+  gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4);
   
   oscillator.start(ctx.currentTime);
   oscillator.stop(ctx.currentTime + 0.4);

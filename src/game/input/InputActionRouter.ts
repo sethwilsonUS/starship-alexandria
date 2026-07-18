@@ -15,7 +15,6 @@ export type GameInputAction =
 export interface InputActionContext {
   phase: GamePhase;
   hasAreaMap: boolean;
-  isGameComplete: boolean;
   now: number;
 }
 
@@ -73,8 +72,7 @@ export class InputActionRouter {
 
     if (context.phase === 'ship') {
       if (
-        (isKeyboardMatch(event, 'Space', ' ') || isKeyboardMatch(event, 'Enter', 'enter')) &&
-        !context.isGameComplete
+        isKeyboardMatch(event, 'Space', ' ') || isKeyboardMatch(event, 'Enter', 'enter')
       ) {
         return 'beamDown';
       }

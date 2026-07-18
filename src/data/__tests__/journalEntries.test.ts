@@ -5,6 +5,7 @@ import type { JournalYaml } from '@/utils/contentLoader';
 const sampleJournalYaml: JournalYaml = {
   id: 'journal-001',
   title: 'A Scrap of Paper',
+  themeIds: ['scriptorium'],
   lines: [
     { text: 'You find a crumpled note tucked inside a desk drawer.' },
     { speaker: 'Note', text: 'Day 47. The library at Fifth and Main is still standing.' },
@@ -17,6 +18,7 @@ describe('yamlToJournal', () => {
     const journal = yamlToJournal(sampleJournalYaml);
     expect(journal.id).toBe('journal-001');
     expect(journal.title).toBe('A Scrap of Paper');
+    expect(journal.themeIds).toEqual(['scriptorium']);
   });
 
   it('converts lines preserving speaker and text', () => {
@@ -38,6 +40,7 @@ describe('yamlToJournal', () => {
     const empty: JournalYaml = {
       id: 'empty-journal',
       title: 'Blank Page',
+      themeIds: ['gardens'],
       lines: [],
     };
     const journal = yamlToJournal(empty);

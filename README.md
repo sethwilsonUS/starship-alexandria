@@ -1,111 +1,151 @@
 # Starship Alexandria
 
+[![CI](https://github.com/sethwilsonUS/starship-alexandria/actions/workflows/ci.yml/badge.svg)](https://github.com/sethwilsonUS/starship-alexandria/actions/workflows/ci.yml)
+![Next.js 16](https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white)
+![React 19](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)
+![Phaser 4](https://img.shields.io/badge/Phaser-4-8B5CF6)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
-![Phaser 3](https://img.shields.io/badge/Phaser-3.90-8B5CF6)
-![Next.js](https://img.shields.io/badge/Next.js-15-000000?logo=next.js&logoColor=white)
-![rot.js](https://img.shields.io/badge/rot.js-2.2-orange)
-![License: MIT](https://img.shields.io/badge/License-MIT-22c55e)
-![CI](https://github.com/sethwilsonUS/starship-alexandria/actions/workflows/ci.yml/badge.svg)
+[![License: MIT](https://img.shields.io/badge/Code-MIT-22c55e)](LICENSE)
 
-![Starship Alexandria screenshot](screenshot.png)
+A quiet, keyboard-first roguelike about recovering lost literature from the ruins of Earth.
 
-A cozy roguelike about recovering lost literature from the ruins of post-apocalyptic Earth.
+From the orbiting library ship *Alexandria*, choose a recovery signal, beam down, explore a procedurally generated archive, meet its survivors, follow a vault clue, and bring public-domain writing home. There is no combat, player death, or timer—only exploration, discovery, and the words that endure.
 
-After a cataclysm, Earth's great works of literature were scattered across the ruins. You play as a crew member aboard the Starship Alexandria, a library ship orbiting what remains. Your mission: beam down to the surface, explore overgrown universities and collapsed libraries, recover fragments of lost classics, and rebuild humanity's library one page at a time.
+[Play the live demo](https://starship-alexandria.vercel.app)
 
-No combat. No death. Just exploration, discovery, and the words that endure.
+![An archivist stands on a blue transporter platform in a brass-lined starship library, with Earth above and four ruined destinations below.](public/images/starship-alexandria-key-art.png)
 
-## Features
+*AI-generated concept key art for the Alexandria and its four recovery signals; generation details are recorded in the [image manifest](public/images/manifest.json).*
 
-- **Procedural exploration** -- Every expedition generates a new ruin to explore using rot.js, with rooms, corridors, rubble, and flooded passages
-- **Real literature** -- Collect fragments of actual public-domain texts: Dante's *Inferno*, Shakespeare's *The Tempest*, Chaucer's *Canterbury Tales*, Spenser's *Faerie Queene*, Dickinson's poetry, and passages from the King James Bible
-- **Fog of war & flashlight** -- Limited visibility with a battery-powered flashlight that dims over time but never goes dark
-- **Turn-based, no pressure** -- Move at your own pace on a tile grid; there is no player death and no time limit
-- **NPCs & lore** -- Meet survivors sheltering in the ruins, read water-damaged journals, unlock vaults with hidden codes
-- **Ship library** -- Return to the Alexandria to browse your growing collection and read the texts you've recovered
-- **Accessibility-first** -- Full keyboard navigation, ARIA live regions for game events, text-to-speech for dialogue and book text, high-contrast player and interactive highlights
+## What is in the game
 
-## Getting Started
+- Four destinations with different map structures, tiles, room vocabularies, NPC pools, and vault stories.
+- Twenty-one sourced excerpts across ten public-domain works, including *Paradise Lost*, *The Canterbury Tales*, *The Faerie Queene*, *Frankenstein*, *A Vindication of the Rights of Woman*, and Frederick Douglass's *Narrative*.
+- Deterministic expeditions: a seed reproduces the layout, placements, clue, and reward.
+- A nonviolent collection loop with fog of war, a battery-powered flashlight, journals, maps, NPC dialogue, clue-driven vaults that never require code entry, and a browsable ship library.
+- Accessible HTML for launch, settings, dialogue, reading, maps, and mission selection around a focused Phaser game region.
+- Narration, sound-effects, ambience, and motion preferences before play begins. Audio never starts before the player's launch gesture.
+- Visible game-event announcements and a textual map equivalent for information that would otherwise exist only on the canvas.
+- A small versioned local save that preserves progress and preferences while safely returning every reload to the ship.
 
-**Prerequisites:** [Node.js](https://nodejs.org) (v20+)
+## Destinations
+
+| Destination | Topology | Notable spaces | Vault thread |
+| --- | --- | --- | --- |
+| The Ruined Scriptorium | rot.js Digger rooms and corridors | chained stacks, reading room, refectory, manuscript workshop | catalog card and archive safe |
+| Cathedral of the Last Canticle | custom ruined cross-plan | nave, transepts, chapels, cloister, crypt | annotated hymnal and reliquary |
+| The Shattered Collegium | academic rooms around a courtyard loop | lecture hall, laboratory, dormitory, special collections | registrar memo and lockbox |
+| The Overgrown Athenaeum | cellular clearings connected by paths | conservatory, sculpture garden, flooded pavilion, seed bank | greenhouse log and seed cache |
+
+“Surprise Me” selects from the same registry and avoids immediately repeating the previous destination.
+
+## Controls
+
+The game targets desktop keyboard play. Native controls inside dialogs continue to use their standard browser behavior.
+
+| Key | Action |
+| --- | --- |
+| Arrow keys or `W` `A` `S` `D` | Move one tile while exploring |
+| `Space` or `E` | Interact with the adjacent object or person |
+| `Space` or `Enter` | Advance dialogue; open the destination picker from the ship |
+| `M` | Open or close the recovered area map |
+| `B` | Use a spare battery when the flashlight is at 50% or below |
+| `I` | Hear/read a concise status summary |
+| `Escape` | Close the active HTML overlay |
+| `Tab` / `Shift`+`Tab` | Move through HTML controls and dialog actions |
+
+## Run locally
+
+Prerequisites: Node.js 22 (the exact version is in [`.nvmrc`](.nvmrc)) and npm.
 
 ```bash
 git clone https://github.com/sethwilsonUS/starship-alexandria.git
 cd starship-alexandria
-npm install
+nvm use
+npm ci
 npm run dev
 ```
 
-Open [http://localhost:8080](http://localhost:8080) in your browser.
+Open [http://localhost:8080](http://localhost:8080).
 
-### Commands
+### Useful commands
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start the development server |
-| `npm run build` | Validate content and create a production build |
-| `npm run validate-content` | Check YAML content files for errors |
-| `npm run clean` | Remove build artifacts |
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the Next.js development server on port 8080 |
+| `npm run check` | Run content/assets validation, lint, typecheck, tests, and a production build |
+| `npm test` | Run the Vitest unit and integration suite once |
+| `npm run test:watch` | Run Vitest in watch mode |
+| `npm run test:e2e` | Run the Playwright browser suite |
+| `npm run test:e2e:update` | Intentionally refresh Playwright visual baselines |
+| `npm run smoke` | Run the representative browser smoke journey |
+| `npm run lint` | Check source files with ESLint |
+| `npm run typecheck` | Run strict TypeScript checks without emitting files |
+| `npm run validate-content` | Validate YAML, text paths, metadata, theme references, and catalog invariants |
+| `npm run validate-assets` | Verify local runtime assets, hashes, formats, dimensions, and licenses |
+| `npm run build` | Validate content and create a production Next.js build |
+| `npm run refresh-assets` | Rebuild committed runtime assets from pinned maintainer sources |
 
-## Project Structure
+For the full local quality gate, run `npm run check`.
 
-```
+To smoke-test a deployed build, set `PLAYWRIGHT_BASE_URL` before `npm run smoke`.
+Protected Vercel previews are supported through either
+`VERCEL_AUTOMATION_BYPASS_SECRET` or a short-lived `VERCEL_OIDC_TOKEN`; neither
+credential is stored in the repository.
+
+## How it is built
+
+Starship Alexandria uses Next.js 16 and React 19 for the application shell and accessible HTML overlays, Phaser 4 for the 1024×768 game world, Zustand 5 for progression/settings/modal state, and rot.js for selected topology builders. The procedural generator is a synchronous, Phaser-free TypeScript module whose semantic output is adapted for rendering.
+
+The ownership rule is intentionally sharp:
+
+- React owns documents, dialogs, focus, tabs, reading, settings, and screen-reader-facing equivalents.
+- Phaser owns world rendering, visibility, collision presentation, movement effects, and spatial sound.
+- Zustand owns durable progression and transient UI/game state.
+- The typed event bridge carries commands and events between React and Phaser.
+
+See [Architecture](docs/ARCHITECTURE.md) for the generator contract, state boundaries, save model, and test strategy.
+
+## Repository map
+
+```text
+public/
+├── content/                 # Sole source for YAML narrative data and excerpt text
+├── game-assets/             # Committed local tiles, sprites, audio, and provenance manifest
+├── fonts/                   # Self-hosted OFL interface and reading fonts
+└── audio/voices/            # Opening narration and generation manifest
 src/
-├── app/                  # Next.js App Router (layout, page)
-├── components/           # React UI overlays
-│   ├── GameContainer     #   Mounts Phaser + wires events to React
-│   ├── HUD               #   Battery, fragment count, controls
-│   ├── DialogueBox       #   NPC and journal dialogue with TTS
-│   ├── BookDetail        #   Paginated reading view for collected texts
-│   ├── LibraryShelf      #   Ship library browser and beam-down trigger
-│   ├── InteractionPrompt #   Context-sensitive action prompt
-│   ├── MapOverlay        #   Area map with rooms and NPC markers
-│   └── AccessibleLog     #   ARIA live region for screen readers
+├── app/                     # Next.js App Router entry points and metadata
+├── components/              # Accessible React overlays and game shell
 ├── game/
-│   ├── scenes/           # Phaser scenes (Boot, Ship, Explore, Map)
-│   ├── entities/         # Player, NPC, BookPickup
-│   ├── systems/          # GridMovement, FOV, MapGenerator, Interaction
-│   └── EventBridge       # Typed event bus (Phaser <-> React)
-├── store/                # Zustand state (designed for future Convex migration)
-├── data/                 # Runtime loaders for YAML content
-├── config/               # Game constants (tile size, FOV radius, speeds)
-├── types/                # TypeScript type definitions
-└── utils/                # Helpers (Gutenberg formatting, flashlight, speech)
-
-content/
-├── books.yaml            # Book and fragment catalog
-├── npcs.yaml             # NPC definitions and dialogue
-├── dialogue.yaml         # NPC dialogue trees
-├── journals.yaml         # Discoverable journal entries
-├── artifacts.yaml        # Vault artifact definitions
-├── rooms.yaml            # Room name templates
-├── gameloop.yaml         # Welcome, victory, and vault dialogue
-└── texts/                # Public-domain literature fragments (Project Gutenberg)
+│   ├── expeditions/         # Pure theme registry, layouts, RNG, generator, and adapter
+│   ├── player/              # Pure movement and interaction contracts
+│   ├── scenes/              # Phaser boot, ship, and expedition scenes
+│   ├── systems/             # FOV, movement, placement, effects, and announcements
+│   └── EventBridge.ts       # Typed React ↔ Phaser boundary
+├── store/                   # Zustand state and save-v5 migration
+├── data/                    # Typed catalog adapters
+├── types/                   # Shared application/content contracts
+└── utils/                   # Content loading, narration, and focused helpers
+scripts/                     # Content, asset, and voice maintenance tools
+docs/                        # Architecture and authoring guides
 ```
 
-## Game Content
+## Authoring and contribution guides
 
-All game content -- books, NPCs, dialogue, journal entries, and room names -- is defined in YAML files under `content/`. The build system validates these files before each production build.
+- [Architecture](docs/ARCHITECTURE.md)
+- [Content authoring](docs/CONTENT_AUTHORING.md)
+- [Destination theme authoring](docs/THEME_AUTHORING.md)
+- [Contributing](CONTRIBUTING.md)
+- [Asset credits and licenses](ASSET_CREDITS.md)
+- [Runtime asset provenance](public/game-assets/README.md)
 
-See [EDITING.md](EDITING.md) for a guide to adding and modifying game content.
+`public/content/` is the only runtime content source. The legacy root `content/` tree is intentionally rejected by validation so the browser, tests, and editing docs cannot silently drift apart.
 
-## Literature & Public Domain
+## Literature, media, and licenses
 
-All literature in this game comes from [Project Gutenberg](https://www.gutenberg.org/) and is in the **public domain** in the United States. These texts are not covered by the project's MIT license -- they belong to everyone. The included works are:
+Project code is available under the [MIT License](LICENSE). Bundled literature is separate from the code license: each work records its Project Gutenberg eBook number, edition, source URL, source location, and “Public domain in the USA” notice in [`public/content/books.yaml`](public/content/books.yaml).
 
-- Dante Alighieri -- *Inferno* (Henry Wadsworth Longfellow translation)
-- William Shakespeare -- *The Tempest*
-- Geoffrey Chaucer -- *The Canterbury Tales*
-- Edmund Spenser -- *The Faerie Queene*
-- Emily Dickinson -- selected poems
-- *The King James Bible* -- selected chapters
+Runtime game art and sound are local—there are no remote runtime asset requests. The bundle uses compatible CC0 sources, primarily Kenney and OpenGameArt contributors, with human-readable credits in [`ASSET_CREDITS.md`](ASSET_CREDITS.md) and hashes/transformations in [`public/game-assets/manifest.json`](public/game-assets/manifest.json). Atkinson Hyperlegible and Literata are self-hosted under the SIL Open Font License; their license files ship beside the fonts.
 
-## Contributing
-
-Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on setting up the project, submitting changes, and adding game content.
-
-## License
-
-This project is licensed under the [MIT License](LICENSE).
-
-Literature texts in `content/texts/` are public domain and carry no license restrictions.
+The four opening narration clips are AI-generated with OpenAI text-to-speech. Their model, voice, source-text hash, and local path are recorded in [`public/audio/voices/manifest.json`](public/audio/voices/manifest.json), and the interface discloses their origin. Dynamic narration uses the browser's optional speech synthesis.

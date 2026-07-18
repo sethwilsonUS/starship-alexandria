@@ -136,7 +136,7 @@ export class FxController {
 
     const fadeTimer = this.scene.time.delayedCall(600, () => {
       this.activeTimers.delete(fadeTimer);
-      onFade();
+      if (!this.isDestroyed) onFade();
     });
     this.activeTimers.add(fadeTimer);
 

@@ -29,7 +29,7 @@ export default function HUD() {
   const explorableTileCount = useGameStore((s) => s.session.explorableTileCount);
   const currentMapId = useGameStore((s) => s.player.currentMapId);
   const contentReady = useGameStore((s) => s.session.contentReady);
-  const [areaName, setAreaName] = useState('Ruined Library Wing');
+  const [areaName, setAreaName] = useState('Starship Alexandria — Library Deck');
 
   const isOnShip = currentMapId === 'ship';
 

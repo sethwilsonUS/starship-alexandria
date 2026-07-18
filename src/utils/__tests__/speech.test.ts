@@ -2,7 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearVoiceManifestCacheForTests, type VoiceManifest } from '../voiceManifest';
 import {
   cancelSpeech,
+  playBumpSound,
+  playDiscoveryChime,
+  setAudioUnlockedGlobal,
   setBrowserTtsFallbackEnabled,
+  setMasterVolumeGlobal,
+  setSfxEnabledGlobal,
   setTTSEnabledGlobal,
   speak,
 } from '../speech';
@@ -53,11 +58,17 @@ function installManifestFetch(manifest: unknown = voiceManifest) {
 }
 
 function installAudio(playImpl: () => Promise<void> = () => Promise.resolve()) {
-  const instances: Array<{ src: string; pause: ReturnType<typeof vi.fn>; currentTime: number }> = [];
+  const instances: Array<{
+    src: string;
+    pause: ReturnType<typeof vi.fn>;
+    currentTime: number;
+    volume: number;
+  }> = [];
   const playMock = vi.fn(playImpl);
 
   class TestAudio {
     currentTime = 0;
+    volume = 1;
     pause = vi.fn();
 
     constructor(public src: string) {
@@ -75,20 +86,45 @@ function installAudio(playImpl: () => Promise<void> = () => Promise.resolve()) {
 
 beforeEach(() => {
   clearVoiceManifestCacheForTests();
+  setAudioUnlockedGlobal(true);
   setTTSEnabledGlobal(true);
+  setSfxEnabledGlobal(true);
+  setMasterVolumeGlobal(0.7);
   setBrowserTtsFallbackEnabled(false);
 });
 
 afterEach(() => {
   cancelSpeech();
   clearVoiceManifestCacheForTests();
+  setAudioUnlockedGlobal(false);
   setTTSEnabledGlobal(true);
+  setSfxEnabledGlobal(true);
+  setMasterVolumeGlobal(0.7);
   setBrowserTtsFallbackEnabled(false);
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
 describe('speak', () => {
+  it('does not construct or play narration before the launch gesture unlocks audio', async () => {
+    const synth = installBrowserSpeech();
+    const fetchMock = installManifestFetch();
+    const { instances, play } = installAudio();
+    setAudioUnlockedGlobal(false);
+
+    speak('Dynamic room announcement.');
+    speak('Welcome aboard the Starship Alexandria.', {
+      voiceLineId: 'opening.welcome.01',
+      allowBrowserFallback: true,
+    });
+    await flushPromises();
+
+    expect(synth.speak).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(instances).toHaveLength(0);
+    expect(play).not.toHaveBeenCalled();
+  });
+
   it('uses browser TTS for dynamic text without a voice line id', () => {
     const synth = installBrowserSpeech();
 
@@ -175,5 +211,101 @@ describe('speak', () => {
 
     expect(instances[0]?.pause).toHaveBeenCalledTimes(1);
     expect(instances[0]?.currentTime).toBe(0);
+  });
+
+  it('applies live master-volume changes to active local narration', async () => {
+    installBrowserSpeech();
+    installManifestFetch();
+    const { instances } = installAudio();
+
+    speak('Welcome aboard the Starship Alexandria.', {
+      voiceLineId: 'opening.welcome.01',
+    });
+    await flushPromises();
+    setMasterVolumeGlobal(0.25);
+
+    expect(instances[0]?.volume).toBe(0.25);
+  });
+});
+
+describe('sound effects', () => {
+  it('does not create an audio context before the launch gesture', () => {
+    const AudioContextMock = vi.fn();
+    vi.stubGlobal('window', { AudioContext: AudioContextMock });
+    setAudioUnlockedGlobal(false);
+
+    playBumpSound();
+
+    expect(AudioContextMock).not.toHaveBeenCalled();
+  });
+
+  it('does not create or schedule browser tones at zero master volume', () => {
+    const createOscillator = vi.fn();
+    const createGain = vi.fn();
+    const AudioContextMock = vi.fn(class {
+      state = 'running';
+      currentTime = 0;
+      createOscillator = createOscillator;
+      createGain = createGain;
+    });
+    vi.stubGlobal('window', { AudioContext: AudioContextMock });
+    setMasterVolumeGlobal(0);
+
+    playBumpSound();
+    playDiscoveryChime();
+
+    expect(AudioContextMock).not.toHaveBeenCalled();
+    expect(createOscillator).not.toHaveBeenCalled();
+    expect(createGain).not.toHaveBeenCalled();
+  });
+
+  it('ramps audible browser tones all the way to silence without exponential zero targets', () => {
+    const gainParams = Array.from({ length: 2 }, () => ({
+      cancelScheduledValues: vi.fn(),
+      setValueAtTime: vi.fn(),
+      linearRampToValueAtTime: vi.fn(),
+      exponentialRampToValueAtTime: vi.fn(),
+    }));
+    let gainIndex = 0;
+    const createGain = vi.fn(() => ({
+      connect: vi.fn(),
+      gain: gainParams[gainIndex++],
+    }));
+    const createOscillator = vi.fn(() => ({
+      connect: vi.fn(),
+      frequency: {
+        setValueAtTime: vi.fn(),
+        exponentialRampToValueAtTime: vi.fn(),
+      },
+      start: vi.fn(),
+      stop: vi.fn(),
+      type: 'sine',
+    }));
+    const AudioContextMock = vi.fn(class {
+      state = 'running';
+      currentTime = 12;
+      destination = {};
+      createOscillator = createOscillator;
+      createGain = createGain;
+      resume = vi.fn();
+    });
+    vi.stubGlobal('window', { AudioContext: AudioContextMock });
+    setMasterVolumeGlobal(0.5);
+
+    playBumpSound();
+    playDiscoveryChime();
+
+    expect(gainParams[0].cancelScheduledValues).toHaveBeenCalledWith(12);
+    expect(gainParams[0].linearRampToValueAtTime).toHaveBeenLastCalledWith(0, 12.1);
+    expect(gainParams[1].cancelScheduledValues).toHaveBeenCalledWith(12);
+    expect(gainParams[1].linearRampToValueAtTime).toHaveBeenLastCalledWith(0, 12.4);
+    expect(gainParams[0].exponentialRampToValueAtTime).not.toHaveBeenCalled();
+    expect(gainParams[1].exponentialRampToValueAtTime).not.toHaveBeenCalled();
+
+    setMasterVolumeGlobal(0);
+    playBumpSound();
+    playDiscoveryChime();
+    expect(createOscillator).toHaveBeenCalledTimes(2);
+    expect(createGain).toHaveBeenCalledTimes(2);
   });
 });

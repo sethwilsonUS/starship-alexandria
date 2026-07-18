@@ -1,7 +1,6 @@
-/**
- * Book and fragment types.
- * BookFragment = a collected fragment in the player's library.
- */
+import type { ContentThemeId } from './content';
+
+/** BookFragment is an included excerpt presented in the player's library. */
 
 export interface BookFragment {
   id: string;
@@ -9,4 +8,8 @@ export interface BookFragment {
   label: string; // e.g. "Canto I"
   order: number;
   text: string; // Full text from Project Gutenberg
+  /** Available for catalog-loaded excerpts; optional on legacy save fixtures. */
+  sourceLocation?: string;
+  themeAffinities?: ContentThemeId[];
+  editorialContext?: string;
 }
