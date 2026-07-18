@@ -24,6 +24,10 @@ export default defineConfig({
     timeout: 15_000,
     toHaveScreenshot: {
       animations: 'disabled',
+      // Self-hosted fonts rasterize with different edge antialiasing on macOS
+      // and Linux. Keep the structural diff budget strict while tolerating
+      // small per-pixel color differences between those renderers.
+      threshold: 0.35,
       maxDiffPixelRatio: 0.035,
     },
   },
