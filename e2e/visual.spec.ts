@@ -23,6 +23,12 @@ test('@visual launch, ship, and destination registry remain visually stable', as
   await expect(page).toHaveScreenshot('ship.png', { fullPage: true });
 
   const picker = await openMissionPicker(page);
+  const missionButtons = picker.locator('.mission-card__button');
+  await expect(missionButtons).toHaveCount(4);
+  for (const button of await missionButtons.all()) {
+    await expect(button).toBeInViewport({ ratio: 1 });
+  }
+  await expect(picker.locator('.mission-picker__footer')).toBeInViewport({ ratio: 1 });
   await expect(page).toHaveScreenshot('mission-picker.png', { fullPage: true });
   await page.keyboard.press('Escape');
   await expect(picker).toBeHidden();
