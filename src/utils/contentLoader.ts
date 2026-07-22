@@ -4,6 +4,7 @@
  */
 
 import { parse as parseYaml } from 'yaml';
+import type { ContentThemeId, PublicDomainSource } from '@/types/content';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types for YAML content structures
@@ -18,13 +19,17 @@ export interface DialogueLineYaml {
 export interface NPCYaml {
   id: string;
   name: string;
+  role: string;
+  themeIds: ContentThemeId[];
   firstMeet: DialogueLineYaml[];
   return: DialogueLineYaml[];
+  postVault: DialogueLineYaml[];
 }
 
 export interface JournalYaml {
   id: string;
   title: string;
+  themeIds: ContentThemeId[];
   lines: DialogueLineYaml[];
 }
 
@@ -33,15 +38,22 @@ export interface FragmentYaml {
   label: string;
   order: number;
   textFile: string;
+  sourceLocation: string;
+  themeAffinities: ContentThemeId[];
+  editorialContext?: string;
 }
 
 export interface BookYaml {
   id: string;
   title: string;
   author: string;
-  totalFragments: number;
+  source: PublicDomainSource;
+  /** Derived from fragments; never stored in books.yaml. */
+  includedFragmentCount: number;
   fragments: FragmentYaml[];
 }
+
+type StoredBookYaml = Omit<BookYaml, 'includedFragmentCount'>;
 
 export interface DialogueChoiceYaml {
   label: string;
@@ -85,11 +97,26 @@ export interface GameloopYaml {
   victory: {
     lines: GameloopDialogueLineYaml[];
   };
-  vault: {
-    alreadyOpened: GameloopDialogueLineYaml[];
-    openWithArtifact: GameloopDialogueLineYaml[];
-    openEmpty: GameloopDialogueLineYaml[];
+}
+
+export interface VaultYaml {
+  id: string;
+  themeId: ContentThemeId;
+  name: string;
+  clue: {
+    id: string;
+    title: string;
+    lines: GameloopDialogueLineYaml[];
+  };
+  dialogue: {
     locked: GameloopDialogueLineYaml[];
+    opening: GameloopDialogueLineYaml[];
+    opened: GameloopDialogueLineYaml[];
+  };
+  exhaustedReward: {
+    journalTitle: string;
+    journalText: string;
+    batteries: number;
   };
 }
 
@@ -100,10 +127,10 @@ export interface GameloopYaml {
 let npcsCache: NPCYaml[] | null = null;
 let journalsCache: JournalYaml[] | null = null;
 let booksCache: BookYaml[] | null = null;
-let roomNamesCache: string[] | null = null;
 let dialogueCache: DialogueContentYaml | null = null;
 let artifactsCache: ArtifactYaml[] | null = null;
 let gameloopCache: GameloopYaml | null = null;
+let vaultsCache: VaultYaml[] | null = null;
 const textFileCache: Map<string, string> = new Map();
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -147,6 +174,11 @@ export async function getAllNPCs(): Promise<NPCYaml[]> {
   return loadNPCs();
 }
 
+export async function getNPCsForTheme(themeId: ContentThemeId): Promise<NPCYaml[]> {
+  const npcs = await loadNPCs();
+  return npcs.filter((npc) => npc.themeIds.includes(themeId));
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Journals
 // ─────────────────────────────────────────────────────────────────────────────
@@ -169,14 +201,22 @@ export async function getRandomJournalEntries(count: number): Promise<JournalYam
   return shuffled.slice(0, count);
 }
 
+export async function getJournalsForTheme(themeId: ContentThemeId): Promise<JournalYaml[]> {
+  const journals = await loadJournals();
+  return journals.filter((journal) => journal.themeIds.includes(themeId));
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Books & Fragments
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function loadBooks(): Promise<BookYaml[]> {
   if (booksCache) return booksCache;
-  const data = await fetchYaml<{ books: BookYaml[] }>('/content/books.yaml');
-  booksCache = data.books;
+  const data = await fetchYaml<{ books: StoredBookYaml[] }>('/content/books.yaml');
+  booksCache = data.books.map((book) => ({
+    ...book,
+    includedFragmentCount: book.fragments.length,
+  }));
   return booksCache;
 }
 
@@ -204,6 +244,9 @@ export interface FragmentWithText {
   label: string;
   order: number;
   text: string;
+  sourceLocation: string;
+  themeAffinities: ContentThemeId[];
+  editorialContext?: string;
 }
 
 export async function getFragmentById(id: string): Promise<FragmentWithText | undefined> {
@@ -218,6 +261,9 @@ export async function getFragmentById(id: string): Promise<FragmentWithText | un
         label: fragment.label,
         order: fragment.order,
         text,
+        sourceLocation: fragment.sourceLocation,
+        themeAffinities: [...fragment.themeAffinities],
+        editorialContext: fragment.editorialContext,
       };
     }
   }
@@ -236,6 +282,9 @@ export async function getAllFragments(): Promise<FragmentWithText[]> {
         label: fragment.label,
         order: fragment.order,
         text,
+        sourceLocation: fragment.sourceLocation,
+        themeAffinities: [...fragment.themeAffinities],
+        editorialContext: fragment.editorialContext,
       });
     }
   }
@@ -263,17 +312,6 @@ export async function getRandomFragmentsForMap(count: number): Promise<FragmentW
   }
 
   return picked;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Room Names
-// ─────────────────────────────────────────────────────────────────────────────
-
-export async function loadRoomNames(): Promise<string[]> {
-  if (roomNamesCache) return roomNamesCache;
-  const data = await fetchYaml<{ roomNames: string[] }>('/content/rooms.yaml');
-  roomNamesCache = data.roomNames;
-  return roomNamesCache;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -356,6 +394,30 @@ export async function loadGameloop(): Promise<GameloopYaml> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Themed vaults
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function loadVaults(): Promise<VaultYaml[]> {
+  if (vaultsCache) return vaultsCache;
+  const data = await fetchYaml<{ vaults: VaultYaml[] }>('/content/vaults.yaml');
+  vaultsCache = data.vaults;
+  return vaultsCache;
+}
+
+export async function getVaultByTheme(themeId: ContentThemeId): Promise<VaultYaml | undefined> {
+  const vaults = await loadVaults();
+  return vaults.find((vault) => vault.themeId === themeId);
+}
+
+/** Synchronous access after preloadAllContent has completed. */
+export function getVaultByThemeSync(themeId: ContentThemeId): VaultYaml | undefined {
+  if (!vaultsCache) {
+    throw new Error('Vault content not loaded. Call preloadAllContent() first.');
+  }
+  return vaultsCache.find((vault) => vault.themeId === themeId);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Preload all content (call at game start for better UX)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -364,10 +426,10 @@ export async function preloadAllContent(): Promise<void> {
     loadNPCs(),
     loadJournals(),
     loadBooks(),
-    loadRoomNames(),
     loadDialogue(),
     loadArtifacts(),
     loadGameloop(),
+    loadVaults(),
   ]);
 }
 
@@ -379,9 +441,9 @@ export function clearContentCache(): void {
   npcsCache = null;
   journalsCache = null;
   booksCache = null;
-  roomNamesCache = null;
   dialogueCache = null;
   artifactsCache = null;
   gameloopCache = null;
+  vaultsCache = null;
   textFileCache.clear();
 }

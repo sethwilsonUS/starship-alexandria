@@ -14,7 +14,6 @@ function context(overrides: Partial<InputActionContext> = {}): InputActionContex
   return {
     phase: 'exploring',
     hasAreaMap: true,
-    isGameComplete: false,
     now: 1000,
     ...overrides,
   };
@@ -64,9 +63,7 @@ describe('InputActionRouter', () => {
     const router = new InputActionRouter({ transitionGuard: guard });
 
     expect(router.actionFromKeyboard(keyboard('ArrowRight'), context({ now: 1100 }))).toBeNull();
-    expect(router.actionFromKeyboard(keyboard('ArrowRight', true), context({ now: 1300 }))).toBe(
-      'move.right'
-    );
+    expect(router.actionFromKeyboard(keyboard('ArrowRight'), context({ now: 1300 }))).toBe('move.right');
   });
 
   it('does not turn repeated Space into repeated interact or beam-down', () => {
@@ -76,10 +73,21 @@ describe('InputActionRouter', () => {
     expect(router.actionFromKeyboard(keyboard('Space', true), context({ phase: 'ship' }))).toBeNull();
   });
 
-  it('allows repeated movement keys so held movement still works', () => {
+  it('ignores repeats for every non-movement command', () => {
     const router = new InputActionRouter();
 
-    expect(router.actionFromKeyboard(keyboard('ArrowRight', true), context())).toBe('move.right');
+    for (const code of ['KeyE', 'KeyM', 'KeyB', 'KeyI']) {
+      expect(router.actionFromKeyboard(keyboard(code, true), context())).toBeNull();
+    }
+    expect(router.actionFromKeyboard(keyboard('Escape', true), context({ phase: 'viewing-map' }))).toBeNull();
+    expect(router.actionFromKeyboard(keyboard('Enter', true), context({ phase: 'dialogue' }))).toBeNull();
+  });
+
+  it('ignores repeated movement keys so one physical press creates one turn', () => {
+    const router = new InputActionRouter();
+
+    expect(router.actionFromKeyboard(keyboard('ArrowRight', true), context())).toBeNull();
+    expect(router.actionFromKeyboard(keyboard('KeyW', true), context())).toBeNull();
   });
 
   it('blocks expedition-only actions outside exploration', () => {

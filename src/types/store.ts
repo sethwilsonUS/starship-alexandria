@@ -1,10 +1,11 @@
 /**
- * Store state types.
- * Shape mirrors planned Convex schema for minimal refactor on migration.
+ * Runtime and v5 local-save state types.
  */
 
 import type { BookFragment } from './books';
 import type { Position } from './game';
+import type { MotionPreference, SaveV5, SavedThemeId } from '@/store/saveMigration';
+import type { VaultReward } from '@/game/expeditions';
 
 export interface DialogueChoice {
   label: string;
@@ -25,8 +26,9 @@ export interface JournalEntry {
   text: string;
 }
 
-/** Room data for map display (matches GeneratedRoom from MapGenerator) */
+/** Semantic zone bounds adapted for the HTML map display. */
 export interface MapRoom {
+  id: string;
   name: string;
   x1: number;
   y1: number;
@@ -36,16 +38,19 @@ export interface MapRoom {
   centerY: number;
 }
 
-/** Persistent state (saved to localStorage now, Convex tables later) */
-export interface PersistedState {
-  player: PlayerState;
-  library: BookFragment[];
-  exploration: ExplorationState;
-  /** Has the player seen the initial welcome to the ship? */
-  hasSeenWelcome: boolean;
-  /** User settings */
-  settings: SettingsState;
+export interface SessionVaultInfo {
+  vaultId: string;
+  contentId: string;
+  clueId: string;
+  clueContentId: string;
+  roomName: string;
+  label: string;
+  code: string;
+  reward: VaultReward;
 }
+
+/** Serialized v5 save. Runtime book objects are resolved from these IDs after content loads. */
+export type PersistedState = SaveV5;
 
 export interface PlayerState {
   id: string;
@@ -60,7 +65,6 @@ export interface ExplorationState {
   visitedMaps: string[];
   discoveredNPCs: string[];
   readJournals: string[];
-  totalFragmentsFound: number;
   /** Artifact IDs collected from vaults */
   collectedArtifacts: string[];
 }
@@ -97,27 +101,45 @@ export interface SessionState {
   mapWalls: number[][];
   /** Player spawn position for the current area */
   mapSpawn: { x: number; y: number };
+  /** Semantic zone under the player; null while traversing a connecting path. */
+  currentZoneId: string | null;
   /** Room names the player has visited this expedition */
   visitedRooms: string[];
   /** Vault info for the current map (room name, code, artifact inside) */
-  vaultInfo: { roomName: string; code: string; artifactId: string | null } | null;
+  vaultInfo: SessionVaultInfo | null;
   /** Whether the vault has been opened this expedition */
   vaultOpened: boolean;
+  /** Theme used by the active, non-resumable expedition. */
+  activeThemeId: SavedThemeId | null;
+  /** Unique vault/clue namespace for the active expedition only. */
+  activeExpeditionId: string | null;
+  discoveredClueIds: string[];
+  /** Every page load starts behind this user-gesture gate. */
+  launchGateOpen: boolean;
+  audioUnlocked: boolean;
+  contentError: string | null;
 }
 
-export type GamePhase = 'exploring' | 'ship' | 'dialogue' | 'reading' | 'viewing-map';
+export type GamePhase = 'exploring' | 'ship' | 'mission-select' | 'dialogue' | 'reading' | 'viewing-map';
 
 /** Settings state (persisted) */
 export interface SettingsState {
-  /** Text-to-speech for accessibility announcements (default: true) */
-  ttsEnabled: boolean;
+  /** Recorded narration and browser speech synthesis. */
+  narrationEnabled: boolean;
+  sfxEnabled: boolean;
+  ambienceEnabled: boolean;
+  masterVolume: number;
+  motionPreference: MotionPreference;
 }
 
 export interface GameState {
   player: PlayerState;
   library: BookFragment[];
+  /** Canonical IDs used to reconstruct `library` after YAML content loads. */
+  savedFragmentIds: string[];
   exploration: ExplorationState;
   hasSeenWelcome: boolean;
+  previousThemeId: SavedThemeId | null;
   settings: SettingsState;
   session: SessionState;
   actions: GameActions;
@@ -140,7 +162,7 @@ export interface GameActions {
   /** Open a collected fragment for reading (ship library) */
   openLibraryBook: (fragment: BookFragment) => void;
   beamToShip: () => void;
-  beamToSurface: (mapId: string) => void;
+  beamToSurface: (mapId: string, themeId?: SavedThemeId) => void;
   saveToLocalStorage: () => void;
   loadFromLocalStorage: () => void;
   addExploredTiles: (coords: string[]) => void;
@@ -160,6 +182,7 @@ export interface GameActions {
   resetGame: () => void;
   /** Store the map layout data when scene is created (before map is found) */
   setMapLayoutData: (rooms: MapRoom[], walls: number[][], spawn: { x: number; y: number }) => void;
+  setCurrentZone: (zoneId: string | null) => void;
   /** Mark the area map as collected (enables viewing) */
   collectMap: () => void;
   /** Clear the area map (on beaming to new surface) */
@@ -168,12 +191,25 @@ export interface GameActions {
   openMap: () => void;
   /** Close the map overlay */
   closeMap: () => void;
-  /** Toggle TTS on/off */
+  setNarrationEnabled: (enabled: boolean) => void;
+  /** Backwards-compatible action name for existing UI callers. */
   setTTSEnabled: (enabled: boolean) => void;
+  setSfxEnabled: (enabled: boolean) => void;
+  setAmbienceEnabled: (enabled: boolean) => void;
+  setMasterVolume: (volume: number) => void;
+  setMotionPreference: (preference: MotionPreference) => void;
+  acceptLaunchGate: () => void;
+  reopenLaunchGate: () => void;
+  setContentError: (message: string | null) => void;
+  openMissionPicker: () => void;
+  closeMissionPicker: () => void;
+  selectExpeditionTheme: (themeId: SavedThemeId) => void;
+  discoverVaultClue: (clueId: string) => void;
+  hasDiscoveredVaultClue: (clueId: string) => boolean;
   /** Mark a room as visited */
   visitRoom: (roomName: string) => void;
   /** Set vault info for current map */
-  setVaultInfo: (info: { roomName: string; code: string; artifactId: string | null } | null) => void;
+  setVaultInfo: (info: SessionVaultInfo | null) => void;
   /** Mark vault as opened */
   openVault: () => void;
   /** Collect an artifact from a vault */

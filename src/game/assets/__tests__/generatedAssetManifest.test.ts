@@ -4,14 +4,13 @@ import sharp from 'sharp';
 import { describe, expect, test } from 'vitest';
 
 import { TILE } from '@/data/tilesets';
-import { ASSET_KEYS, IMAGE_ASSETS } from '../assetManifest';
+import { ASSET_KEYS, AUDIO_ASSETS, FONT_ASSETS, IMAGE_ASSETS } from '../assetManifest';
 
 const PUBLIC_ROOT = path.join(process.cwd(), 'public');
 const TILE_SIZE = 32;
 const TILE_PIXELS = TILE_SIZE * TILE_SIZE;
 
-async function countFullyOpaqueTilePixels(tileIndex: number): Promise<number> {
-  const tilesetPath = path.join(PUBLIC_ROOT, 'game-assets/tiles/library-tiles.png');
+async function countFullyOpaqueTilePixels(tilesetPath: string, tileIndex: number): Promise<number> {
   const { data } = await sharp(tilesetPath)
     .extract({
       left: (tileIndex % 4) * TILE_SIZE,
@@ -52,17 +51,36 @@ describe('generated game assets', () => {
       })
     );
 
+    const tilesetKeys = new Set(Object.values(ASSET_KEYS.tilesets));
     expect(assetDimensions).toEqual(
       IMAGE_ASSETS.map((asset) =>
-        asset.key === ASSET_KEYS.tileset
+        tilesetKeys.has(asset.key as (typeof ASSET_KEYS.tilesets)[keyof typeof ASSET_KEYS.tilesets])
           ? { key: asset.key, width: 128, height: 96, format: 'png' }
           : { key: asset.key, width: 32, height: 32, format: 'png' }
       )
     );
   });
 
-  test('keeps blocking wall tiles visually filled', async () => {
-    await expect(countFullyOpaqueTilePixels(TILE.WALL)).resolves.toBe(TILE_PIXELS);
-    await expect(countFullyOpaqueTilePixels(TILE.RUBBLE)).resolves.toBe(TILE_PIXELS);
+  test('keeps blocking wall tiles visually filled in every theme', async () => {
+    const tilesets = IMAGE_ASSETS.filter((asset) => asset.path.includes('/tiles/'));
+    for (const tileset of tilesets) {
+      const tilesetPath = path.join(PUBLIC_ROOT, tileset.path.replace(/^\//, ''));
+      await expect(countFullyOpaqueTilePixels(tilesetPath, TILE.WALL)).resolves.toBe(TILE_PIXELS);
+      await expect(countFullyOpaqueTilePixels(tilesetPath, TILE.RUBBLE)).resolves.toBe(TILE_PIXELS);
+    }
+  });
+
+  test('ships local OGG/MP3 pairs and self-hosted fonts', () => {
+    expect(new Set(AUDIO_ASSETS.map((asset) => asset.key)).size).toBe(AUDIO_ASSETS.length);
+    for (const asset of AUDIO_ASSETS) {
+      expect(asset.paths[0]).toMatch(/\.ogg$/);
+      expect(asset.paths[1]).toMatch(/\.mp3$/);
+      for (const assetPath of asset.paths) {
+        expect(fs.existsSync(path.join(PUBLIC_ROOT, assetPath.replace(/^\//, ''))), assetPath).toBe(true);
+      }
+    }
+    for (const asset of FONT_ASSETS) {
+      expect(fs.existsSync(path.join(PUBLIC_ROOT, asset.path.replace(/^\//, ''))), asset.path).toBe(true);
+    }
   });
 });

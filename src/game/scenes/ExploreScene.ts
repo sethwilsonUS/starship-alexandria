@@ -1,17 +1,8 @@
 import { Scene } from 'phaser';
-import { MAP_WIDTH, MAP_HEIGHT, TILE_SIZE } from '@/config/gameConfig';
-import {
-  generateMap,
-  getRoomAt,
-  getOpenTilesInRoom,
-  type GeneratedMap,
-  type GeneratedRoom,
-} from '../systems/MapGenerator';
+import { TILE_SIZE } from '@/config/gameConfig';
 import { getBookCatalogSync } from '@/data/books';
 import { getNPCCatalogSync } from '@/data/npcs';
-import { getRandomUncollectedArtifact } from '@/data/artifacts';
-import { getRandomFragmentsForMapSync, getRandomJournalEntriesSync, getJournalCacheSync } from '@/utils/contentLoaderSync';
-import type { JournalEntryDef } from '@/data/journalEntries';
+import { getJournalCacheSync } from '@/utils/contentLoaderSync';
 import { computeVisibleTiles } from '../systems/FOVSystem';
 import { getFovRadiusFromBattery } from '@/utils/flashlight';
 import { useGameStore } from '@/store/gameStore';
@@ -24,16 +15,32 @@ import { FxController } from '../systems/FxController';
 import { FogRenderer } from '../systems/FogRenderer';
 import { summarizeRoomContent, type RoomContentSummary } from '../systems/PlacementSystem';
 import { createCpuTilemapLayer } from '../utils/tilemapLayers';
-import { ASSET_KEYS } from '@/game/assets/assetManifest';
-import { playBumpSound, speak, playDiscoveryChime } from '@/utils/speech';
+import { ASSET_KEYS, THEME_TILESET_KEYS } from '@/game/assets/assetManifest';
+import { playBumpSound, speak } from '@/utils/speech';
 import { transitionGuard } from '@/game/input/gameInput';
+import {
+  EXPEDITION_THEMES,
+  expeditionToTilemap,
+  generateExpedition,
+  type ExpeditionContentCatalog,
+  type ExpeditionTheme,
+  type GeneratedExpedition,
+  type PlacedEntity,
+  type Point,
+  type ThemeId,
+  type RenderedExpeditionMap,
+} from '@/game/expeditions';
+import type { FootstepSurface } from '@/game/expeditions';
+import {
+  playCue,
+  playFootstep as playFootstepSound,
+  startAmbience,
+} from '@/game/audio/AudioDirector';
+import { shouldUseMotion } from '@/game/motionPolicy';
 
 const BEAM_UP_INPUT_BLOCK_MS = 1100;
 
-/**
- * ExploreScene: Main exploration gameplay.
- * Procedurally generated tilemap via MapGenerator (Phase 2.1).
- */
+/** Renders and operates one pure, deterministic expedition. */
 export default class ExploreScene extends Scene {
   private tilemap!: Phaser.Tilemaps.Tilemap;
   private groundLayer!: Phaser.Tilemaps.TilemapLayer;
@@ -46,209 +53,172 @@ export default class ExploreScene extends Scene {
   private fx!: FxController;
   private fogRenderer!: FogRenderer;
   private camera!: Phaser.Cameras.Scene2D.Camera;
-  private mapData!: GeneratedMap;
-  private lastRoomName: string | null = null;
-  private revealedRoomNames = new Set<string>();
+  private expedition!: GeneratedExpedition;
+  private theme!: ExpeditionTheme;
+  private mapData!: RenderedExpeditionMap;
+  private lastZoneId: string | null = null;
+  private revealedZoneIds = new Set<string>();
   private vignetteOverlay!: Phaser.GameObjects.Graphics;
   private bookContainers = new Map<string, Phaser.GameObjects.Container>();
   private journalContainers = new Map<string, Phaser.GameObjects.Container>();
   private batteryContainers = new Map<string, Phaser.GameObjects.Container>();
   private mapContainer: Phaser.GameObjects.Container | null = null;
   private vaultContainer: Phaser.GameObjects.Container | null = null;
-  private vaultRoomName: string | null = null;
-  private npcBlockedTiles = new Set<string>();
+  private blockedTiles = new Set<string>();
   private moveCount = 0;
-  private bookToRoomMap = new Map<string, string>(); // fragmentId → roomName
-  private roomContents = new Map<string, RoomContentSummary>(); // roomName → contents
-  private announcedRooms = new Set<string>(); // Rooms we've already announced contents for
+  private bookToRoomMap = new Map<string, string>();
+  private roomContents = new Map<string, RoomContentSummary>();
+  private announcedRooms = new Set<string>();
   private isBeamingUp = false;
+  private footstepIndex = 0;
 
   constructor() {
     super({ key: 'ExploreScene' });
   }
 
-  create() {
-    // Fade in from beam-down
-    this.cameras.main.fadeIn(600, 92, 180, 255);
+  create(): void {
+    this.resetSceneCollections();
+    const state = useGameStore.getState();
+    const themeId = state.session.activeThemeId ?? 'scriptorium';
+    this.theme = EXPEDITION_THEMES[themeId];
+    const seed = getExpeditionSeed(state.session.activeExpeditionId, themeId);
+    this.expedition = generateExpedition({
+      seed,
+      themeId,
+      collectedFragmentIds: state.savedFragmentIds,
+      contentCatalog: buildRuntimeContentCatalog(),
+    });
+    this.mapData = expeditionToTilemap(this.expedition);
+
+    if (this.shouldAnimate()) this.cameras.main.fadeIn(600, 92, 180, 255);
     this.fx = new FxController(this);
-    
-    this.mapData = generateMap();
-    const { ground, walls, decoration, rooms, spawnX, spawnY } = this.mapData;
-
-    // Create tilemap from raw data
-    this.tilemap = this.make.tilemap({
-      data: ground,
-      tileWidth: TILE_SIZE,
-      tileHeight: TILE_SIZE,
-    });
-
-    const tileset = this.tilemap.addTilesetImage(
-      ASSET_KEYS.tileset,
-      ASSET_KEYS.tileset,
-      TILE_SIZE,
-      TILE_SIZE,
-      0,
-      0
-    )!;
-
-    // Create layers (bottom to top: ground → walls → decoration)
-    this.groundLayer = createCpuTilemapLayer(this.tilemap, 0, tileset, 0, 0);
-    this.groundLayer.setDepth(0);
-
-    // Wall layer from separate data
-    const wallMapData = this.make.tilemap({
-      data: walls,
-      tileWidth: TILE_SIZE,
-      tileHeight: TILE_SIZE,
-    });
-    const wallTileset = wallMapData.addTilesetImage(
-      ASSET_KEYS.tileset,
-      ASSET_KEYS.tileset,
-      TILE_SIZE,
-      TILE_SIZE
-    )!;
-    this.wallLayer = createCpuTilemapLayer(wallMapData, 0, wallTileset, 0, 0);
-    this.wallLayer.setDepth(1);
-    this.wallLayer.setCollision([4, 5]); // Wall and rubble block
-
-    // Decoration layer (non-blocking)
-    const decoMapData = this.make.tilemap({
-      data: decoration,
-      tileWidth: TILE_SIZE,
-      tileHeight: TILE_SIZE,
-    });
-    const decoTileset = decoMapData.addTilesetImage(
-      ASSET_KEYS.tileset,
-      ASSET_KEYS.tileset,
-      TILE_SIZE,
-      TILE_SIZE
-    )!;
-    this.decorationLayer = createCpuTilemapLayer(decoMapData, 0, decoTileset, 0, 0);
-    this.decorationLayer.setDepth(2);
-
+    startAmbience(this, ASSET_KEYS.audio.ambience.byTheme[themeId]);
+    this.createTilemap();
     this.fogRenderer = new FogRenderer(this, this.mapData.walls);
 
-    // Player entity
+    const { x: spawnX, y: spawnY } = this.expedition.spawn;
     this.player = new Player(this, ASSET_KEYS.sprites.player, spawnX, spawnY);
     this.player.setDirection('down');
 
     this.gridMovement = new GridMovement();
     this.gridMovement.attach(this, this.player, {
       wallLayer: this.wallLayer,
-      mapWidth: MAP_WIDTH,
-      mapHeight: MAP_HEIGHT,
-      getBlockedTiles: () => this.npcBlockedTiles,
-      getFloodedTiles: () => this.mapData.floodedTiles,
+      mapWidth: this.expedition.width,
+      mapHeight: this.expedition.height,
+      getBlockedTiles: () => this.blockedTiles,
+      getSemanticCell: (x, y) => this.expedition.cells[y]?.[x] ?? null,
     });
 
-    // Interaction system
     this.interactionSystem = new InteractionSystem();
     this.interactionSystem.attach(this, this.player);
     this.announcementQueue = new AnnouncementQueue(createSceneAnnouncementScheduler(this));
     this.events.once('shutdown', () => this.cleanupOnShutdown());
+    this.placeGeneratedInteractives();
 
-    this.placeInteractives(rooms, spawnX, spawnY);
-
-    // Interaction prompt rendered via React (InteractionPrompt.tsx) to avoid Phaser Text/WebGL bugs
-
-    // Mark expedition start (tracks library size for "new fragments this trip" calculation)
-    useGameStore.getState().actions.startExpedition();
-    // Store map layout data for the map overlay (when player finds the map pickup)
-    useGameStore.getState().actions.setMapLayoutData(rooms, walls, { x: spawnX, y: spawnY });
-    // Reset battery at start of expedition
-    useGameStore.getState().actions.setFlashlight(100);
+    state.actions.startExpedition();
+    state.actions.setMapLayoutData(
+      this.mapData.rooms,
+      this.mapData.walls,
+      { x: spawnX, y: spawnY },
+    );
+    state.actions.setFlashlight(100);
+    state.actions.clearExploredTiles();
+    state.actions.setExplorableTileCount(this.mapData.reachableTiles.size);
+    state.actions.movePlayer({ x: spawnX, y: spawnY });
     this.moveCount = 0;
 
-    // Sync store on movement
-    const onPlayerMoved = ({ x, y }: { x: number; y: number }) => {
-      useGameStore.getState().actions.movePlayer({ x, y });
-      this.moveCount++;
-      if (this.moveCount % 5 === 0) {
-        useGameStore.getState().actions.decrementFlashlight();
-      }
+    this.bindRuntimeEvents();
+    this.checkRoomEntry(spawnX, spawnY, true);
+    this.updateFOV(spawnX, spawnY);
+
+    const worldWidth = this.expedition.width * TILE_SIZE;
+    const worldHeight = this.expedition.height * TILE_SIZE;
+    this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
+    this.camera = this.cameras.main;
+    this.camera.setBounds(0, 0, worldWidth, worldHeight);
+    this.camera.setZoom(2);
+    this.camera.startFollow(this.player.getSprite(), true, 0.08, 0.08);
+    this.createVignetteOverlay();
+    this.showLocationCard();
+    this.publishE2ESnapshot();
+  }
+
+  private createTilemap(): void {
+    const atlasKey = THEME_TILESET_KEYS[this.expedition.themeId];
+    this.tilemap = this.make.tilemap({
+      data: this.mapData.ground,
+      tileWidth: TILE_SIZE,
+      tileHeight: TILE_SIZE,
+    });
+    const groundTileset = this.tilemap.addTilesetImage(atlasKey, atlasKey, TILE_SIZE, TILE_SIZE)!;
+    this.groundLayer = createCpuTilemapLayer(this.tilemap, 0, groundTileset, 0, 0);
+    this.groundLayer.setDepth(0);
+
+    const wallMap = this.make.tilemap({
+      data: this.mapData.walls,
+      tileWidth: TILE_SIZE,
+      tileHeight: TILE_SIZE,
+    });
+    const wallTileset = wallMap.addTilesetImage(atlasKey, atlasKey, TILE_SIZE, TILE_SIZE)!;
+    this.wallLayer = createCpuTilemapLayer(wallMap, 0, wallTileset, 0, 0);
+    this.wallLayer.setDepth(1);
+    this.wallLayer.setCollision([4, 5]);
+
+    const decorationMap = this.make.tilemap({
+      data: this.mapData.decoration,
+      tileWidth: TILE_SIZE,
+      tileHeight: TILE_SIZE,
+    });
+    const decorationTileset = decorationMap.addTilesetImage(atlasKey, atlasKey, TILE_SIZE, TILE_SIZE)!;
+    this.decorationLayer = createCpuTilemapLayer(decorationMap, 0, decorationTileset, 0, 0);
+    this.decorationLayer.setDepth(2);
+  }
+
+  private bindRuntimeEvents(): void {
+    const onPlayerMoved = ({ x, y, surface }: { x: number; y: number; surface: FootstepSurface }) => {
+      const actions = useGameStore.getState().actions;
+      actions.movePlayer({ x, y });
+      this.moveCount += 1;
+      if (this.moveCount % 5 === 0) actions.decrementFlashlight();
+      this.playFootstep(surface);
       this.checkRoomEntry(x, y);
       this.updateFOV(x, y);
+      this.publishE2ESnapshot();
     };
     EventBridge.on('player-moved', onPlayerMoved);
     this.events.once('shutdown', () => EventBridge.off('player-moved', onPlayerMoved));
 
-    // Beam-up animation and scene transition
-    const onBeamUpConfirmed = () => {
-      this.playBeamUpAnimation();
-    };
+    const onBeamUpConfirmed = () => this.playBeamUpAnimation();
     EventBridge.on('beam-up-confirmed', onBeamUpConfirmed);
     this.events.once('shutdown', () => EventBridge.off('beam-up-confirmed', onBeamUpConfirmed));
 
-    // Camera shake + golden flash when picking up a book fragment
     const onBookFound = () => {
-      this.playBookPickupEffect();
+      if (this.shouldAnimate()) this.fx.playPickupBurst(this.player.getPixelPosition());
     };
     EventBridge.on('book-found', onBookFound);
     this.events.once('shutdown', () => EventBridge.off('book-found', onBookFound));
 
-    // Bump sound when hitting obstacles
     const onMovementBlocked = ({ reason }: { reason: string }) => {
       playBumpSound();
-      // Speak what blocked us (but don't spam - use short phrases)
-      const messages: Record<string, string> = {
-        wall: 'Wall',
-        rubble: 'Rubble',
-        npc: 'Someone here',
-        edge: 'Edge',
-      };
-      const msg = messages[reason] || 'Blocked';
-      speak(msg);
+      speak({ edge: 'Edge of the site', terrain: 'Blocked passage', entity: 'Someone or something is here' }[reason] ?? 'Blocked');
     };
     EventBridge.on('movement-blocked', onMovementBlocked);
     this.events.once('shutdown', () => EventBridge.off('movement-blocked', onMovementBlocked));
 
     const onInteractiveConsumed = ({ type, id }: { type: string; id?: string }) => {
-      const destroy = () => {
-        if (type === 'book' && id) {
-          const container = this.bookContainers.get(id);
-          if (container) {
-            container.destroy();
-            this.bookContainers.delete(id);
-          }
-          this.interactionSystem.unregister(id);
-          useGameStore.getState().actions.setBooksRemainingOnThisMap(this.bookContainers.size);
-          
-          // Update roomsWithBooksOnMap to remove the room this book was in
-          const roomName = this.bookToRoomMap.get(id);
-          if (roomName) {
-            this.bookToRoomMap.delete(id);
-            // Rebuild the list of rooms that still have books
-            const remainingRooms = new Set(this.bookToRoomMap.values());
-            useGameStore.getState().actions.setRoomsWithBooksOnMap(Array.from(remainingRooms));
-          }
-        } else if (type === 'journal' && id) {
-          const container = this.journalContainers.get(id);
-          if (container) {
-            container.destroy();
-            this.journalContainers.delete(id);
-          }
-          this.interactionSystem.unregister(id);
-        } else if (type === 'battery' && id) {
-          const container = this.batteryContainers.get(id);
-          if (container) {
-            container.destroy();
-            this.batteryContainers.delete(id);
-          }
-          this.interactionSystem.unregister(id);
-        } else if (type === 'map' && id) {
-          if (this.mapContainer) {
-            this.mapContainer.destroy();
-            this.mapContainer = null;
-          }
-          this.interactionSystem.unregister(id);
-        }
-      };
-      this.time.delayedCall(50, destroy);
+      this.time.delayedCall(50, () => this.removeConsumedInteractive(type, id));
     };
     EventBridge.on('interactive-consumed', onInteractiveConsumed);
     this.events.once('shutdown', () => EventBridge.off('interactive-consumed', onInteractiveConsumed));
 
-    // Debug: despawn all books on current map
+    const onVaultOpened = ({ vaultId }: { vaultId: string }) => {
+      if (vaultId !== this.expedition.vault.id || !this.vaultContainer) return;
+      playCue(this, ASSET_KEYS.audio.cues.vaultOpen, 0.55);
+      this.vaultContainer.setAlpha(0.62);
+    };
+    EventBridge.on('vault-opened', onVaultOpened);
+    this.events.once('shutdown', () => EventBridge.off('vault-opened', onVaultOpened));
+
     const onDebugDespawnAllBooks = () => {
       this.bookContainers.forEach((container, id) => {
         container.destroy();
@@ -256,774 +226,437 @@ export default class ExploreScene extends Scene {
       });
       this.bookContainers.clear();
       this.bookToRoomMap.clear();
-      useGameStore.getState().actions.setBooksRemainingOnThisMap(0);
-      useGameStore.getState().actions.setRoomsWithBooksOnMap([]);
+      const actions = useGameStore.getState().actions;
+      actions.setBooksRemainingOnThisMap(0);
+      actions.setRoomsWithBooksOnMap([]);
     };
     EventBridge.on('debug-despawn-all-books', onDebugDespawnAllBooks);
     this.events.once('shutdown', () => EventBridge.off('debug-despawn-all-books', onDebugDespawnAllBooks));
-
-    useGameStore.getState().actions.movePlayer({ x: spawnX, y: spawnY });
-    this.checkRoomEntry(spawnX, spawnY, true); // isInitialSpawn = true
-    useGameStore.getState().actions.clearExploredTiles();
-    useGameStore.getState().actions.setExplorableTileCount(this.mapData.reachableTiles.size);
-    this.updateFOV(spawnX, spawnY);
-
-    // World bounds
-    this.physics.world.setBounds(
-      0,
-      0,
-      MAP_WIDTH * TILE_SIZE,
-      MAP_HEIGHT * TILE_SIZE
-    );
-
-    // Camera
-    this.camera = this.cameras.main;
-    this.camera.setBounds(0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE);
-    this.camera.setZoom(1);
-    this.camera.startFollow(this.player.getSprite(), true, 0.08, 0.08);
-
-    // Vignette overlay - atmospheric darkening at edges
-    this.createVignetteOverlay();
-    
-    // Show location title card
-    this.showLocationCard();
   }
 
-  private showLocationCard(): void {
-    const { width, height } = this.cameras.main;
-    
-    // Create container for title card (fixed to camera)
-    const container = this.add.container(width / 2, height / 2);
-    container.setDepth(500);
-    container.setScrollFactor(0);
-    container.setAlpha(0);
-    
-    // Background bar
-    const bg = this.add.graphics();
-    bg.fillStyle(0x000000, 0.7);
-    bg.fillRoundedRect(-200, -40, 400, 80, 8);
-    container.add(bg);
-    
-    // Location text (use Phaser text - this is temporary UI, not permanent game element)
-    const locationNames = [
-      'Ruined Library Wing',
-      'Collapsed Archive',
-      'Overgrown Reading Hall',
-      'Flooded Record Room',
-      'Crumbling Study',
-    ];
-    const locationName = locationNames[Math.floor(Math.random() * locationNames.length)];
-    
-    // We'll emit this for the HUD to pick up
-    EventBridge.emit('area-entered', { areaName: locationName });
-    
-    // Create simple text display using graphics (avoiding Phaser Text issues)
-    const subtitleBg = this.add.graphics();
-    subtitleBg.fillStyle(0xd4af37, 0.8);
-    subtitleBg.fillRoundedRect(-60, -30, 120, 20, 4);
-    container.add(subtitleBg);
-    
-    // Decorative lines
-    const decorLine = this.add.graphics();
-    decorLine.lineStyle(2, 0xd4af37, 0.6);
-    decorLine.lineBetween(-150, 25, 150, 25);
-    decorLine.lineBetween(-100, 32, 100, 32);
-    container.add(decorLine);
-    
-    // Animate in
-    this.tweens.add({
-      targets: container,
-      alpha: 1,
-      y: height / 2 - 20,
-      duration: 500,
-      ease: 'Back.easeOut',
-      onComplete: () => {
-        // Hold, then fade out
-        this.time.delayedCall(1500, () => {
-          this.tweens.add({
-            targets: container,
-            alpha: 0,
-            y: height / 2 - 40,
-            duration: 400,
-            ease: 'Quad.easeIn',
-            onComplete: () => container.destroy(),
-          });
-        });
-      },
-    });
-  }
-
-  private createVignetteOverlay(): void {
-    // Simple subtle vignette - just darken the edges slightly
-    // Using a minimal approach to avoid performance/rendering issues
-    const { width, height } = this.cameras.main;
-    this.vignetteOverlay = this.add.graphics();
-    this.vignetteOverlay.setDepth(1000);
-    this.vignetteOverlay.setScrollFactor(0);
-    
-    // Simple gradient bars at edges
-    const edgeWidth = 80;
-    
-    // Left edge gradient
-    for (let i = 0; i < edgeWidth; i++) {
-      const alpha = 0.25 * (1 - i / edgeWidth);
-      this.vignetteOverlay.fillStyle(0x000000, alpha);
-      this.vignetteOverlay.fillRect(i, 0, 1, height);
-    }
-    
-    // Right edge gradient
-    for (let i = 0; i < edgeWidth; i++) {
-      const alpha = 0.25 * (1 - i / edgeWidth);
-      this.vignetteOverlay.fillStyle(0x000000, alpha);
-      this.vignetteOverlay.fillRect(width - i - 1, 0, 1, height);
-    }
-    
-    // Top edge gradient
-    for (let i = 0; i < edgeWidth; i++) {
-      const alpha = 0.2 * (1 - i / edgeWidth);
-      this.vignetteOverlay.fillStyle(0x000000, alpha);
-      this.vignetteOverlay.fillRect(0, i, width, 1);
-    }
-    
-    // Bottom edge gradient  
-    for (let i = 0; i < edgeWidth; i++) {
-      const alpha = 0.2 * (1 - i / edgeWidth);
-      this.vignetteOverlay.fillStyle(0x000000, alpha);
-      this.vignetteOverlay.fillRect(0, height - i - 1, width, 1);
-    }
-  }
-
-  private placeInteractives(
-    rooms: GeneratedRoom[],
-    spawnX: number,
-    spawnY: number
-  ): void {
-    const { walls } = this.mapData;
-
-    // Transporter at spawn — container with shadow, rings, pulse (blue glow)
-    const tx = spawnX * TILE_SIZE + TILE_SIZE / 2;
-    const ty = spawnY * TILE_SIZE + TILE_SIZE / 2;
-    const transporterContainer = this.add.container(tx, ty);
-    transporterContainer.setDepth(5);
-    const tShadow = this.add.graphics();
-    tShadow.fillStyle(0x1a1a2e, 0.6);
-    tShadow.fillCircle(0, 2, 14);
-    transporterContainer.add(tShadow);
-    const tOutline = this.add.graphics();
-    tOutline.lineStyle(5, 0x1a1a2e, 1);
-    tOutline.strokeCircle(0, 0, 18);
-    transporterContainer.add(tOutline);
-    const tRing = this.add.graphics();
-    tRing.lineStyle(3, 0x5cb3ff, 1); // Electric blue
-    tRing.strokeCircle(0, 0, 18);
-    transporterContainer.add(tRing);
-    transporterContainer.add(this.add.sprite(0, 0, ASSET_KEYS.sprites.transporter));
-    this.tweens.add({
-      targets: transporterContainer,
-      scale: 1.06,
-      duration: 1000,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut',
-    });
-    this.interactionSystem.register({
-      id: 'transporter-1',
-      type: 'transporter',
-      gridX: spawnX,
-      gridY: spawnY,
-      label: 'Transporter pad',
-    });
-
-    // Books: 2-4 fragments per map, one per room, never in spawn room
-    // Only use rooms/tiles reachable from spawn (rubble can block corridors)
-    const reachable = this.mapData.reachableTiles;
-    const roomData = getOpenTilesInRoom(rooms, walls, { x: spawnX, y: spawnY })
-      .map(({ room, tiles }) => ({
-        room,
-        tiles: tiles.filter((t) => reachable.has(`${t.x},${t.y}`)),
-      }))
-      .filter(({ tiles }) => tiles.length > 0);
-    const spawnRoom = getRoomAt(rooms, spawnX, spawnY);
-    const bookRoomData = spawnRoom
-      ? roomData.filter(({ room }) => room !== spawnRoom)
-      : roomData;
-    if (bookRoomData.length === 0) return;
-
-    const count = Math.min(
-      2 + Math.floor(Math.random() * 3),
-      bookRoomData.length,
-      4
-    );
-    const fragments = getRandomFragmentsForMapSync(count);
-
-    const distFromSpawn = (r: GeneratedRoom) =>
-      Math.abs(r.centerX - spawnX) + Math.abs(r.centerY - spawnY);
-    const farRooms = bookRoomData.filter(({ room }) => distFromSpawn(room) >= 8);
-    const nearRooms = bookRoomData.filter(({ room }) => distFromSpawn(room) < 8);
-    const shuffledFar = [...farRooms].sort(() => Math.random() - 0.5);
-    const shuffledNear = [...nearRooms].sort(() => Math.random() - 0.5);
-
-    const roomsToUse: { room: GeneratedRoom; tiles: { x: number; y: number }[] }[] = [];
-    if (shuffledFar.length > 0) roomsToUse.push(shuffledFar[0]);
-    const rest = [...shuffledFar.slice(1), ...shuffledNear].sort(() => Math.random() - 0.5);
-    for (const r of rest) {
-      if (roomsToUse.length >= count) break;
-      roomsToUse.push(r);
-    }
-
-    const roomNamesWithBooks = roomsToUse.map((r) => r.room.name);
-    useGameStore.getState().actions.setRoomsWithBooksOnMap(roomNamesWithBooks);
-
-    const usedTiles = new Set<string>();
-    usedTiles.add(`${spawnX},${spawnY}`);
-    const isAdjacentToUsed = (x: number, y: number) =>
-      usedTiles.has(`${x - 1},${y}`) || usedTiles.has(`${x + 1},${y}`) ||
-      usedTiles.has(`${x},${y - 1}`) || usedTiles.has(`${x},${y + 1}`);
-
-    // Check if a tile is a corridor/chokepoint (blocking it would prevent passage)
-    const isCorridorTile = (x: number, y: number): boolean => {
-      const { reachableTiles } = this.mapData;
-      const n = reachableTiles.has(`${x},${y - 1}`);
-      const s = reachableTiles.has(`${x},${y + 1}`);
-      const e = reachableTiles.has(`${x + 1},${y}`);
-      const w = reachableTiles.has(`${x - 1},${y}`);
-      const walkableNeighbors = [n, s, e, w].filter(Boolean).length;
-      
-      // Corridor: exactly 2 opposite neighbors (N-S or E-W)
-      if (walkableNeighbors === 2) {
-        if ((n && s) || (e && w)) return true;
-      }
-      // Also consider doorways: 2-3 neighbors in a line pattern
-      // A tile with only 2 neighbors that aren't opposite is likely a corner, not a corridor
-      return false;
-    };
-
-    for (let i = 0; i < count && i < roomsToUse.length && i < fragments.length; i++) {
-      const { room, tiles } = roomsToUse[i];
-      const frag = fragments[i];
-      const available = tiles.filter(
-        (t) => !usedTiles.has(`${t.x},${t.y}`) && !isAdjacentToUsed(t.x, t.y)
-      );
-      if (available.length === 0) continue;
-
-      const tile = available[Math.floor(Math.random() * available.length)];
-      usedTiles.add(`${tile.x},${tile.y}`);
-      const bookCatalog = getBookCatalogSync();
-      const book = bookCatalog.find((b) => b.id === frag.bookId);
-      const label = `${book?.title ?? 'Fragment'}: ${frag.label}`;
-
-      const px = tile.x * TILE_SIZE + TILE_SIZE / 2;
-      const py = tile.y * TILE_SIZE + TILE_SIZE / 2;
-      const container = this.add.container(px, py);
-      container.setDepth(5);
-
-      // Shadow: dark circle under book — improves visibility on light floors
-      const shadow = this.add.graphics();
-      shadow.fillStyle(0x1a1a2e, 0.6);
-      shadow.fillCircle(0, 2, 14);
-      container.add(shadow);
-
-      // Dark outline ring — strong silhouette on any floor color
-      const outlineRing = this.add.graphics();
-      outlineRing.lineStyle(5, 0x1a1a2e, 1);
-      outlineRing.strokeCircle(0, 0, 18);
-      container.add(outlineRing);
-
-      const ring = this.add.graphics();
-      ring.lineStyle(3, 0xd4af37, 1); // Gold highlight — always bright
-      ring.strokeCircle(0, 0, 18);
-      container.add(ring);
-      const sprite = this.add.sprite(0, 0, ASSET_KEYS.sprites.book);
-      container.add(sprite);
-      this.bookContainers.set(frag.id, container);
-
-      // Subtle pulse so books are easy to spot
-      this.tweens.add({
-        targets: container,
-        scale: 1.08,
-        duration: 900,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut',
-      });
-      this.interactionSystem.register({
-        id: frag.id,
-        type: 'book',
-        gridX: tile.x,
-        gridY: tile.y,
-        label,
-      });
-      // Track which room this book is in (for updating Martha's hints)
-      this.bookToRoomMap.set(frag.id, room.name);
-      // Track for room content announcements
-      summarizeRoomContent(this.roomContents, room.name, 'book');
-    }
-    useGameStore.getState().actions.setBooksOnThisMap(count);
-
-    // NPCs: 1–2 per map, in rooms other than spawn, never in same room as a book
-    const roomsWithBooks = new Set(roomsToUse.map((r) => r.room));
-    const npcRoomData = roomData.filter(({ room }) => {
-      const dx = Math.abs(room.centerX - spawnX);
-      const dy = Math.abs(room.centerY - spawnY);
-      if (dx <= 1 && dy <= 1) return false; // exclude spawn room
-      if (roomsWithBooks.has(room)) return false; // exclude rooms with books
-      return true;
-    });
-    const npcCount = Math.min(1 + Math.floor(Math.random() * 2), npcRoomData.length);
-    const npcCatalog = getNPCCatalogSync();
-    const npcsToPlace = [...npcCatalog].sort(() => Math.random() - 0.5).slice(0, npcCount);
+  private placeGeneratedInteractives(): void {
+    this.placeTransporter();
+    const bookCatalog = getBookCatalogSync();
+    const fragments = new Map(bookCatalog.flatMap((book) => book.fragments.map((fragment) => [fragment.id, { book, fragment }] as const)));
+    const npcs = new Map(getNPCCatalogSync().map((npc) => [npc.id, npc]));
+    const journals = new Map(getJournalCacheSync().map((journal) => [journal.id, journal]));
     const npcRooms: Record<string, string> = {};
     const npcPositions: Array<{ id: string; name: string; x: number; y: number; roomName: string }> = [];
 
-    for (let i = 0; i < npcCount && i < npcRoomData.length; i++) {
-      const { room, tiles } = npcRoomData[i];
-      const npc = npcsToPlace[i];
-      const available = tiles.filter(
-        (t) => !usedTiles.has(`${t.x},${t.y}`) && 
-               !isAdjacentToUsed(t.x, t.y) &&
-               !isCorridorTile(t.x, t.y) // Don't block corridors/doorways
-      );
-      if (available.length === 0 || !npc) continue;
+    for (const entity of this.expedition.entities) {
+      const roomName = this.zoneName(entity.zoneId);
+      if (entity.blocksMovement) this.blockedTiles.add(pointKey(entity.position));
 
-      // Sort by distance to room center (prefer interior tiles, avoid doorways)
-      const sortedByCenter = [...available].sort((a, b) => {
-        const distA = Math.abs(a.x - room.centerX) + Math.abs(a.y - room.centerY);
-        const distB = Math.abs(b.x - room.centerX) + Math.abs(b.y - room.centerY);
-        return distA - distB;
-      });
-      
-      // Pick from the closest 30% to center (or at least top 2)
-      const centerCount = Math.max(2, Math.floor(sortedByCenter.length * 0.3));
-      const centerTiles = sortedByCenter.slice(0, centerCount);
-      const tile = centerTiles[Math.floor(Math.random() * centerTiles.length)];
-      usedTiles.add(`${tile.x},${tile.y}`);
-      this.npcBlockedTiles.add(`${tile.x},${tile.y}`);
-
-      const px = tile.x * TILE_SIZE + TILE_SIZE / 2;
-      const py = tile.y * TILE_SIZE + TILE_SIZE / 2;
-      const npcContainer = this.add.container(px, py);
-      npcContainer.setDepth(5);
-      const nTorchGlow = this.add.graphics();
-      nTorchGlow.fillStyle(0xff9944, 0.25);
-      nTorchGlow.fillCircle(0, 0, 28);
-      nTorchGlow.fillStyle(0xffcc66, 0.15);
-      nTorchGlow.fillCircle(0, 0, 20);
-      npcContainer.add(nTorchGlow);
-      const nShadow = this.add.graphics();
-      nShadow.fillStyle(0x1a1a2e, 0.6);
-      nShadow.fillCircle(0, 2, 14);
-      npcContainer.add(nShadow);
-      const nOutline = this.add.graphics();
-      nOutline.lineStyle(5, 0x1a1a2e, 1);
-      nOutline.strokeCircle(0, 0, 18);
-      npcContainer.add(nOutline);
-      const nRing = this.add.graphics();
-      nRing.lineStyle(3, 0xe8a838, 1); // Warm amber — survivor/friendly
-      nRing.strokeCircle(0, 0, 18);
-      npcContainer.add(nRing);
-      npcContainer.add(this.add.sprite(0, 0, ASSET_KEYS.sprites.npc));
-      this.tweens.add({
-        targets: npcContainer,
-        scale: 1.06,
-        duration: 1100,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut',
-      });
-      this.interactionSystem.register({
-        id: npc.id,
-        type: 'npc',
-        gridX: tile.x,
-        gridY: tile.y,
-        label: npc.name,
-        interactionRange: 'adjacent',
-      });
-      npcRooms[npc.id] = room.name;
-      npcPositions.push({ id: npc.id, name: npc.name, x: tile.x, y: tile.y, roomName: room.name });
-      // Track for room content announcements
-      summarizeRoomContent(this.roomContents, room.name, 'npc', npc.name);
-    }
-    useGameStore.getState().actions.setNpcRoomsOnMap(npcRooms);
-    useGameStore.getState().actions.setNpcPositionsOnMap(npcPositions);
-
-    // Journals: 1–2 per map, like books but different visual
-    // First, get the vault info to create a dynamic vault journal
-    const vaultInfo = useGameStore.getState().session.vaultInfo;
-    
-    // Get all journals except the vault hint (we'll handle it specially)
-    const allJournals = getJournalCacheSync();
-    const nonVaultJournals = allJournals.filter(j => j.id !== 'journal-diary-2');
-    const shuffledNonVault = [...nonVaultJournals].sort(() => Math.random() - 0.5);
-    const journalEntries = shuffledNonVault.slice(0, Math.min(1, roomData.length));
-    
-    // Create dynamic vault journal if we have vault info
-    if (vaultInfo) {
-      const vaultJournal: JournalEntryDef = {
-        id: 'journal-vault-hint',
-        title: 'Faded note',
-        lines: [
-          {
-            text: `If anyone finds this: the ${vaultInfo.roomName} vault code is ${vaultInfo.code.split('').join('-')}. The director's birthday. They sealed it before they left. There's nothing down there worth dying for, they said. I think they were wrong.`,
-          },
-        ],
-      };
-      journalEntries.push(vaultJournal);
-    }
-    
-    // Get rooms, but exclude vault room from vault journal placement
-    const shuffledRooms = [...roomData].sort(() => Math.random() - 0.5);
-    for (let i = 0; i < journalEntries.length; i++) {
-      const journal = journalEntries[i];
-      // If this is the vault hint journal, exclude the vault room
-      const isVaultHint = journal.id === 'journal-vault-hint';
-      const eligibleRooms = isVaultHint && this.vaultRoomName
-        ? shuffledRooms.filter(({ room }) => room.name !== this.vaultRoomName)
-        : shuffledRooms;
-      const roomWithSpace = eligibleRooms.find(({ tiles }) =>
-        tiles.some((t) => !usedTiles.has(`${t.x},${t.y}`) && !isAdjacentToUsed(t.x, t.y))
-      );
-      if (!roomWithSpace) break;
-      const available = roomWithSpace.tiles.filter(
-        (t) => !usedTiles.has(`${t.x},${t.y}`) && !isAdjacentToUsed(t.x, t.y)
-      );
-      const tile = available[Math.floor(Math.random() * available.length)];
-      usedTiles.add(`${tile.x},${tile.y}`);
-
-      const px = tile.x * TILE_SIZE + TILE_SIZE / 2;
-      const py = tile.y * TILE_SIZE + TILE_SIZE / 2;
-      const container = this.add.container(px, py);
-      container.setDepth(5);
-
-      const shadow = this.add.graphics();
-      shadow.fillStyle(0x1a1a2e, 0.6);
-      shadow.fillCircle(0, 2, 12);
-      container.add(shadow);
-      const outlineRing = this.add.graphics();
-      outlineRing.lineStyle(5, 0x1a1a2e, 1);
-      outlineRing.strokeCircle(0, 0, 16);
-      container.add(outlineRing);
-      const ring = this.add.graphics();
-      ring.lineStyle(3, 0xb8860b, 1); // Dark goldenrod — aged paper/sepia
-      ring.strokeCircle(0, 0, 16);
-      container.add(ring);
-      const sprite = this.add.sprite(0, 0, ASSET_KEYS.sprites.journal);
-      container.add(sprite);
-      this.journalContainers.set(journal.id, container);
-
-      this.tweens.add({
-        targets: container,
-        scale: 1.05,
-        duration: 1200,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut',
-      });
-      this.interactionSystem.register({
-        id: journal.id,
-        type: 'journal',
-        gridX: tile.x,
-        gridY: tile.y,
-        label: journal.title,
-      });
-      // Track for room content announcements
-      summarizeRoomContent(this.roomContents, roomWithSpace.room.name, 'journal');
+      switch (entity.kind) {
+        case 'fragment': {
+          const content = fragments.get(entity.fragmentId);
+          if (!content) break;
+          const container = this.addMarkedSprite(entity.position, ASSET_KEYS.sprites.book, 0xd4af37);
+          this.bookContainers.set(entity.fragmentId, container);
+          this.bookToRoomMap.set(entity.fragmentId, roomName);
+          this.interactionSystem.register({
+            id: entity.fragmentId,
+            type: 'book',
+            gridX: entity.position.x,
+            gridY: entity.position.y,
+            label: `${content.book.title}: ${content.fragment.label}`,
+          });
+          summarizeRoomContent(this.roomContents, roomName, 'book');
+          break;
+        }
+        case 'npc': {
+          const npc = npcs.get(entity.npcId);
+          if (!npc) break;
+          this.addMarkedSprite(entity.position, ASSET_KEYS.sprites.npc, 0xe8a838);
+          this.interactionSystem.register({
+            id: npc.id,
+            type: 'npc',
+            gridX: entity.position.x,
+            gridY: entity.position.y,
+            label: `${npc.name}, ${npc.role}`,
+            interactionRange: 'adjacent',
+          });
+          npcRooms[npc.id] = roomName;
+          npcPositions.push({ id: npc.id, name: npc.name, x: entity.position.x, y: entity.position.y, roomName });
+          summarizeRoomContent(this.roomContents, roomName, 'npc', npc.name);
+          break;
+        }
+        case 'journal': {
+          const journal = journals.get(entity.journalId);
+          if (!journal) break;
+          const container = this.addMarkedSprite(entity.position, ASSET_KEYS.sprites.journal, 0xb8860b, 16);
+          this.journalContainers.set(entity.journalId, container);
+          this.interactionSystem.register({
+            id: entity.journalId,
+            type: 'journal',
+            gridX: entity.position.x,
+            gridY: entity.position.y,
+            label: journal.title,
+          });
+          summarizeRoomContent(this.roomContents, roomName, 'journal');
+          break;
+        }
+        case 'clue': {
+          const container = this.addMarkedSprite(entity.position, ASSET_KEYS.sprites.journal, 0x9cb3c9, 16);
+          this.journalContainers.set(entity.clueId, container);
+          this.interactionSystem.register({
+            id: entity.clueId,
+            type: 'journal',
+            gridX: entity.position.x,
+            gridY: entity.position.y,
+            label: entity.label,
+          });
+          summarizeRoomContent(this.roomContents, roomName, 'journal');
+          break;
+        }
+        case 'battery': {
+          const container = this.addMarkedSprite(entity.position, ASSET_KEYS.sprites.battery, 0x5cb85c);
+          this.batteryContainers.set(entity.id, container);
+          this.interactionSystem.register({
+            id: entity.id,
+            type: 'battery',
+            gridX: entity.position.x,
+            gridY: entity.position.y,
+            label: 'Spare battery',
+          });
+          summarizeRoomContent(this.roomContents, roomName, 'battery');
+          break;
+        }
+        case 'map': {
+          this.mapContainer = this.addMarkedSprite(entity.position, ASSET_KEYS.sprites.map, 0x00ced1);
+          this.interactionSystem.register({
+            id: entity.id,
+            type: 'map',
+            gridX: entity.position.x,
+            gridY: entity.position.y,
+            label: `Map of ${this.theme.title}`,
+          });
+          summarizeRoomContent(this.roomContents, roomName, 'map');
+          break;
+        }
+        case 'prop':
+          this.placeProp(entity);
+          break;
+      }
     }
 
-    // Batteries: 1–2 per map, same rules as books (never in spawn room), green ring
-    const batteryCount = Math.min(1 + Math.floor(Math.random() * 2), bookRoomData.length);
-    const batteryRoomsShuffled = [...bookRoomData].sort(() => Math.random() - 0.5);
-    for (let i = 0; i < batteryCount; i++) {
-      const { room: batteryRoom, tiles } = batteryRoomsShuffled[i];
-      const available = tiles.filter(
-        (t) => !usedTiles.has(`${t.x},${t.y}`) && !isAdjacentToUsed(t.x, t.y)
-      );
-      if (available.length === 0) continue;
+    this.placeVault();
+    const actions = useGameStore.getState().actions;
+    actions.setBooksOnThisMap(this.bookContainers.size);
+    actions.setRoomsWithBooksOnMap([...new Set(this.bookToRoomMap.values())]);
+    actions.setNpcRoomsOnMap(npcRooms);
+    actions.setNpcPositionsOnMap(npcPositions);
+  }
 
-      const tile = available[Math.floor(Math.random() * available.length)];
-      usedTiles.add(`${tile.x},${tile.y}`);
-      const batteryId = `battery-${i}`;
+  private placeTransporter(): void {
+    this.addMarkedSprite(this.expedition.extraction, ASSET_KEYS.sprites.transporter, 0x5cb3ff);
+    this.interactionSystem.register({
+      id: `transporter-${this.expedition.seed}`,
+      type: 'transporter',
+      gridX: this.expedition.extraction.x,
+      gridY: this.expedition.extraction.y,
+      label: 'Transporter pad',
+    });
+  }
 
-      const px = tile.x * TILE_SIZE + TILE_SIZE / 2;
-      const py = tile.y * TILE_SIZE + TILE_SIZE / 2;
-      const container = this.add.container(px, py);
-      container.setDepth(5);
+  private placeVault(): void {
+    const vault = this.expedition.vault;
+    const roomName = this.zoneName(vault.zoneId);
+    this.blockedTiles.add(pointKey(vault.position));
+    this.vaultContainer = this.addMarkedSprite(vault.position, ASSET_KEYS.sprites.vault, 0x9370db);
+    this.interactionSystem.register({
+      id: vault.id,
+      type: 'vault',
+      gridX: vault.position.x,
+      gridY: vault.position.y,
+      label: vault.label,
+      interactionRange: 'adjacent',
+    });
+    useGameStore.getState().actions.setVaultInfo({
+      vaultId: vault.id,
+      contentId: vault.contentId,
+      clueId: vault.clueId,
+      clueContentId: vault.clueContentId,
+      roomName,
+      label: vault.label,
+      code: vault.code,
+      reward: vault.reward,
+    });
+  }
 
-      const shadow = this.add.graphics();
-      shadow.fillStyle(0x1a1a2e, 0.6);
-      shadow.fillCircle(0, 2, 14);
-      container.add(shadow);
-      const outlineRing = this.add.graphics();
-      outlineRing.lineStyle(5, 0x1a1a2e, 1);
-      outlineRing.strokeCircle(0, 0, 18);
-      container.add(outlineRing);
-      const ring = this.add.graphics();
-      ring.lineStyle(3, 0x5cb85c, 1); // Green — battery/energy
-      ring.strokeCircle(0, 0, 18);
-      container.add(ring);
-      container.add(this.add.sprite(0, 0, ASSET_KEYS.sprites.battery));
-      this.batteryContainers.set(batteryId, container);
+  private placeProp(entity: Extract<PlacedEntity, { kind: 'prop' }>): void {
+    const substantial = /shelf|desk|pew|column|locker|crate|console|stand|statue/i.test(entity.propId);
+    const texture = substantial ? ASSET_KEYS.sprites.bookshelfProp : ASSET_KEYS.sprites.paperDebrisProp;
+    const image = this.add.image(
+      entity.position.x * TILE_SIZE + TILE_SIZE / 2,
+      entity.position.y * TILE_SIZE + TILE_SIZE / 2,
+      texture,
+    );
+    image.setDepth(3.1);
+    image.setAlpha(0.84);
+    if (!substantial) image.setAngle(stableAngle(entity.id));
+  }
 
+  private addMarkedSprite(position: Point, texture: string, ringColor: number, radius = 18): Phaser.GameObjects.Container {
+    const container = this.add.container(
+      position.x * TILE_SIZE + TILE_SIZE / 2,
+      position.y * TILE_SIZE + TILE_SIZE / 2,
+    );
+    container.setDepth(5);
+    const shadow = this.add.graphics();
+    shadow.fillStyle(0x090d19, 0.72);
+    shadow.fillCircle(0, 2, radius - 3);
+    container.add(shadow);
+    const outline = this.add.graphics();
+    outline.lineStyle(5, 0x090d19, 1);
+    outline.strokeCircle(0, 0, radius);
+    container.add(outline);
+    const ring = this.add.graphics();
+    ring.lineStyle(3, ringColor, 1);
+    ring.strokeCircle(0, 0, radius);
+    container.add(ring);
+    container.add(this.add.sprite(0, 0, texture));
+    if (this.shouldAnimate()) {
       this.tweens.add({
         targets: container,
         scale: 1.06,
-        duration: 950,
+        duration: 1050,
         yoyo: true,
         repeat: -1,
         ease: 'Sine.easeInOut',
       });
-      this.interactionSystem.register({
-        id: batteryId,
-        type: 'battery',
-        gridX: tile.x,
-        gridY: tile.y,
-        label: 'Battery',
-      });
-      // Track for room content announcements
-      summarizeRoomContent(this.roomContents, batteryRoom.name, 'battery');
     }
+    return container;
+  }
 
-    // Map: exactly 1 per map, in a room other than spawn, cyan/teal ring
-    const mapRoomData = [...bookRoomData].sort(() => Math.random() - 0.5);
-    for (const { room: mapRoom, tiles } of mapRoomData) {
-      const available = tiles.filter(
-        (t) => !usedTiles.has(`${t.x},${t.y}`) && !isAdjacentToUsed(t.x, t.y)
-      );
-      if (available.length === 0) continue;
-
-      const tile = available[Math.floor(Math.random() * available.length)];
-      usedTiles.add(`${tile.x},${tile.y}`);
-      const mapId = 'area-map';
-
-      const px = tile.x * TILE_SIZE + TILE_SIZE / 2;
-      const py = tile.y * TILE_SIZE + TILE_SIZE / 2;
-      const container = this.add.container(px, py);
-      container.setDepth(5);
-
-      const shadow = this.add.graphics();
-      shadow.fillStyle(0x1a1a2e, 0.6);
-      shadow.fillCircle(0, 2, 14);
-      container.add(shadow);
-      const outlineRing = this.add.graphics();
-      outlineRing.lineStyle(5, 0x1a1a2e, 1);
-      outlineRing.strokeCircle(0, 0, 18);
-      container.add(outlineRing);
-      const ring = this.add.graphics();
-      ring.lineStyle(3, 0x00ced1, 1); // Cyan/teal — map/navigation
-      ring.strokeCircle(0, 0, 18);
-      container.add(ring);
-      container.add(this.add.sprite(0, 0, ASSET_KEYS.sprites.map));
-      this.mapContainer = container;
-
-      this.tweens.add({
-        targets: container,
-        scale: 1.06,
-        duration: 1000,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut',
-      });
-      this.interactionSystem.register({
-        id: mapId,
-        type: 'map',
-        gridX: tile.x,
-        gridY: tile.y,
-        label: 'Map',
-      });
-      // Track for room content announcements
-      summarizeRoomContent(this.roomContents, mapRoom.name, 'map');
-      break; // Only place one map
+  private removeConsumedInteractive(type: string, id?: string): void {
+    if (!id) return;
+    const containers = type === 'book'
+      ? this.bookContainers
+      : type === 'journal'
+        ? this.journalContainers
+        : type === 'battery'
+          ? this.batteryContainers
+          : null;
+    const container = containers?.get(id);
+    if (container) {
+      container.destroy();
+      containers?.delete(id);
+    } else if (type === 'map' && this.mapContainer) {
+      this.mapContainer.destroy();
+      this.mapContainer = null;
     }
+    this.interactionSystem.unregister(id);
 
-    // Vault: exactly 1 per map, in a room other than spawn, solid (like NPCs), purple ring
-    // Generate a random 4-digit code
-    const vaultCode = String(Math.floor(1000 + Math.random() * 9000));
-    const vaultRoomData = [...bookRoomData].sort(() => Math.random() - 0.5);
-    for (const { room: vaultRoom, tiles } of vaultRoomData) {
-      const available = tiles.filter(
-        (t) => !usedTiles.has(`${t.x},${t.y}`) && 
-               !isAdjacentToUsed(t.x, t.y) &&
-               !isCorridorTile(t.x, t.y)
-      );
-      if (available.length === 0) continue;
-
-      // Prefer interior tiles (like NPCs)
-      const sortedByCenter = [...available].sort((a, b) => {
-        const distA = Math.abs(a.x - vaultRoom.centerX) + Math.abs(a.y - vaultRoom.centerY);
-        const distB = Math.abs(b.x - vaultRoom.centerX) + Math.abs(b.y - vaultRoom.centerY);
-        return distA - distB;
-      });
-      const centerCount = Math.max(2, Math.floor(sortedByCenter.length * 0.3));
-      const centerTiles = sortedByCenter.slice(0, centerCount);
-      const tile = centerTiles[Math.floor(Math.random() * centerTiles.length)];
-      usedTiles.add(`${tile.x},${tile.y}`);
-      this.npcBlockedTiles.add(`${tile.x},${tile.y}`); // Vault is solid
-
-      const px = tile.x * TILE_SIZE + TILE_SIZE / 2;
-      const py = tile.y * TILE_SIZE + TILE_SIZE / 2;
-      const container = this.add.container(px, py);
-      container.setDepth(5);
-
-      const shadow = this.add.graphics();
-      shadow.fillStyle(0x1a1a2e, 0.6);
-      shadow.fillCircle(0, 2, 14);
-      container.add(shadow);
-      const outlineRing = this.add.graphics();
-      outlineRing.lineStyle(5, 0x1a1a2e, 1);
-      outlineRing.strokeCircle(0, 0, 18);
-      container.add(outlineRing);
-      const ring = this.add.graphics();
-      ring.lineStyle(3, 0x9370db, 1); // Purple — vault/mystery
-      ring.strokeCircle(0, 0, 18);
-      container.add(ring);
-      container.add(this.add.sprite(0, 0, ASSET_KEYS.sprites.vault));
-      this.vaultContainer = container;
-      this.vaultRoomName = vaultRoom.name;
-
-      this.tweens.add({
-        targets: container,
-        scale: 1.06,
-        duration: 1100,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut',
-      });
-      this.interactionSystem.register({
-        id: 'vault',
-        type: 'vault',
-        gridX: tile.x,
-        gridY: tile.y,
-        label: 'Vault',
-        interactionRange: 'adjacent',
-      });
-      // Store vault info in state for dynamic journal text and artifact
-      const collectedArtifacts = useGameStore.getState().exploration.collectedArtifacts;
-      const vaultArtifact = getRandomUncollectedArtifact(collectedArtifacts);
-      useGameStore.getState().actions.setVaultInfo({
-        roomName: vaultRoom.name,
-        code: vaultCode,
-        artifactId: vaultArtifact?.id ?? null,
-      });
-      break; // Only place one vault
+    if (type === 'book') {
+      this.bookToRoomMap.delete(id);
+      const actions = useGameStore.getState().actions;
+      actions.setBooksRemainingOnThisMap(this.bookContainers.size);
+      actions.setRoomsWithBooksOnMap([...new Set(this.bookToRoomMap.values())]);
     }
   }
 
   private checkRoomEntry(x: number, y: number, isInitialSpawn = false): void {
-    const room = getRoomAt(this.mapData.rooms, x, y);
-    const name = room?.name ?? 'corridor';
-    if (name !== this.lastRoomName) {
-      this.lastRoomName = name;
-      EventBridge.emit('area-entered', { areaName: name });
-      
-      // Track visited rooms for map display (use coordinates as unique key)
-      if (room) {
-        useGameStore.getState().actions.visitRoom(`${room.x1},${room.y1}`);
-      }
-      
-      // Announce room name and contents if entering a room for the first time
-      if (name !== 'corridor' && !this.announcedRooms.has(name)) {
-        this.announcedRooms.add(name);
-        // On initial spawn, delay longer to let game settle
-        const initialDelay = isInitialSpawn ? 1500 : 300;
-        this.announceRoomEntry(name, initialDelay);
-      } else if (isInitialSpawn) {
-        // Even if spawning in corridor, emit event so transporter can be announced
-        this.announcementQueue.play([
-          { delayMs: 2000, run: () => EventBridge.emit('room-announcements-complete') },
-        ]);
-      }
+    const zone = this.zoneAt(x, y);
+    const zoneId = zone?.id ?? 'corridor';
+    if (zoneId === this.lastZoneId) return;
+    this.lastZoneId = zoneId;
+    useGameStore.getState().actions.setCurrentZone(zone?.id ?? null);
+    const name = zone?.name ?? this.corridorLabel();
+    EventBridge.emit('area-entered', { areaName: name });
+    if (zone) useGameStore.getState().actions.visitRoom(`${zone.bounds.x1},${zone.bounds.y1}`);
+
+    if (zone && !this.announcedRooms.has(zone.id)) {
+      this.announcedRooms.add(zone.id);
+      this.announceRoomEntry(name, isInitialSpawn ? 1200 : 250);
+    } else if (isInitialSpawn) {
+      this.announcementQueue.play([
+        { delayMs: 1600, run: () => EventBridge.emit('room-announcements-complete') },
+      ]);
     }
   }
 
   private announceRoomEntry(roomName: string, initialDelay: number): void {
     this.announcementQueue.play([
       { delayMs: initialDelay, run: () => speak(roomName) },
-      { delayMs: 1200, run: () => this.announceRoomContents(roomName) },
-      { delayMs: 1500, run: () => EventBridge.emit('room-announcements-complete') },
+      { delayMs: 900, run: () => this.announceRoomContents(roomName) },
+      { delayMs: 1200, run: () => EventBridge.emit('room-announcements-complete') },
     ]);
   }
 
   private announceRoomContents(roomName: string): void {
     const contents = this.roomContents.get(roomName);
     if (!contents) return;
-    
     const parts: string[] = [];
-    
-    if (contents.books > 0) {
-      parts.push(contents.books === 1 ? '1 book fragment' : `${contents.books} book fragments`);
-    }
-    if (contents.journals > 0) {
-      parts.push(contents.journals === 1 ? '1 journal' : `${contents.journals} journals`);
-    }
-    if (contents.npcs.length > 0) {
-      parts.push(contents.npcs.join(' and '));
-    }
-    if (contents.batteries > 0) {
-      parts.push(contents.batteries === 1 ? '1 battery' : `${contents.batteries} batteries`);
-    }
-    if (contents.maps > 0) {
-      parts.push('area map');
-    }
-    
-    if (parts.length === 0) return;
-    
-    const announcement = `Contains: ${parts.join(', ')}.`;
-    speak(announcement);
+    if (contents.books) parts.push(`${contents.books} book ${contents.books === 1 ? 'fragment' : 'fragments'}`);
+    if (contents.journals) parts.push(`${contents.journals} ${contents.journals === 1 ? 'journal or clue' : 'journals or clues'}`);
+    if (contents.npcs.length) parts.push(contents.npcs.join(' and '));
+    if (contents.batteries) parts.push(`${contents.batteries} ${contents.batteries === 1 ? 'battery' : 'batteries'}`);
+    if (contents.maps) parts.push('area map');
+    if (parts.length) speak(`Contains: ${parts.join(', ')}.`);
   }
 
   private updateFOV(originX: number, originY: number): void {
     const battery = useGameStore.getState().player.flashlightBattery;
-    const radius = getFovRadiusFromBattery(battery);
     const visible = computeVisibleTiles(originX, originY, {
       walls: this.mapData.walls,
-      radius,
+      radius: getFovRadiusFromBattery(battery),
     });
-    // Only count tiles that are actually reachable/walkable for discovery
-    const { reachableTiles } = this.mapData;
-    const reachableVisible = Array.from(visible).filter(coord => reachableTiles.has(coord));
+    const reachableVisible = [...visible].filter((coordinate) => this.mapData.reachableTiles.has(coordinate));
     useGameStore.getState().actions.addExploredTiles(reachableVisible);
+    this.fogRenderer.render(visible, new Set(useGameStore.getState().session.exploredTiles));
 
-    const explored = new Set(useGameStore.getState().session.exploredTiles);
-    this.fogRenderer.render(visible, explored);
-
-    // Emit area-entered when a new room first enters visibility
-    for (const coord of visible) {
-      const [x, y] = coord.split(',').map(Number);
-      const room = getRoomAt(this.mapData.rooms, x, y);
-      const name = room?.name ?? 'corridor';
-      if (name !== 'corridor' && !this.revealedRoomNames.has(name)) {
-        this.revealedRoomNames.add(name);
-        EventBridge.emit('area-entered', { areaName: name });
+    for (const coordinate of visible) {
+      const [x, y] = coordinate.split(',').map(Number);
+      const zone = this.zoneAt(x, y);
+      if (zone && !this.revealedZoneIds.has(zone.id)) {
+        this.revealedZoneIds.add(zone.id);
+        EventBridge.emit('area-discovered', { areaName: zone.name });
       }
     }
   }
 
-  update() {
-    this.interactionSystem?.update();
+  private showLocationCard(): void {
+    EventBridge.emit('location-card', { title: this.theme.title, kicker: this.theme.kicker });
+    const { width, height } = this.cameras.main;
+    const container = this.add.container(width / 2, height / 2 - 20).setDepth(500).setScrollFactor(0);
+    const background = this.add.graphics();
+    background.fillStyle(0x080f21, 0.92);
+    background.fillRoundedRect(-260, -52, 520, 104, 8);
+    background.lineStyle(2, Number.parseInt(this.theme.accentColor.slice(1), 16), 0.9);
+    background.strokeRoundedRect(-260, -52, 520, 104, 8);
+    container.add(background);
+    container.add(this.add.text(0, -12, this.theme.title, {
+      color: '#f5ecd5',
+      fontFamily: 'Atkinson Hyperlegible, sans-serif',
+      fontSize: '22px',
+      fontStyle: 'bold',
+      align: 'center',
+    }).setOrigin(0.5));
+    container.add(this.add.text(0, 22, this.theme.kicker, {
+      color: this.theme.accentColor,
+      fontFamily: 'Atkinson Hyperlegible, sans-serif',
+      fontSize: '13px',
+      align: 'center',
+    }).setOrigin(0.5));
+
+    if (!this.shouldAnimate()) {
+      this.time.delayedCall(1400, () => container.destroy());
+      return;
+    }
+    container.setAlpha(0);
+    this.tweens.add({
+      targets: container,
+      alpha: 1,
+      duration: 350,
+      onComplete: () => this.time.delayedCall(1500, () => {
+        this.tweens.add({ targets: container, alpha: 0, duration: 350, onComplete: () => container.destroy() });
+      }),
+    });
   }
 
-  private playBookPickupEffect(): void {
-    this.fx.playPickupBurst(this.player.getPixelPosition());
+  private createVignetteOverlay(): void {
+    const { width, height } = this.cameras.main;
+    this.vignetteOverlay = this.add.graphics().setDepth(1000).setScrollFactor(0);
+    const edgeWidth = 64;
+    for (let offset = 0; offset < edgeWidth; offset += 1) {
+      const alpha = 0.22 * (1 - offset / edgeWidth);
+      this.vignetteOverlay.fillStyle(0x000000, alpha);
+      this.vignetteOverlay.fillRect(offset, 0, 1, height);
+      this.vignetteOverlay.fillRect(width - offset - 1, 0, 1, height);
+      this.vignetteOverlay.fillRect(0, offset, width, 1);
+      this.vignetteOverlay.fillRect(0, height - offset - 1, width, 1);
+    }
+  }
+
+  private playFootstep(surface: FootstepSurface): void {
+    this.footstepIndex = playFootstepSound(this, surface, this.footstepIndex);
+  }
+
+  private zoneAt(x: number, y: number) {
+    const id = this.expedition.cells[y]?.[x]?.zoneId;
+    return id ? this.expedition.zones.find((zone) => zone.id === id) ?? null : null;
+  }
+
+  private zoneName(zoneId: string): string {
+    return this.expedition.zones.find((zone) => zone.id === zoneId)?.name ?? this.corridorLabel();
+  }
+
+  private corridorLabel(): string {
+    return this.expedition.themeId === 'gardens' ? 'the overgrown paths' : 'the connecting passage';
+  }
+
+  private shouldAnimate(): boolean {
+    return shouldUseMotion(useGameStore.getState().settings.motionPreference);
   }
 
   private playBeamUpAnimation(): void {
     if (this.isBeamingUp) return;
     this.isBeamingUp = true;
     transitionGuard.beginTransition(Date.now(), BEAM_UP_INPUT_BLOCK_MS);
-
-    // Disable player input during animation
-    this.gridMovement?.detach();
-    this.interactionSystem?.detach();
+    this.gridMovement.detach();
+    this.interactionSystem.detach();
     EventBridge.emit('interaction-available', { type: '', label: undefined });
-
+    const finish = () => {
+      useGameStore.getState().actions.beamToShip();
+      useGameStore.getState().actions.saveToLocalStorage();
+      this.scene.start('ShipScene');
+    };
+    playCue(this, ASSET_KEYS.audio.cues.transporter, 0.55);
+    if (!this.shouldAnimate()) {
+      finish();
+      return;
+    }
     this.fx.playBeamColumn(
       this.player.getPixelPosition(),
       () => this.cameras.main.fadeOut(400, 200, 220, 255),
-      () => {
-        useGameStore.getState().actions.beamToShip();
-        useGameStore.getState().actions.saveToLocalStorage();
-        this.scene.start('ShipScene');
-      }
+      finish,
     );
+  }
+
+  private publishE2ESnapshot(): void {
+    if (process.env.NEXT_PUBLIC_E2E !== '1' || typeof window === 'undefined') return;
+    window.__STARSHIP_E2E__ = Object.freeze({
+      get inputReady() {
+        return transitionGuard.canAcceptAction();
+      },
+      seed: this.expedition.seed,
+      themeId: this.expedition.themeId,
+      cells: this.expedition.cells.map((row) => row.map((cell) => ({
+        walkable: cell.walkable,
+        surface: cell.surface,
+        zoneId: cell.zoneId,
+      }))),
+      player: { ...this.player.getGridPosition() },
+      extraction: { ...this.expedition.extraction },
+      entities: this.expedition.entities.map((entity) => ({
+        id: entity.id,
+        kind: entity.kind,
+        position: { ...entity.position },
+        blocksMovement: entity.blocksMovement,
+      })),
+      vault: {
+        id: this.expedition.vault.id,
+        position: { ...this.expedition.vault.position },
+        clueId: this.expedition.vault.clueId,
+      },
+    });
+  }
+
+  private resetSceneCollections(): void {
+    this.lastZoneId = null;
+    this.revealedZoneIds.clear();
+    this.bookContainers.clear();
+    this.journalContainers.clear();
+    this.batteryContainers.clear();
+    this.blockedTiles.clear();
+    this.bookToRoomMap.clear();
+    this.roomContents.clear();
+    this.announcedRooms.clear();
+    this.mapContainer = null;
+    this.vaultContainer = null;
+    this.isBeamingUp = false;
+    this.footstepIndex = 0;
   }
 
   private cleanupOnShutdown(): void {
@@ -1033,6 +666,71 @@ export default class ExploreScene extends Scene {
     this.gridMovement?.detach();
     this.interactionSystem?.detach();
     EventBridge.emit('interaction-available', { type: '', label: undefined });
+    if (process.env.NEXT_PUBLIC_E2E === '1' && typeof window !== 'undefined') {
+      delete window.__STARSHIP_E2E__;
+    }
     this.isBeamingUp = false;
+  }
+
+  update(): void {
+    this.interactionSystem?.update();
+  }
+}
+
+function buildRuntimeContentCatalog(): ExpeditionContentCatalog {
+  const books = getBookCatalogSync();
+  const npcs = getNPCCatalogSync();
+  const journals = getJournalCacheSync();
+  const themes = Object.keys(EXPEDITION_THEMES) as ThemeId[];
+  return {
+    fragments: books.flatMap((book) => book.fragments.map((fragment) => ({
+      id: fragment.id,
+      themeIds: fragment.themeAffinities,
+    }))),
+    npcIdsByTheme: Object.fromEntries(themes.map((themeId) => [
+      themeId,
+      npcs.filter((npc) => npc.themeIds.includes(themeId)).map((npc) => npc.id),
+    ])),
+    journalIdsByTheme: Object.fromEntries(themes.map((themeId) => [
+      themeId,
+      journals.filter((journal) => journal.themeIds?.includes(themeId)).map((journal) => journal.id),
+    ])),
+  };
+}
+
+function getExpeditionSeed(activeExpeditionId: string | null, themeId: ThemeId): string {
+  if (process.env.NEXT_PUBLIC_E2E === '1' && typeof window !== 'undefined') {
+    const requestedSeed = new URLSearchParams(window.location.search).get('seed')?.trim();
+    if (requestedSeed) return requestedSeed;
+  }
+  return activeExpeditionId ?? `${themeId}-expedition`;
+}
+
+function pointKey(point: Point): string {
+  return `${point.x},${point.y}`;
+}
+
+function stableAngle(value: string): number {
+  const sum = [...value].reduce((total, character) => total + character.charCodeAt(0), 0);
+  return (sum % 25) - 12;
+}
+
+declare global {
+  interface Window {
+    __STARSHIP_E2E__?: Readonly<{
+      readonly inputReady: boolean;
+      seed: string;
+      themeId: ThemeId;
+      cells: Array<Array<{ walkable: boolean; surface: FootstepSurface; zoneId: string | null }>>;
+      player: Point;
+      extraction: Point;
+      entities: Array<{
+        id: string;
+        kind: PlacedEntity['kind'];
+        position: Point;
+        blocksMovement: boolean;
+      }>;
+      vault: { id: string; position: Point; clueId: string };
+    }>;
   }
 }

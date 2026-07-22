@@ -1,88 +1,87 @@
 # Contributing to Starship Alexandria
 
-Thanks for your interest in contributing! This project is a cozy roguelike about recovering lost literature, and contributions of all kinds are welcome -- code, content, accessibility improvements, bug reports, and ideas.
+Contributions are welcome across code, public-domain content, accessibility, game feel, tests, and documentation.
 
-## Getting Set Up
+## Set up
 
-1. Fork the repository and clone your fork:
+Starship Alexandria uses the Node.js version in `.nvmrc`.
 
 ```bash
 git clone https://github.com/<your-username>/starship-alexandria.git
 cd starship-alexandria
-```
-
-2. Install dependencies (requires Node.js 20+):
-
-```bash
-npm install
-```
-
-3. Start the dev server:
-
-```bash
+nvm use
+npm ci
 npm run dev
 ```
 
-4. Open [http://localhost:8080](http://localhost:8080) in your browser. The server hot-reloads on file changes.
+Open [http://localhost:8080](http://localhost:8080).
 
-## Submitting Changes
+## Before opening a pull request
 
-1. Create a branch from `main` for your work:
-
-```bash
-git checkout -b my-feature
-```
-
-2. Make your changes and verify the build passes:
+Keep the change focused and explain both its player-facing effect and how you verified it. Run:
 
 ```bash
-npm run build
+npm run check
+npm run test:e2e
 ```
 
-3. Push your branch and open a pull request against `main`.
+When a browser test fails, include the relevant screenshot/trace or describe what you observed. Update a visual baseline with `npm run test:e2e:update` only after inspecting the change at the target viewport.
 
-Please keep PRs focused -- one feature or fix per PR is ideal. Include a brief description of what your change does and why.
+## Engineering boundaries
 
-## Code Style
+- TypeScript strict mode is enabled; avoid `any` and unchecked casts.
+- React owns semantic HTML, overlays, focus, and non-canvas equivalents.
+- Phaser owns world rendering and spatial presentation.
+- Zustand owns progression, settings, and modal/game-phase state.
+- React and Phaser communicate through the typed `EventBridge` and store actions.
+- Expedition generation remains synchronous, deterministic, and independent of Phaser, React, Zustand, I/O, and `Math.random()`.
+- Runtime content and assets are local; do not add remote production fetches.
+- Clean up the exact event listener, timer, sound, or scene resource that a component/system registers.
 
-- **TypeScript strict mode** is enabled. Avoid `any` unless unavoidable (add a `TODO` comment if you must).
-- **Functional React components** with hooks. No class components.
-- **Composition over inheritance** for Phaser game entities.
-- All state changes go through the **Zustand store** actions -- never mutate state directly.
-- Phaser and React communicate through the **EventBridge**, not direct imports.
-- Linting is configured in `.eslintrc.json`. Run your editor's linter or check for errors before submitting.
+Read [Architecture](docs/ARCHITECTURE.md) before changing a cross-boundary flow.
 
-## Accessibility
+## Accessibility expectations
 
-Accessibility is a core requirement, not an afterthought. When contributing UI or gameplay changes:
+Every complete gameplay path must work with a keyboard. Canvas pixels, animation, color, and sound may enrich information but must not be its only carrier.
 
-- All React UI must use **semantic HTML**, ARIA landmarks, and proper heading hierarchy.
-- Game events that convey important information must emit to the **ARIA live region** (`AccessibleLog` component), not just render on canvas.
-- All interactions must work with **keyboard only** (arrow keys/WASD for movement, Space/Enter/E for interaction, Escape to close overlays).
-- Interactive elements (player, books, NPCs) must be **visually distinct** with high contrast -- thick outlines, highlight rings, bright colors on dark backgrounds.
-- UI text must meet **WCAG 2.2 Level AA** contrast ratios (4.5:1 for normal text, 3:1 for large text).
+For UI/game changes:
 
-## Content Contributions
+- use semantic HTML and native controls where possible;
+- preserve visible focus, logical focus order, modal focus trap, and focus return;
+- prevent canvas/global shortcuts while an HTML control or modal owns input;
+- send essential game events to the accessible event log;
+- keep the textual map equivalent aligned with spatial state;
+- honor narration, SFX, ambience, and `system | reduce | full` motion preferences;
+- provide a motion-free equivalent for effects and a visible/spoken equivalent for sounds;
+- test at 200% browser zoom as well as the supported desktop viewports.
 
-Game content is defined in YAML files under `content/` and validated at build time. See [EDITING.md](EDITING.md) for details on the format and how to add:
+Automated axe checks do not replace a keyboard-only screen-reader pass.
 
-- **Books and fragments** (`books.yaml` + text files in `content/texts/`)
-- **NPC dialogue** (`npcs.yaml`, `dialogue.yaml`)
-- **Journal entries** (`journals.yaml`)
-- **Artifacts** (`artifacts.yaml`)
-- **Room names** (`rooms.yaml`)
+## Content contributions
 
-All literature must be **public domain**. [Project Gutenberg](https://www.gutenberg.org/) is the primary source.
+`public/content/` is the sole narrative source. See [Content authoring](docs/CONTENT_AUTHORING.md) for the complete schemas and validation rules.
 
-## Reporting Bugs
+Literary excerpts must be public domain in the United States and preserve the recorded edition's wording. Include Project Gutenberg eBook/edition metadata and exact source location; do not include Gutenberg headers or footers. Never add `totalFragments`—the included count is derived.
+
+Destination changes should also follow [Theme authoring](docs/THEME_AUTHORING.md). Each theme requires two NPCs, a journal pool, and one accessible clue/vault loop.
+
+## Asset contributions
+
+Runtime media must be compatible with the project's license policy and committed locally. Update the pinned refresh recipe, SHA-256 hash, transformation details, and license/source record for every asset. Run:
+
+```bash
+npm run refresh-assets
+npm run validate-assets
+```
+
+Do not replace provenance with a generic credit or make builds depend on a network download. See [runtime asset provenance](public/game-assets/README.md).
+
+## Reporting problems
 
 Open a [GitHub issue](https://github.com/sethwilsonUS/starship-alexandria/issues) with:
 
-- What you expected to happen
-- What actually happened
-- Steps to reproduce
-- Browser and OS (if relevant)
-
-## Questions?
-
-Open a discussion or issue. There are no bad questions.
+- what you expected;
+- what happened;
+- reliable reproduction steps;
+- browser, operating system, input method, and relevant accessibility settings;
+- console output, screenshot, or Playwright trace when available.

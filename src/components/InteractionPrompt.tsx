@@ -27,7 +27,20 @@ export default function InteractionPrompt() {
 
   if (!prompt) return null;
 
-  const displayText = `[E] ${prompt.label ?? prompt.type}`;
+  const label = prompt.label ?? prompt.type;
+  const displayText = prompt.type === 'npc'
+    ? `[E] Talk to ${label}`
+    : prompt.type === 'book'
+      ? `[E] Read book fragment: ${label}`
+      : prompt.type === 'journal'
+        ? `[E] Read ${label}`
+        : prompt.type === 'map'
+          ? `[E] Take area map: ${label}`
+          : prompt.type === 'vault'
+            ? `[E] Inspect ${label}`
+            : prompt.type === 'transporter'
+              ? `[E] Use ${label}`
+              : `[E] Take ${label}`;
 
   return (
     <div

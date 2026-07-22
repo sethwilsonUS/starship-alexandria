@@ -1,4 +1,3 @@
-import { getBookCatalogSync } from '@/data/books';
 import { useGameStore } from '@/store/gameStore';
 import { isNativeInteractiveTarget } from '@/utils/domEvents';
 import { EventBridge } from '../EventBridge';
@@ -14,28 +13,17 @@ export const inputActionRouter = new InputActionRouter({ transitionGuard });
 
 export function getInputActionContext(now = Date.now()): InputActionContext {
   const state = useGameStore.getState();
-  let totalFragments = 0;
-
-  try {
-    totalFragments = getBookCatalogSync().reduce(
-      (sum, book) => sum + book.fragments.length,
-      0
-    );
-  } catch {
-    totalFragments = 0;
-  }
 
   return {
     phase: state.session.gamePhase,
     hasAreaMap: state.session.hasAreaMap,
-    isGameComplete: totalFragments > 0 && state.library.length >= totalFragments,
     now,
   };
 }
 
 export function dispatchGameInputAction(action: GameInputAction): boolean {
   if (action === 'beamDown') {
-    EventBridge.emit('beam-down-requested');
+    useGameStore.getState().actions.openMissionPicker();
     return true;
   }
 
@@ -61,6 +49,7 @@ export function dispatchGameInputAction(action: GameInputAction): boolean {
 export function handleKeyboardInput(event: KeyboardEvent): boolean {
   if (event.defaultPrevented) return false;
   if (isNativeInteractiveTarget(event.target)) return false;
+  if (useGameStore.getState().session.launchGateOpen) return false;
 
   const action = inputActionRouter.actionFromKeyboard(event, getInputActionContext());
   if (!action) return false;

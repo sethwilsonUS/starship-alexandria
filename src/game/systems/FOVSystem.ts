@@ -7,7 +7,7 @@
 import { FOV } from 'rot-js';
 import { MAP_WIDTH, MAP_HEIGHT, FOV_RADIUS } from '@/config/gameConfig';
 import { TILE } from '@/data/tilesets';
-import type { MapLayer } from '@/utils/mapUtils';
+type MapLayer = number[][];
 
 export interface FOVOptions {
   walls: MapLayer;

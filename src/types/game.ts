@@ -3,6 +3,7 @@
  */
 
 import type { Scene } from 'phaser';
+import type { FootstepSurface, SemanticCell } from '@/game/expeditions';
 
 export interface Position {
   x: number;
@@ -33,6 +34,10 @@ export interface MovementContext {
   getBlockedTiles?: () => Set<string>;
   /** Optional: flooded tiles (passable but slow). Returns coord strings "x,y". */
   getFloodedTiles?: () => Set<string>;
+  /** Semantic terrain supplied by the pure expedition generator. */
+  getSemanticCell?: (x: number, y: number) => Pick<SemanticCell, 'walkable' | 'surface'> | null;
+  /** Compatibility surface lookup for hand-authored scenes. */
+  getSurfaceAt?: (x: number, y: number) => FootstepSurface;
 }
 
 /** Minimal player API required by MovementController and InteractionSystem */

@@ -5,6 +5,8 @@ import { useGameStore } from '@/store/gameStore';
 import { speak, cancelSpeech } from '@/utils/speech';
 import { MAP_WIDTH, MAP_HEIGHT } from '@/config/gameConfig';
 import type { MapRoom } from '@/types/store';
+import { EXPEDITION_THEMES } from '@/game/expeditions';
+import { useModalFocus } from './useModalFocus';
 
 function getDirectionLabel(room: MapRoom, mapWidth: number, mapHeight: number): string {
   const cx = (room.x1 + room.x2) / 2;
@@ -28,10 +30,6 @@ function getDirectionLabel(room: MapRoom, mapWidth: number, mapHeight: number): 
   return 'center';
 }
 
-function getRoomContainingPoint(rooms: MapRoom[], x: number, y: number): MapRoom | null {
-  return rooms.find(r => x >= r.x1 && x <= r.x2 && y >= r.y1 && y <= r.y2) ?? null;
-}
-
 function isInAnyRoom(rooms: MapRoom[], x: number, y: number): boolean {
   return rooms.some(r => x >= r.x1 && x <= r.x2 && y >= r.y1 && y <= r.y2);
 }
@@ -53,18 +51,27 @@ export default function MapOverlay() {
   const gamePhase = useGameStore((s) => s.session.gamePhase);
   const mapRooms = useGameStore((s) => s.session.mapRooms);
   const mapWalls = useGameStore((s) => s.session.mapWalls);
+  const currentZoneId = useGameStore((s) => s.session.currentZoneId);
   const playerPosition = useGameStore((s) => s.player.position);
   const mapSpawn = useGameStore((s) => s.session.mapSpawn);
   const npcPositions = useGameStore((s) => s.session.npcPositionsOnMap);
   const discoveredNPCs = useGameStore((s) => s.exploration.discoveredNPCs);
   const visitedRooms = useGameStore((s) => s.session.visitedRooms);
   const closeMap = useGameStore((s) => s.actions.closeMap);
+  const activeThemeId = useGameStore((s) => s.session.activeThemeId);
   
   const [selectedRoomIndex, setSelectedRoomIndex] = useState<number | null>(null);
   const [isAnimatingIn, setIsAnimatingIn] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
   const openedAtRef = useRef<number>(0);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const isOpen = gamePhase === 'viewing-map';
+  const close = useCallback(() => {
+    setIsAnimatingIn(false);
+    cancelSpeech();
+    closeMap();
+  }, [closeMap]);
+  useModalFocus(isOpen, dialogRef, close);
+  const theme = activeThemeId ? EXPEDITION_THEMES[activeThemeId] : null;
 
   const rooms = useMemo(
     () => [...mapRooms].sort((a, b) => {
@@ -75,6 +82,10 @@ export default function MapOverlay() {
     }),
     [mapRooms]
   );
+  const playerRoom = useMemo(
+    () => currentZoneId ? rooms.find((room) => room.id === currentZoneId) ?? null : null,
+    [currentZoneId, rooms]
+  );
   const visitedRoomKeys = useMemo(() => new Set(visitedRooms), [visitedRooms]);
   const discoveredNPCSet = useMemo(() => new Set(discoveredNPCs), [discoveredNPCs]);
   const visibleNpcs = useMemo(
@@ -82,49 +93,33 @@ export default function MapOverlay() {
     [npcPositions, discoveredNPCSet]
   );
   
-  // Animate in when opening
+  // Animate in when opening. Closing unmounts synchronously with the modal
+  // phase so the background never becomes interactive beneath a stale dialog.
   useEffect(() => {
-    let frame = 0;
-    if (isOpen) {
-      frame = requestAnimationFrame(() => {
-        setIsVisible(true);
-        setSelectedRoomIndex(null);
-        requestAnimationFrame(() => {
-          setIsAnimatingIn(true);
-        });
-      });
-      openedAtRef.current = Date.now();
+    if (!isOpen) return;
 
-      const playerRoom = getRoomContainingPoint(rooms, playerPosition.x, playerPosition.y);
-      const playerRoomName = playerRoom ? playerRoom.name : 'a corridor';
-      const intro = `Map of the area. ${rooms.length} rooms. You are in ${playerRoomName}. Use arrow keys to navigate between rooms. Press Escape or M to close.`;
-      speak(intro);
-    } else {
-      frame = requestAnimationFrame(() => {
-        setIsAnimatingIn(false);
-      });
-      // Delay hiding to allow animation out
-      const timer = setTimeout(() => setIsVisible(false), 300);
-      return () => {
-        cancelAnimationFrame(frame);
-        clearTimeout(timer);
-      };
-    }
+    openedAtRef.current = Date.now();
+    const frame = requestAnimationFrame(() => {
+      setSelectedRoomIndex(null);
+      setIsAnimatingIn(true);
+    });
+
+    const playerRoomName = playerRoom ? playerRoom.name : 'a corridor';
+    const intro = `Map of the area. ${rooms.length} rooms. You are in ${playerRoomName}. Use arrow keys to navigate between rooms. Press Escape or M to close.`;
+    speak(intro);
+
     return () => {
       cancelAnimationFrame(frame);
-      if (isOpen) {
-        cancelSpeech();
-      }
+      cancelSpeech();
     };
-  }, [isOpen, rooms, playerPosition.x, playerPosition.y]);
+  }, [isOpen, playerRoom, rooms.length]);
   
   const speakRoom = useCallback((index: number) => {
     const room = rooms[index];
     if (!room) return;
     
     const direction = getDirectionLabel(room, MAP_WIDTH, MAP_HEIGHT);
-    const playerRoom = getRoomContainingPoint(rooms, playerPosition.x, playerPosition.y);
-    const isPlayerHere = playerRoom === room;
+    const isPlayerHere = room.id === currentZoneId;
     const isVisited = visitedRoomKeys.has(`${room.x1},${room.y1}`);
     const suffixes = [
       isVisited ? 'visited' : 'not yet visited',
@@ -132,7 +127,7 @@ export default function MapOverlay() {
     ].filter(Boolean);
     const text = `${room.name}. ${direction} side of the map. ${suffixes.join('. ')}.`;
     speak(text);
-  }, [rooms, playerPosition.x, playerPosition.y, visitedRoomKeys]);
+  }, [currentZoneId, rooms, visitedRoomKeys]);
   
   useEffect(() => {
     if (!isOpen) return;
@@ -169,7 +164,7 @@ export default function MapOverlay() {
         e.preventDefault();
         e.stopImmediatePropagation();
         cancelSpeech();
-        closeMap();
+        close();
         return;
       }
       
@@ -197,14 +192,12 @@ export default function MapOverlay() {
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, closeMap, speakRoom, rooms.length]);
+  }, [isOpen, close, speakRoom, rooms.length]);
   
-  if (!isVisible) return null;
+  if (!isOpen) return null;
   
   if (rooms.length === 0) return null;
 
-  const playerRoom = getRoomContainingPoint(rooms, playerPosition.x, playerPosition.y);
-  
   // Calculate bounding box of all rooms for better scaling
   const bounds = rooms.reduce(
     (acc, room) => ({
@@ -243,6 +236,7 @@ export default function MapOverlay() {
   
   return (
     <div
+      ref={dialogRef}
       className="map-overlay"
       style={{
         opacity: isAnimatingIn ? 1 : 0,
@@ -250,7 +244,9 @@ export default function MapOverlay() {
       }}
       role="dialog"
       aria-modal="true"
-      aria-label="Area map"
+      aria-labelledby="area-map-title"
+      aria-describedby="area-map-summary"
+      tabIndex={-1}
     >
       {/* Parchment-style container */}
       <div className="map-overlay__parchment">
@@ -258,11 +254,32 @@ export default function MapOverlay() {
         <div className="map-overlay__header">
           <div className="map-overlay__header-decor">✦</div>
           <div>
-            <h2 className="map-overlay__title">Area Map</h2>
-            <p className="map-overlay__subtitle">Ruins of the Old Library</p>
+            <h2 id="area-map-title" className="map-overlay__title">Area Map</h2>
+            <p className="map-overlay__subtitle">{theme?.title ?? 'Expedition site'}</p>
           </div>
-          <div className="map-overlay__header-decor">✦</div>
+          <button type="button" className="modal-close map-overlay__close" onClick={close} aria-label="Close area map" data-autofocus>
+            <span aria-hidden="true">×</span>
+          </button>
         </div>
+
+        <section id="area-map-summary" className="map-overlay__textual" aria-label="Text map" tabIndex={0}>
+          <h3>Discovered locations</h3>
+          <p>
+            You are {playerRoom ? `in ${playerRoom.name}` : 'in a corridor'}. Locations are listed with their direction and walking distance.
+          </p>
+          <ol>
+            {rooms.map((room) => {
+              const distance = Math.abs(room.centerX - playerPosition.x) + Math.abs(room.centerY - playerPosition.y);
+              const occupants = visibleNpcs.filter((npc) => npc.roomName === room.name).map((npc) => npc.name);
+              const visited = visitedRoomKeys.has(`${room.x1},${room.y1}`);
+              return (
+                <li key={`text-${room.name}-${room.x1}-${room.y1}`}>
+                  <strong>{room.name}</strong>: {getDirectionLabel(room, MAP_WIDTH, MAP_HEIGHT)}, about {distance} steps away; {visited ? 'visited' : 'not yet visited'}{occupants.length ? `; known survivor: ${occupants.join(', ')}` : ''}.
+                </li>
+              );
+            })}
+          </ol>
+        </section>
         
         {/* Map container */}
         <div className="map-overlay__map-area">
@@ -291,7 +308,7 @@ export default function MapOverlay() {
             
             {rooms.map((room, idx) => {
               const isSelected = selectedRoomIndex === idx;
-              const isPlayerRoom = room === playerRoom;
+              const isPlayerRoom = room.id === currentZoneId;
               const isVisited = visitedRoomKeys.has(`${room.x1},${room.y1}`);
               
               const leftPct = toPercent(room.x1, bounds.minX, boundsWidth);

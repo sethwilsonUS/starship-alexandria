@@ -23,19 +23,31 @@
     ],
     "scripts": {
         "dev": "next dev -p 8080",
+        "dev:e2e": "NEXT_PUBLIC_E2E=1 next dev -p 8080",
+        "start": "next start -p 8080",
+        "start:e2e": "NEXT_PUBLIC_E2E=1 next start -p 8080",
         "clean": "rm -rf dist .next",
         "build": "npm run validate-content && next build",
+        "build:e2e": "NEXT_PUBLIC_E2E=1 npm run build",
+        "check": "npm run validate-content && npm run validate-assets && npm run lint && npm run typecheck && npm test && npm run build",
         "test": "vitest run",
         "test:watch": "vitest",
+        "test:e2e": "playwright test",
+        "test:e2e:update": "playwright test --update-snapshots=all",
+        "smoke": "playwright test --project=chromium --grep @smoke",
         "lint": "eslint src/",
         "typecheck": "tsc --noEmit",
         "validate-content": "node scripts/validate-content.js",
+        "validate-assets": "node scripts/validate-assets.mjs",
+        "refresh-assets": "node scripts/import-external-game-assets.mjs",
         "generate-assets": "npm run generate:game-assets",
         "generate:game-assets": "node scripts/generate-game-assets.mjs",
+        "generate:social-preview": "node scripts/generate-social-preview.mjs",
+        "import-external-assets": "node scripts/import-external-game-assets.mjs",
         "generate-voices:opening": "node scripts/generate-opening-voices.mjs"
     },
     "dependencies": {
-        "next": "^16.1.6",
+        "next": "^16.2.10",
         "phaser": "^4.1.0",
         "react": "19.2.5",
         "react-dom": "19.2.5",
@@ -45,15 +57,20 @@
         "zustand": "^5.0.11"
     },
     "devDependencies": {
-        "@types/node": "^20",
+        "@axe-core/playwright": "^4.12.1",
+        "@playwright/test": "^1.61.1",
+        "@types/node": "^20.19.0",
         "@types/react": "^19",
         "@types/react-dom": "^19",
         "@types/uuid": "^10.0.0",
         "eslint": "^9.39.4",
-        "eslint-config-next": "^16.1.6",
+        "eslint-config-next": "^16.2.10",
         "sharp": "^0.34.5",
         "ts-node": "^10.9.2",
         "typescript": "^5",
-        "vitest": "^4.0.18"
+        "vitest": "^4.1.10"
+    },
+    "overrides": {
+        "postcss": "8.5.19"
     }
 }

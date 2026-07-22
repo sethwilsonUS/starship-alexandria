@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { parse as parseYaml } from 'yaml';
+import { getOpeningVoiceLines } from './lib/opening-voice-lines.mjs';
 
 const apiKey = process.env.OPENAI_API_KEY;
 
@@ -19,12 +19,6 @@ const model = process.env.OPENAI_TTS_MODEL || 'gpt-4o-mini-tts';
 const voice = process.env.OPENAI_TTS_VOICE || 'marin';
 const instructions = process.env.OPENAI_TTS_INSTRUCTIONS ||
   'Warm, clear starship librarian narration. Calm, hopeful, intimate, and accessible. Avoid harsh sibilance or theatrical overacting.';
-const SAFE_LINE_ID = /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/;
-
-function hashText(text) {
-  return crypto.createHash('sha256').update(text).digest('hex').slice(0, 16);
-}
-
 async function readManifest(filePath) {
   let raw;
 
@@ -51,30 +45,6 @@ async function readManifest(filePath) {
 
   validateManifest(manifest);
   return manifest;
-}
-
-function getOpeningVoiceLines(gameloop) {
-  const seenLineIds = new Set();
-
-  return (gameloop?.welcome?.lines ?? [])
-    .filter((line) => typeof line?.voiceLineId === 'string' && typeof line?.text === 'string')
-    .map((line) => {
-      if (!SAFE_LINE_ID.test(line.voiceLineId)) {
-        throw new Error(`Invalid voiceLineId "${line.voiceLineId}". Use lowercase letters, digits, dots, dashes, or underscores.`);
-      }
-
-      if (seenLineIds.has(line.voiceLineId)) {
-        throw new Error(`Duplicate opening voiceLineId "${line.voiceLineId}".`);
-      }
-
-      seenLineIds.add(line.voiceLineId);
-
-      return {
-        lineId: line.voiceLineId,
-        text: line.text,
-        textHash: hashText(line.text),
-      };
-    });
 }
 
 function isPresentString(value) {

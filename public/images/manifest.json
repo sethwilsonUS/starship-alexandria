@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "generations": [
+    {
+      "id": "celestial-acropolis-key-art",
+      "generatedAt": "2026-07-22T02:19:42.268Z",
+      "tool": "OpenAI image generation via Codex built-in image tool",
+      "model": "Model identifier was not exposed by the image-generation tool",
+      "disclosure": "AI-generated README key art and social-preview artwork; not used for collision, sprites, or tilemaps",
+      "referenceDescription": "The prior observation-library concept art was supplied as a mood and palette reference only; screenshot interface chrome was explicitly excluded.",
+      "prompt": "Use case: ads-marketing. Asset type: OpenGraph / Twitter share card for a literary science-fiction game, 1.91:1 landscape composition, designed to crop cleanly to 1200×630. Input images: Image 1 is a mood and palette reference only. Use only the central artwork's sense of midnight space, brass, cyan transporter light, starlight, and archival grandeur. Completely ignore and exclude all screenshot UI, browser chrome, Codex interface, window borders, buttons, and zoom controls. Primary request: Direction 1 — \"The Celestial Acropolis.\" Create original cinematic key art in which an elegant archival starship sails across the upper third against deep space. A narrow luminous cyan beam descends from the ship to one lone, mysterious, gender-ambiguous archivist figure arriving below. The ground transitions seamlessly through an Arcadian landscape of cypress and olive trees into monumental marble temple stairs, ruined classical colonnades, and the silhouette of a roofless Gothic cathedral farther back. Space above should feel vast; the architecture below should feel sublime and discoverable, not apocalyptic. Style/medium: premium cinematic matte painting and richly textured editorial illustration; realistic scale with readable silhouettes; original design. Composition/framing: starship clearly visible above, vertical beam as the main axis, one small full-body figure centered at the landing point, grand architecture framing the lower half. Strong thumbnail readability and generous title-safe space. Lighting/mood: midnight blue starlight, warm dawn-gold marble and brass, pale parchment highlights, cyan beam; contemplative, mysterious, hopeful. Text (verbatim): \"STARSHIP ALEXANDRIA\". Spell ALEXANDRIA exactly A-L-E-X-A-N-D-R-I-A. Render the title exactly once. Typography should combine dignified Roman inscription proportions and subtle serifs with modern geometric spacing and restrained sci-fi precision; crisp, prominent, highly legible at small size. Constraints: preserve all essential subjects within the central 90% safe area; exactly one starship, one beam, and one lone figure; no weapons, no combat, no unrelated characters, no extra words, no logos, no watermark, no UI.",
+      "outputs": [
+        {
+          "path": "/images/starship-alexandria-key-art.png",
+          "role": "readme-key-art",
+          "width": 1734,
+          "height": 907,
+          "sha256": "23daee52011b08ace59ce0e4737dc896a252669f961c7a1af744e1211e265c7f",
+          "transformation": "Original generated PNG copied byte-for-byte from the built-in Codex image-generation output; C2PA metadata retained"
+        },
+        {
+          "path": "/images/og.png",
+          "role": "social-card",
+          "width": 1200,
+          "height": 630,
+          "sha256": "b20bd3ccc4549631f158a331d96fdc477e5cd9e62e62df278fddfb7b077d2df3",
+          "derivedFrom": "/images/starship-alexandria-key-art.png",
+          "transformation": "Center-cropped and resized from the generated source with sharp Lanczos3; PNG compression level 9 with adaptive filtering"
+        }
+      ]
+    }
+  ]
+}

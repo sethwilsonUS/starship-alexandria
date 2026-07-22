@@ -1,11 +1,10 @@
 /**
  * NPC definitions: name, dialogue trees.
- * Phase 2.4 — NPCs & journal entries.
- * 
- * Content is now loaded from content/npcs.yaml
+ * Content is loaded from the canonical public/content/npcs.yaml.
  */
 
 import type { DialogueLine } from '@/types/store';
+import type { ContentThemeId } from '@/types/content';
 import {
   getAllNPCs,
   getNPCById as getContentNPCById,
@@ -16,19 +15,28 @@ import {
 export interface NPC {
   id: string;
   name: string;
+  role: string;
+  themeIds: ContentThemeId[];
   firstMeet: DialogueLine[];
   return: DialogueLine[];
+  postVault: DialogueLine[];
 }
 
 export function yamlToNPC(yaml: NPCYaml): NPC {
   return {
     id: yaml.id,
     name: yaml.name,
+    role: yaml.role,
+    themeIds: [...yaml.themeIds],
     firstMeet: yaml.firstMeet.map((line) => ({
       speaker: line.speaker,
       text: line.text,
     })),
     return: yaml.return.map((line) => ({
+      speaker: line.speaker,
+      text: line.text,
+    })),
+    postVault: yaml.postVault.map((line) => ({
       speaker: line.speaker,
       text: line.text,
     })),
@@ -49,8 +57,7 @@ export async function getMarthaBookHint(roomNames: string[]): Promise<string> {
   return getContentMarthaBookHint(roomNames);
 }
 
-// Backward compatibility: export a placeholder that throws if accessed synchronously
-// This will help catch places that need to be updated to async
+// Phaser scenes use this catalog only after BootScene has loaded canonical content.
 let _cachedCatalog: NPC[] | null = null;
 
 export function setCachedNPCCatalog(npcs: NPC[]): void {
@@ -66,4 +73,8 @@ export function getNPCCatalogSync(): NPC[] {
 
 export function getNPCByIdSync(id: string): NPC | undefined {
   return getNPCCatalogSync().find((n) => n.id === id);
+}
+
+export function getNPCsForThemeSync(themeId: ContentThemeId): NPC[] {
+  return getNPCCatalogSync().filter((npc) => npc.themeIds.includes(themeId));
 }

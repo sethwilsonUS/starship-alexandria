@@ -1,8 +1,10 @@
 import { TILE_SIZE } from '@/config/gameConfig';
-import { ASSET_KEYS } from './assetManifest';
+import { ASSET_KEYS, THEME_TILESET_KEYS } from './assetManifest';
 
 export function ensureProceduralFallbackTextures(scene: Phaser.Scene): void {
-  if (!scene.textures.exists(ASSET_KEYS.tileset)) createTileset(scene);
+  for (const tilesetKey of Object.values(THEME_TILESET_KEYS)) {
+    if (!scene.textures.exists(tilesetKey)) createTileset(scene, tilesetKey);
+  }
   if (!scene.textures.exists(ASSET_KEYS.sprites.book)) createBook(scene);
   if (!scene.textures.exists(ASSET_KEYS.sprites.transporter)) createTransporter(scene);
   if (!scene.textures.exists(ASSET_KEYS.sprites.player)) createPlayer(scene);
@@ -11,9 +13,12 @@ export function ensureProceduralFallbackTextures(scene: Phaser.Scene): void {
   if (!scene.textures.exists(ASSET_KEYS.sprites.battery)) createBattery(scene);
   if (!scene.textures.exists(ASSET_KEYS.sprites.map)) createMapPickup(scene);
   if (!scene.textures.exists(ASSET_KEYS.sprites.vault)) createVault(scene);
+  if (!scene.textures.exists(ASSET_KEYS.sprites.bookshelfProp)) createBookshelfProp(scene);
+  if (!scene.textures.exists(ASSET_KEYS.sprites.paperDebrisProp)) createPaperDebrisProp(scene);
+  if (!scene.textures.exists(ASSET_KEYS.sprites.shipTerminalProp)) createShipTerminalProp(scene);
 }
 
-function createTileset(scene: Phaser.Scene): void {
+function createTileset(scene: Phaser.Scene, key: string): void {
   // Generate procedural tileset (post-apocalyptic palette)
   // 4 columns x 3 rows = 12 tiles @ 32x32 each
   const cols = 4;
@@ -61,7 +66,7 @@ function createTileset(scene: Phaser.Scene): void {
     }
   }
 
-  graphics.generateTexture(ASSET_KEYS.tileset, width, height);
+  graphics.generateTexture(key, width, height);
   graphics.destroy();
 }
 
@@ -207,4 +212,63 @@ function createVault(scene: Phaser.Scene): void {
   vault.strokeRoundedRect(4, 6, 24, 20, 3);
   vault.generateTexture(ASSET_KEYS.sprites.vault, 32, 32);
   vault.destroy();
+}
+
+function createBookshelfProp(scene: Phaser.Scene): void {
+  const shelf = scene.add.graphics();
+  shelf.fillStyle(0x1a120d, 1);
+  shelf.fillRoundedRect(5, 3, 22, 26, 2);
+  shelf.fillStyle(0x4a3020, 1);
+  shelf.fillRect(8, 6, 16, 20);
+  shelf.fillStyle(0x2d1f12, 1);
+  shelf.fillRect(8, 11, 16, 2);
+  shelf.fillRect(8, 19, 16, 2);
+  const bookColors = [0xb94a3a, 0xd4af37, 0x4f7cac, 0x5f9f55, 0xb86b3f];
+  for (let i = 0; i < bookColors.length; i++) {
+    shelf.fillStyle(bookColors[i], 1);
+    shelf.fillRect(9 + i * 3, 7, 2, 4 + (i % 2));
+    shelf.fillRect(9 + i * 3, 21, 2, 4);
+  }
+  shelf.lineStyle(3, 0x1a120d, 1);
+  shelf.strokeRoundedRect(5, 3, 22, 26, 2);
+  shelf.generateTexture(ASSET_KEYS.sprites.bookshelfProp, 32, 32);
+  shelf.destroy();
+}
+
+function createPaperDebrisProp(scene: Phaser.Scene): void {
+  const paper = scene.add.graphics();
+  paper.fillStyle(0x1a1a2e, 0.3);
+  paper.fillEllipse(16, 23, 26, 7);
+  paper.fillStyle(0xe8dcc4, 1);
+  paper.fillRect(5, 16, 11, 5);
+  paper.fillStyle(0xd7c29b, 1);
+  paper.fillRect(16, 13, 10, 5);
+  paper.fillStyle(0xc4b896, 1);
+  paper.fillRect(10, 9, 10, 4);
+  paper.lineStyle(1, 0x6f6048, 0.8);
+  paper.lineBetween(7, 18, 14, 18);
+  paper.lineBetween(18, 15, 24, 15);
+  paper.lineBetween(11, 11, 18, 11);
+  paper.generateTexture(ASSET_KEYS.sprites.paperDebrisProp, 32, 32);
+  paper.destroy();
+}
+
+function createShipTerminalProp(scene: Phaser.Scene): void {
+  const terminal = scene.add.graphics();
+  terminal.fillStyle(0x1a1a2e, 0.3);
+  terminal.fillEllipse(16, 25, 25, 7);
+  terminal.fillStyle(0x152334, 1);
+  terminal.fillRoundedRect(6, 8, 20, 15, 3);
+  terminal.fillStyle(0x5cb3ff, 0.9);
+  terminal.fillRoundedRect(8, 10, 16, 6, 1);
+  terminal.lineStyle(1, 0xe8fbff, 0.9);
+  terminal.lineBetween(10, 12, 15, 12);
+  terminal.lineBetween(17, 12, 22, 12);
+  terminal.lineBetween(10, 15, 20, 15);
+  terminal.fillStyle(0x9fb8c4, 1);
+  terminal.fillRect(8, 18, 16, 5);
+  terminal.lineStyle(2, 0x1f2937, 1);
+  terminal.strokeRoundedRect(6, 8, 20, 15, 3);
+  terminal.generateTexture(ASSET_KEYS.sprites.shipTerminalProp, 32, 32);
+  terminal.destroy();
 }

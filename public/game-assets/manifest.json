@@ -1,0 +1,909 @@
+{
+  "schemaVersion": 1,
+  "runtimePolicy": "All runtime assets are local. Network access is maintainer-only.",
+  "toolchain": {
+    "ffmpeg": "8.1"
+  },
+  "tileSchema": {
+    "sourceTileSize": 16,
+    "runtimeTileSize": 32,
+    "columns": 4,
+    "rows": 3,
+    "roles": [
+      "floor",
+      "grass",
+      "dirt",
+      "stone-floor",
+      "wall",
+      "rubble",
+      "vine",
+      "debris",
+      "flooded"
+    ],
+    "opaqueRoles": [
+      "floor",
+      "grass",
+      "dirt",
+      "stone-floor",
+      "wall",
+      "rubble"
+    ]
+  },
+  "sources": {
+    "kenneyRoguelike": {
+      "owner": "Kenney",
+      "title": "Roguelike/RPG Pack",
+      "license": "CC0-1.0",
+      "pageUrl": "https://www.kenney.nl/assets/roguelike-rpg-pack",
+      "archiveUrl": "https://www.kenney.nl/media/pages/assets/roguelike-rpg-pack/12c03cd78b-1677697420/kenney_roguelike-rpg-pack.zip",
+      "sha256": "4709d89e4d3f2e0ede6b0959d555a97b48b0513a70076caa4d0943dabe8c33cc"
+    },
+    "kenneyDungeon": {
+      "owner": "Kenney",
+      "title": "Roguelike Caves & Dungeons",
+      "license": "CC0-1.0",
+      "pageUrl": "https://www.kenney.nl/assets/roguelike-caves-dungeons",
+      "archiveUrl": "https://www.kenney.nl/media/pages/assets/roguelike-caves-dungeons/5195ceb8ca-1677694831/kenney_roguelike-caves-dungeons.zip",
+      "sha256": "508b4ab4929f1d79e3376b0201eb28f5e8f7f974edc7b96d420edc192f74888c"
+    },
+    "kenneyModernCity": {
+      "owner": "Kenney",
+      "title": "Roguelike Modern City",
+      "license": "CC0-1.0",
+      "pageUrl": "https://www.kenney.nl/assets/roguelike-modern-city",
+      "archiveUrl": "https://www.kenney.nl/media/pages/assets/roguelike-modern-city/0ff3dfff2b-1677694743/kenney_roguelike-modern-city.zip",
+      "sha256": "e7791156bfe5fd238a698e900ca5c749dec49c8f58b0c570af2f288ced34500c"
+    },
+    "kenneyUrban": {
+      "owner": "Kenney",
+      "title": "RPG Urban Pack",
+      "license": "CC0-1.0",
+      "pageUrl": "https://www.kenney.nl/assets/rpg-urban-pack",
+      "archiveUrl": "https://www.kenney.nl/media/pages/assets/rpg-urban-pack/0a097d1dc7-1677578575/kenney_rpg-urban-pack.zip",
+      "sha256": "c2a4b6c58587a39cef78553347d6d2b51ec6820efb9945fd548c68a0b50cafe0"
+    },
+    "kenneyTinyDungeon": {
+      "owner": "Kenney",
+      "title": "Tiny Dungeon",
+      "license": "CC0-1.0",
+      "pageUrl": "https://www.kenney.nl/assets/tiny-dungeon",
+      "archiveUrl": "https://www.kenney.nl/media/pages/assets/tiny-dungeon/f8422efb44-1674742415/kenney_tiny-dungeon.zip",
+      "sha256": "5653222ac495d89e942f9b636300759b3f38e85b26e9b888676f2e9ab834095a"
+    },
+    "kenneyInterface": {
+      "owner": "Kenney",
+      "title": "Interface Sounds",
+      "license": "CC0-1.0",
+      "pageUrl": "https://www.kenney.nl/assets/interface-sounds"
+    },
+    "kenneyScifi": {
+      "owner": "Kenney",
+      "title": "Sci-fi Sounds",
+      "license": "CC0-1.0",
+      "pageUrl": "https://www.kenney.nl/assets/sci-fi-sounds"
+    },
+    "kenneyRpgAudio": {
+      "owner": "Kenney",
+      "title": "RPG Audio",
+      "license": "CC0-1.0",
+      "pageUrl": "https://www.kenney.nl/assets/rpg-audio"
+    },
+    "fantozziFootsteps": {
+      "owner": "Fantozzi (submitted by qubodup)",
+      "title": "Fantozzi's Footsteps (Grass/Sand & Stone)",
+      "license": "CC0-1.0",
+      "pageUrl": "https://opengameart.org/content/fantozzis-footsteps-grasssand-stone"
+    },
+    "tinyWorldsFootsteps": {
+      "owner": "TinyWorlds; source recordings from pdsounds",
+      "title": "Different steps on wood, stone, leaves, gravel and mud",
+      "license": "CC0-1.0",
+      "pageUrl": "https://opengameart.org/node/5701"
+    },
+    "peludoFootsteps": {
+      "owner": "Peludo",
+      "title": "Water Splash and sand footsteps",
+      "license": "CC0-1.0",
+      "pageUrl": "https://opengameart.org/content/water-splash-and-sand-footsteps"
+    },
+    "haelDbFootsteps": {
+      "owner": "HaelDB",
+      "title": "Footsteps Leather, Cloth, Armor",
+      "license": "CC0-1.0",
+      "pageUrl": "https://opengameart.org/content/footsteps-leather-cloth-armor"
+    },
+    "voltimentPageTurns": {
+      "owner": "Voltiment555",
+      "title": "Book Flip Sounds",
+      "license": "CC0-1.0",
+      "pageUrl": "https://opengameart.org/content/book-flip-sounds"
+    },
+    "springSpringAmbience": {
+      "owner": "Spring Spring; public-domain bird recordings credited by the author",
+      "title": "Birds and Wind - Ambient, Birds, Wind and Synth",
+      "license": "CC0-1.0",
+      "pageUrl": "https://opengameart.org/content/birds-and-wind-ambient-birds-wind-and-synth"
+    },
+    "jasinskiWaves": {
+      "owner": "jasinski (submitted by qubodup)",
+      "title": "Beach Ocean Waves",
+      "license": "CC0-1.0",
+      "pageUrl": "https://opengameart.org/content/beach-ocean-waves"
+    },
+    "atkinson": {
+      "owner": "Braille Institute of America",
+      "title": "Atkinson Hyperlegible",
+      "license": "OFL-1.1",
+      "pageUrl": "https://github.com/googlefonts/atkinson-hyperlegible",
+      "revision": "1cb311624b2ddf88e9e37873999d165a8cd28b46"
+    },
+    "literata": {
+      "owner": "The Literata Project Authors / TypeTogether",
+      "title": "Literata",
+      "license": "OFL-1.1",
+      "pageUrl": "https://github.com/googlefonts/literata"
+    }
+  },
+  "assets": [
+    {
+      "path": "fonts/atkinson-hyperlegible/AtkinsonHyperlegible-Bold.woff2",
+      "kind": "font",
+      "mediaType": "font/woff2",
+      "sourceIds": [
+        "atkinson"
+      ],
+      "transformation": "Copied from the pinned Beowulf font library without modification",
+      "bytes": 23776,
+      "sha256": "da8fce41a04f8498fbf79076f92d304b12e70c76f71b143c5dcfb6536c93c075"
+    },
+    {
+      "path": "fonts/atkinson-hyperlegible/AtkinsonHyperlegible-Regular.woff2",
+      "kind": "font",
+      "mediaType": "font/woff2",
+      "sourceIds": [
+        "atkinson"
+      ],
+      "transformation": "Copied from the pinned Beowulf font library without modification",
+      "bytes": 23196,
+      "sha256": "2df4ba17804bc7a36f123127966075d8427bff2df58d0d76820c1130bb1a4150"
+    },
+    {
+      "path": "fonts/atkinson-hyperlegible/OFL.txt",
+      "kind": "license",
+      "mediaType": "text/plain",
+      "sourceIds": [
+        "atkinson"
+      ],
+      "transformation": "Copied from the pinned Beowulf font library without modification",
+      "bytes": 4351,
+      "sha256": "64b9cae8727cb41ea9e8843103e69647c82383f3a902e2bb39b2c5d92083b6e1"
+    },
+    {
+      "path": "fonts/literata/Literata-Latin-Variable.woff2",
+      "kind": "font",
+      "mediaType": "font/woff2",
+      "sourceIds": [
+        "literata"
+      ],
+      "transformation": "Copied from the pinned Beowulf font library without modification",
+      "bytes": 85672,
+      "sha256": "7478e1920209e51dcc235d151d2056a0a6e3c54b4436f7030d256f231fe09b58"
+    },
+    {
+      "path": "fonts/literata/OFL.txt",
+      "kind": "license",
+      "mediaType": "text/plain",
+      "sourceIds": [
+        "literata"
+      ],
+      "transformation": "Copied from the pinned Beowulf font library without modification",
+      "bytes": 4388,
+      "sha256": "72ef68216a08669b2a977fe788a4aea6114636adbbe0bc6aa9192f63f8d400d0"
+    },
+    {
+      "path": "game-assets/audio/ambience/ambience-gardens.mp3",
+      "kind": "audio",
+      "mediaType": "audio/mpeg",
+      "sourceIds": [
+        "jasinskiWaves"
+      ],
+      "logicalName": "ambience-gardens",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 54314,
+      "sha256": "fef5dd39c5c4bb6a25cb9525ad2386d57499845e60319b01bced7743f89d9cd3"
+    },
+    {
+      "path": "game-assets/audio/ambience/ambience-gardens.ogg",
+      "kind": "audio",
+      "mediaType": "audio/ogg",
+      "sourceIds": [
+        "jasinskiWaves"
+      ],
+      "logicalName": "ambience-gardens",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 86980,
+      "sha256": "49488d935213587ed7da97cbf6f2e4262ed96a8efef2951aa1beeb116d5d6cb9"
+    },
+    {
+      "path": "game-assets/audio/ambience/ambience-ruins.mp3",
+      "kind": "audio",
+      "mediaType": "audio/mpeg",
+      "sourceIds": [
+        "springSpringAmbience"
+      ],
+      "logicalName": "ambience-ruins",
+      "transformation": "Selected seconds 60-120 and crossfaded the final two seconds into the opening two seconds; encoded bit-exact without metadata",
+      "bytes": 811691,
+      "sha256": "c53f812e2eb37edb27fb178354c164816a5d7c8d528a9534447e8e633ab80f7d"
+    },
+    {
+      "path": "game-assets/audio/ambience/ambience-ruins.ogg",
+      "kind": "audio",
+      "mediaType": "audio/ogg",
+      "sourceIds": [
+        "springSpringAmbience"
+      ],
+      "logicalName": "ambience-ruins",
+      "transformation": "Selected seconds 60-120 and crossfaded the final two seconds into the opening two seconds; encoded bit-exact without metadata",
+      "bytes": 630340,
+      "sha256": "a154bda83d6659938b432c48f8ff7ee545e48885e52c7e1c40d9c2de6e18e93b"
+    },
+    {
+      "path": "game-assets/audio/ambience/ship-engine.mp3",
+      "kind": "audio",
+      "mediaType": "audio/mpeg",
+      "sourceIds": [
+        "kenneyScifi"
+      ],
+      "logicalName": "ship-engine",
+      "transformation": "Transcoded from the pinned Kenney OGG source with ffmpeg libmp3lame q=4 and metadata removed",
+      "bytes": 38973,
+      "sha256": "25511eaa7ea5b49c8084ab748b9f0e39bbe7d87aaa6cfb5a297fbcf6f5aa7b4b"
+    },
+    {
+      "path": "game-assets/audio/ambience/ship-engine.ogg",
+      "kind": "audio",
+      "mediaType": "audio/ogg",
+      "sourceIds": [
+        "kenneyScifi"
+      ],
+      "logicalName": "ship-engine",
+      "transformation": "Copied from the pinned Kenney OGG source",
+      "bytes": 101858,
+      "sha256": "c741a87521746092d7fc7b2428b5208cf0655638100a77881a617b425ad240bc"
+    },
+    {
+      "path": "game-assets/audio/cues/book-open.mp3",
+      "kind": "audio",
+      "mediaType": "audio/mpeg",
+      "sourceIds": [
+        "kenneyRpgAudio"
+      ],
+      "logicalName": "book-open",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 4077,
+      "sha256": "ea69743f3500f4e531822424399a56ce466729268c2ed0e294adfcdcc113f1a8"
+    },
+    {
+      "path": "game-assets/audio/cues/book-open.ogg",
+      "kind": "audio",
+      "mediaType": "audio/ogg",
+      "sourceIds": [
+        "kenneyRpgAudio"
+      ],
+      "logicalName": "book-open",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 8134,
+      "sha256": "0f2e27a329ff7d06fc8932599a1db1aaddd5f0fd5abc913a6ec33c8c52190a0e"
+    },
+    {
+      "path": "game-assets/audio/cues/page-turn-1.mp3",
+      "kind": "audio",
+      "mediaType": "audio/mpeg",
+      "sourceIds": [
+        "voltimentPageTurns"
+      ],
+      "logicalName": "page-turn-1",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 6404,
+      "sha256": "42a64f503b8bba9844b1f5c94455079efbda1bdce86f5e8f63e3ae69fe66b19a"
+    },
+    {
+      "path": "game-assets/audio/cues/page-turn-1.ogg",
+      "kind": "audio",
+      "mediaType": "audio/ogg",
+      "sourceIds": [
+        "voltimentPageTurns"
+      ],
+      "logicalName": "page-turn-1",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 14719,
+      "sha256": "a842a9ebfe6b75328cd9b50dab1856f5e79dd48f3f3d8ab13b9711ddaaf15b7c"
+    },
+    {
+      "path": "game-assets/audio/cues/page-turn-2.mp3",
+      "kind": "audio",
+      "mediaType": "audio/mpeg",
+      "sourceIds": [
+        "voltimentPageTurns"
+      ],
+      "logicalName": "page-turn-2",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 9639,
+      "sha256": "50ba81068681516e66cffd7038647115939678f7d8f79510ca177e6c1a721f99"
+    },
+    {
+      "path": "game-assets/audio/cues/page-turn-2.ogg",
+      "kind": "audio",
+      "mediaType": "audio/ogg",
+      "sourceIds": [
+        "voltimentPageTurns"
+      ],
+      "logicalName": "page-turn-2",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 22358,
+      "sha256": "bf97f6287217638fa581da9c5346cbe6f693ac75dbe659e321877ffae4088079"
+    },
+    {
+      "path": "game-assets/audio/cues/transporter.mp3",
+      "kind": "audio",
+      "mediaType": "audio/mpeg",
+      "sourceIds": [
+        "kenneyScifi"
+      ],
+      "logicalName": "transporter",
+      "transformation": "Transcoded from the pinned Kenney OGG source with ffmpeg libmp3lame q=4 and metadata removed",
+      "bytes": 7360,
+      "sha256": "a6ae362f4cb4ebda3106a3693613d1e2e05b9e8150a85517e446d2fc04d95dd8"
+    },
+    {
+      "path": "game-assets/audio/cues/transporter.ogg",
+      "kind": "audio",
+      "mediaType": "audio/ogg",
+      "sourceIds": [
+        "kenneyScifi"
+      ],
+      "logicalName": "transporter",
+      "transformation": "Copied from the pinned Kenney OGG source",
+      "bytes": 27770,
+      "sha256": "63f31cbf6fd8b6387204ba5bbfdb29ca1889552faf7f30b419ead3f68e3be54e"
+    },
+    {
+      "path": "game-assets/audio/cues/ui-close.mp3",
+      "kind": "audio",
+      "mediaType": "audio/mpeg",
+      "sourceIds": [
+        "kenneyInterface"
+      ],
+      "logicalName": "ui-close",
+      "transformation": "Transcoded from the pinned Kenney OGG source with ffmpeg libmp3lame q=4 and metadata removed",
+      "bytes": 2497,
+      "sha256": "96e9eea3db62f823d3f6764c3f7dcf4d40ac5b845ca1592ed46d63d8d756a2b5"
+    },
+    {
+      "path": "game-assets/audio/cues/ui-close.ogg",
+      "kind": "audio",
+      "mediaType": "audio/ogg",
+      "sourceIds": [
+        "kenneyInterface"
+      ],
+      "logicalName": "ui-close",
+      "transformation": "Copied from the pinned Kenney OGG source",
+      "bytes": 12013,
+      "sha256": "c971de34787cd175c0847b511e7d1f73308aaee9508f3914991c2d098beeefc4"
+    },
+    {
+      "path": "game-assets/audio/cues/ui-confirm.mp3",
+      "kind": "audio",
+      "mediaType": "audio/mpeg",
+      "sourceIds": [
+        "kenneyInterface"
+      ],
+      "logicalName": "ui-confirm",
+      "transformation": "Transcoded from the pinned Kenney OGG source with ffmpeg libmp3lame q=4 and metadata removed",
+      "bytes": 2804,
+      "sha256": "8a57e7d8b49dbd2d0112ebdbed6abd3e66721128e611c2062b1bc078e6eb6177"
+    },
+    {
+      "path": "game-assets/audio/cues/ui-confirm.ogg",
+      "kind": "audio",
+      "mediaType": "audio/ogg",
+      "sourceIds": [
+        "kenneyInterface"
+      ],
+      "logicalName": "ui-confirm",
+      "transformation": "Copied from the pinned Kenney OGG source",
+      "bytes": 11066,
+      "sha256": "1d59821014076adf376ae092a556ff7ee4816f5532a8ae0719b6d44d244bfbc1"
+    },
+    {
+      "path": "game-assets/audio/cues/ui-select.mp3",
+      "kind": "audio",
+      "mediaType": "audio/mpeg",
+      "sourceIds": [
+        "kenneyInterface"
+      ],
+      "logicalName": "ui-select",
+      "transformation": "Transcoded from the pinned Kenney OGG source with ffmpeg libmp3lame q=4 and metadata removed",
+      "bytes": 1323,
+      "sha256": "7920484de58ac58fbf3eb0a306b626a4828c8b093061ab234802c5430c1ebd37"
+    },
+    {
+      "path": "game-assets/audio/cues/ui-select.ogg",
+      "kind": "audio",
+      "mediaType": "audio/ogg",
+      "sourceIds": [
+        "kenneyInterface"
+      ],
+      "logicalName": "ui-select",
+      "transformation": "Copied from the pinned Kenney OGG source",
+      "bytes": 7549,
+      "sha256": "510deb19199cfbba6ee90c85b70ff00d429ee8437d5be196c2b2c7cfca01fc50"
+    },
+    {
+      "path": "game-assets/audio/cues/vault-open.mp3",
+      "kind": "audio",
+      "mediaType": "audio/mpeg",
+      "sourceIds": [
+        "kenneyRpgAudio"
+      ],
+      "logicalName": "vault-open",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 5565,
+      "sha256": "0fac8b9dd2ae6c3a50190dbf37f7a3fb4699f0f02e983b6c4b7d3163b320e014"
+    },
+    {
+      "path": "game-assets/audio/cues/vault-open.ogg",
+      "kind": "audio",
+      "mediaType": "audio/ogg",
+      "sourceIds": [
+        "kenneyRpgAudio"
+      ],
+      "logicalName": "vault-open",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 13577,
+      "sha256": "a0ec5452293a521db0a137a7a550df1fb5f5d4ed78ed9ca15039ec0425feb0a8"
+    },
+    {
+      "path": "game-assets/audio/footsteps/dirt-1.mp3",
+      "kind": "audio",
+      "mediaType": "audio/mpeg",
+      "sourceIds": [
+        "tinyWorldsFootsteps"
+      ],
+      "logicalName": "dirt-1",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 15854,
+      "sha256": "54913ff0b356565e494d79f463bfcfdcac57b757c3b2417ce75328224b8b1c82"
+    },
+    {
+      "path": "game-assets/audio/footsteps/dirt-1.ogg",
+      "kind": "audio",
+      "mediaType": "audio/ogg",
+      "sourceIds": [
+        "tinyWorldsFootsteps"
+      ],
+      "logicalName": "dirt-1",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 21668,
+      "sha256": "507fb2d1746f2b799995a5cc177447af277ed0073fe8585a105d27ec901e5dae"
+    },
+    {
+      "path": "game-assets/audio/footsteps/dirt-2.mp3",
+      "kind": "audio",
+      "mediaType": "audio/mpeg",
+      "sourceIds": [
+        "tinyWorldsFootsteps"
+      ],
+      "logicalName": "dirt-2",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 7191,
+      "sha256": "a2d490d171403f2b71a75793acb1d909eff66062a3027a31bb148ace81f5a399"
+    },
+    {
+      "path": "game-assets/audio/footsteps/dirt-2.ogg",
+      "kind": "audio",
+      "mediaType": "audio/ogg",
+      "sourceIds": [
+        "tinyWorldsFootsteps"
+      ],
+      "logicalName": "dirt-2",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 13677,
+      "sha256": "bebee4f6d812500a78fb3f43fcccc1e48f97e6c354866a43cb9a3e45b35d383b"
+    },
+    {
+      "path": "game-assets/audio/footsteps/gear-1.mp3",
+      "kind": "audio",
+      "mediaType": "audio/mpeg",
+      "sourceIds": [
+        "haelDbFootsteps"
+      ],
+      "logicalName": "gear-1",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 4295,
+      "sha256": "138a95e6813a8ca678f4354e0d1eae1995cd79d0b0ca0f5e98f9ce5e94768a0d"
+    },
+    {
+      "path": "game-assets/audio/footsteps/gear-1.ogg",
+      "kind": "audio",
+      "mediaType": "audio/ogg",
+      "sourceIds": [
+        "haelDbFootsteps"
+      ],
+      "logicalName": "gear-1",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 7427,
+      "sha256": "2ab9bbd412a9e9f78f420559d7b0024c2f3a7dafd2fe227efd124a4bd851860f"
+    },
+    {
+      "path": "game-assets/audio/footsteps/gear-2.mp3",
+      "kind": "audio",
+      "mediaType": "audio/mpeg",
+      "sourceIds": [
+        "haelDbFootsteps"
+      ],
+      "logicalName": "gear-2",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 3539,
+      "sha256": "b5d555755daa0ca142f858b837185f7561f7735c91381b03a3c90212d7547445"
+    },
+    {
+      "path": "game-assets/audio/footsteps/gear-2.ogg",
+      "kind": "audio",
+      "mediaType": "audio/ogg",
+      "sourceIds": [
+        "haelDbFootsteps"
+      ],
+      "logicalName": "gear-2",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 6823,
+      "sha256": "22fc01f5f9c4a97a936139aa664db2899cb1efeb6d57f009e81db527b9046113"
+    },
+    {
+      "path": "game-assets/audio/footsteps/sand-1.mp3",
+      "kind": "audio",
+      "mediaType": "audio/mpeg",
+      "sourceIds": [
+        "fantozziFootsteps"
+      ],
+      "logicalName": "sand-1",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 7922,
+      "sha256": "0e3f789edb3390e841679e09c98fe94cb8e9471c1e5b34f10f2f754e41e8d773"
+    },
+    {
+      "path": "game-assets/audio/footsteps/sand-1.ogg",
+      "kind": "audio",
+      "mediaType": "audio/ogg",
+      "sourceIds": [
+        "fantozziFootsteps"
+      ],
+      "logicalName": "sand-1",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 14726,
+      "sha256": "18e2db5dd5e8e5e72a5604b1c0bd9a48dc119c02bcda78077b4f938f6d30e53b"
+    },
+    {
+      "path": "game-assets/audio/footsteps/sand-2.mp3",
+      "kind": "audio",
+      "mediaType": "audio/mpeg",
+      "sourceIds": [
+        "fantozziFootsteps"
+      ],
+      "logicalName": "sand-2",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 7243,
+      "sha256": "087b7385b056ca49f5832e333bf68bd23b5721b91b0aa8b324f979aaa36f2c2f"
+    },
+    {
+      "path": "game-assets/audio/footsteps/sand-2.ogg",
+      "kind": "audio",
+      "mediaType": "audio/ogg",
+      "sourceIds": [
+        "fantozziFootsteps"
+      ],
+      "logicalName": "sand-2",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 13812,
+      "sha256": "32490950dd804a4d92432f3cc13a59e34013001f7f3c493c7e35e2394fb570a8"
+    },
+    {
+      "path": "game-assets/audio/footsteps/stone-1.mp3",
+      "kind": "audio",
+      "mediaType": "audio/mpeg",
+      "sourceIds": [
+        "fantozziFootsteps"
+      ],
+      "logicalName": "stone-1",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 6615,
+      "sha256": "e9beaa8ca25bb68476b14970ec272516e39baeccac3eb4f4899a5d67440dee63"
+    },
+    {
+      "path": "game-assets/audio/footsteps/stone-1.ogg",
+      "kind": "audio",
+      "mediaType": "audio/ogg",
+      "sourceIds": [
+        "fantozziFootsteps"
+      ],
+      "logicalName": "stone-1",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 12921,
+      "sha256": "50939f401795fbe24c1f1c964706d16fba20b72b1c3c4ebc88e59287d3a37187"
+    },
+    {
+      "path": "game-assets/audio/footsteps/stone-2.mp3",
+      "kind": "audio",
+      "mediaType": "audio/mpeg",
+      "sourceIds": [
+        "fantozziFootsteps"
+      ],
+      "logicalName": "stone-2",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 6721,
+      "sha256": "92bb9253ce659e6070bcd47266da5bd886a18883dae9194b14a079a516987ad7"
+    },
+    {
+      "path": "game-assets/audio/footsteps/stone-2.ogg",
+      "kind": "audio",
+      "mediaType": "audio/ogg",
+      "sourceIds": [
+        "fantozziFootsteps"
+      ],
+      "logicalName": "stone-2",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 13174,
+      "sha256": "9765b807dc69e5d208773e3fa53d4c56dffa50028b73342ebed8ad25209b57ac"
+    },
+    {
+      "path": "game-assets/audio/footsteps/water-1.mp3",
+      "kind": "audio",
+      "mediaType": "audio/mpeg",
+      "sourceIds": [
+        "peludoFootsteps"
+      ],
+      "logicalName": "water-1",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 5541,
+      "sha256": "465f2b29dd4033e69627b6f068cb77c3c7d44155b9fb4db101b85492fc822c4c"
+    },
+    {
+      "path": "game-assets/audio/footsteps/water-1.ogg",
+      "kind": "audio",
+      "mediaType": "audio/ogg",
+      "sourceIds": [
+        "peludoFootsteps"
+      ],
+      "logicalName": "water-1",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 20252,
+      "sha256": "c65db589153cdbb4da4c1f211fcd630fe534f5e278002b6b62f2f72db45529d3"
+    },
+    {
+      "path": "game-assets/audio/footsteps/water-2.mp3",
+      "kind": "audio",
+      "mediaType": "audio/mpeg",
+      "sourceIds": [
+        "peludoFootsteps"
+      ],
+      "logicalName": "water-2",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 7599,
+      "sha256": "8a71eb4f327c1a8b6f1d3166deab8c5927db42723acabedb027b3044aaa8ac7b"
+    },
+    {
+      "path": "game-assets/audio/footsteps/water-2.ogg",
+      "kind": "audio",
+      "mediaType": "audio/ogg",
+      "sourceIds": [
+        "peludoFootsteps"
+      ],
+      "logicalName": "water-2",
+      "transformation": "Copied from Beowulf normalized CC0 audio library without re-encoding",
+      "bytes": 16926,
+      "sha256": "deecf58bc851e89a348f3060cacaccb8fc969c3a666dfed563c14c45488badaa"
+    },
+    {
+      "path": "game-assets/sprites/battery-pickup.png",
+      "kind": "sprite",
+      "mediaType": "image/png",
+      "width": 32,
+      "height": 32,
+      "sourceIds": [
+        "project"
+      ],
+      "transformation": "Project-authored battery icon drawn on a 16px integer grid and scaled 2x with nearest-neighbor",
+      "bytes": 166,
+      "sha256": "324060af03e5db85bc521b67ccd9cdf2425516c0945c1cd80f319edef13fe4a7"
+    },
+    {
+      "path": "game-assets/sprites/book-pickup.png",
+      "kind": "sprite",
+      "mediaType": "image/png",
+      "width": 32,
+      "height": 32,
+      "sourceIds": [
+        "project"
+      ],
+      "transformation": "Project-authored book icon drawn on a 16px integer grid and scaled 2x with nearest-neighbor",
+      "bytes": 162,
+      "sha256": "7b827ee9cdfd5b85e623e147190d1c1be668a9286a47b8c90b3c9a8eb9c5b09f"
+    },
+    {
+      "path": "game-assets/sprites/bookshelf-prop.png",
+      "kind": "sprite",
+      "mediaType": "image/png",
+      "width": 32,
+      "height": 32,
+      "sourceIds": [
+        "kenneyTinyDungeon"
+      ],
+      "transformation": "Cell 75 extracted from a 16px CC0 sheet and scaled 2x with nearest-neighbor",
+      "bytes": 162,
+      "sha256": "99106c8a198e367ea6e08827cfaf8b7c3e442454a44a5af991d8fcfa0d8fa9df"
+    },
+    {
+      "path": "game-assets/sprites/journal-pickup.png",
+      "kind": "sprite",
+      "mediaType": "image/png",
+      "width": 32,
+      "height": 32,
+      "sourceIds": [
+        "project"
+      ],
+      "transformation": "Project-authored journal icon drawn on a 16px integer grid and scaled 2x with nearest-neighbor",
+      "bytes": 161,
+      "sha256": "1639c2657541559c9fdc568c769bf7f3036bfcfb701df9262a0f076163addfe1"
+    },
+    {
+      "path": "game-assets/sprites/map-pickup.png",
+      "kind": "sprite",
+      "mediaType": "image/png",
+      "width": 32,
+      "height": 32,
+      "sourceIds": [
+        "project"
+      ],
+      "transformation": "Project-authored map icon drawn on a 16px integer grid and scaled 2x with nearest-neighbor",
+      "bytes": 176,
+      "sha256": "7bcfc8a6b870b5eef2b562f9cae1223226c353c87984fad3c87d1f4907f72cad"
+    },
+    {
+      "path": "game-assets/sprites/npc.png",
+      "kind": "sprite",
+      "mediaType": "image/png",
+      "width": 32,
+      "height": 32,
+      "sourceIds": [
+        "kenneyTinyDungeon"
+      ],
+      "transformation": "Cell 87 extracted from a 16px CC0 sheet and scaled 2x with nearest-neighbor",
+      "bytes": 324,
+      "sha256": "36be5fc1ff265a208ce5ac93d80e5c72376c76081e3ed0bcb50a5dd9aa93538b"
+    },
+    {
+      "path": "game-assets/sprites/paper-debris-prop.png",
+      "kind": "sprite",
+      "mediaType": "image/png",
+      "width": 32,
+      "height": 32,
+      "sourceIds": [
+        "project"
+      ],
+      "transformation": "Project-authored paper icon drawn on a 16px integer grid and scaled 2x with nearest-neighbor",
+      "bytes": 171,
+      "sha256": "8ba6da06b532697acfc2937c30c3ad85f58cf044cc042aa460ef35781295d429"
+    },
+    {
+      "path": "game-assets/sprites/player.png",
+      "kind": "sprite",
+      "mediaType": "image/png",
+      "width": 32,
+      "height": 32,
+      "sourceIds": [
+        "kenneyTinyDungeon"
+      ],
+      "transformation": "Cell 85 extracted from a 16px CC0 sheet and scaled 2x with nearest-neighbor",
+      "bytes": 285,
+      "sha256": "717181f69784e43563a00d4b51630074188071d5a6e190d783421f518eec7131"
+    },
+    {
+      "path": "game-assets/sprites/ship-terminal-prop.png",
+      "kind": "sprite",
+      "mediaType": "image/png",
+      "width": 32,
+      "height": 32,
+      "sourceIds": [
+        "project"
+      ],
+      "transformation": "Project-authored terminal icon drawn on a 16px integer grid and scaled 2x with nearest-neighbor",
+      "bytes": 179,
+      "sha256": "23407a92c69ee146197db8943aaf30833db64920cddc2be02999041924fb56f2"
+    },
+    {
+      "path": "game-assets/sprites/transporter-pad.png",
+      "kind": "sprite",
+      "mediaType": "image/png",
+      "width": 32,
+      "height": 32,
+      "sourceIds": [
+        "project"
+      ],
+      "transformation": "Project-authored transporter icon drawn on a 16px integer grid and scaled 2x with nearest-neighbor",
+      "bytes": 179,
+      "sha256": "ca34b2e13ec567168ac59585bd1544ec18c0fb4d470b967c7a9faab7077fda6f"
+    },
+    {
+      "path": "game-assets/sprites/vault.png",
+      "kind": "sprite",
+      "mediaType": "image/png",
+      "width": 32,
+      "height": 32,
+      "sourceIds": [
+        "kenneyTinyDungeon"
+      ],
+      "transformation": "Cell 89 extracted from a 16px CC0 sheet and scaled 2x with nearest-neighbor",
+      "bytes": 224,
+      "sha256": "3670ddc7c4a87f8b704d672f7f1d68963526edd216cbccc65ee534f055de8efd"
+    },
+    {
+      "path": "game-assets/tiles/cathedral-tiles.png",
+      "kind": "tileset",
+      "mediaType": "image/png",
+      "width": 128,
+      "height": 96,
+      "sourceIds": [
+        "kenneyDungeon",
+        "kenneyRoguelike"
+      ],
+      "transformation": "Nine semantic 16px cells composed on a 4x3 grid and scaled 2x with nearest-neighbor; theme=cathedral",
+      "bytes": 950,
+      "sha256": "762166dac7e427374700d0ddd408e14616a8ae94842f05c409c3c874468bec53"
+    },
+    {
+      "path": "game-assets/tiles/gardens-tiles.png",
+      "kind": "tileset",
+      "mediaType": "image/png",
+      "width": 128,
+      "height": 96,
+      "sourceIds": [
+        "kenneyModernCity",
+        "kenneyUrban",
+        "kenneyDungeon",
+        "kenneyRoguelike"
+      ],
+      "transformation": "Nine semantic 16px cells composed on a 4x3 grid and scaled 2x with nearest-neighbor; theme=gardens",
+      "bytes": 1053,
+      "sha256": "d162eddb68f15e3509da60409c180bbde131be1dcb543927396f03e2eddb9535"
+    },
+    {
+      "path": "game-assets/tiles/scriptorium-tiles.png",
+      "kind": "tileset",
+      "mediaType": "image/png",
+      "width": 128,
+      "height": 96,
+      "sourceIds": [
+        "kenneyDungeon",
+        "kenneyRoguelike"
+      ],
+      "transformation": "Nine semantic 16px cells composed on a 4x3 grid and scaled 2x with nearest-neighbor; theme=scriptorium",
+      "bytes": 867,
+      "sha256": "df5d973f20207e90c8b5de11d262e04a44d33aa6976f0f79db7c8fc8b934a25f"
+    },
+    {
+      "path": "game-assets/tiles/university-tiles.png",
+      "kind": "tileset",
+      "mediaType": "image/png",
+      "width": 128,
+      "height": 96,
+      "sourceIds": [
+        "kenneyUrban",
+        "kenneyModernCity"
+      ],
+      "transformation": "Nine semantic 16px cells composed on a 4x3 grid and scaled 2x with nearest-neighbor; theme=university",
+      "bytes": 1012,
+      "sha256": "1dbd0ba89347d120d675a49c25316bdce318596a0eb11a4e6fdc75d7e5b085fd"
+    }
+  ]
+}

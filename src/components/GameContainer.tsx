@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { PhaserGame } from '@/PhaserGame';
+import { PhaserGame } from './PhaserGame';
 import { EventBridge } from '@/game/EventBridge';
 import { handleKeyboardInput } from '@/game/input/gameInput';
 import type { GameInputAction } from '@/game/input/InputActionRouter';
@@ -9,18 +9,22 @@ import { useGameStore } from '@/store/gameStore';
 import { getFragmentById, getBookCatalogSync } from '@/data/books';
 import { getNPCById, getMarthaBookHint } from '@/data/npcs';
 import { getJournalById } from '@/data/journalEntries';
-import { getArtifactById } from '@/data/artifacts';
 import { getGameloopCacheSync } from '@/utils/contentLoaderSync';
 import { unlockInteractions } from '@/game/systems/Interaction';
 import HUD from './HUD';
 import AccessibleLog from './AccessibleLog';
 import LibraryShelf from './LibraryShelf';
 import MapOverlay from './MapOverlay';
-import { getTransporterDialogue as getTransporterDialogueFromContent } from '@/utils/contentLoader';
+import {
+  getTransporterDialogue as getTransporterDialogueFromContent,
+  getVaultByThemeSync,
+} from '@/utils/contentLoader';
 import DialogueBox from './DialogueBox';
 import BookDetail from './BookDetail';
 import InteractionPrompt from './InteractionPrompt';
 import DebugPanel from './DebugPanel';
+import LaunchGate from './LaunchGate';
+import MissionPicker from './MissionPicker';
 
 function getTotalFragments(): number {
   try {
@@ -106,6 +110,11 @@ function handleHudSummaryAction(): void {
  * Subscribes to EventBridge; wires interaction-triggered → collectFragment (books) or dialogue (npc/journal/transporter).
  */
 export default function GameContainer() {
+  const launchGateOpen = useGameStore((state) => state.session.launchGateOpen);
+  const motionPreference = useGameStore((state) => state.settings.motionPreference);
+  const gamePhase = useGameStore((state) => state.session.gamePhase);
+  const modalOpen = gamePhase === 'mission-select' || gamePhase === 'dialogue' || gamePhase === 'reading' || gamePhase === 'viewing-map';
+
   useEffect(() => {
     window.addEventListener('keydown', handleKeyboardInput);
     return () => window.removeEventListener('keydown', handleKeyboardInput);
@@ -156,8 +165,10 @@ export default function GameContainer() {
           const roomNames = useGameStore.getState().session.roomsWithBooksOnMap;
           const npcRooms = useGameStore.getState().session.npcRoomsOnMap;
           let lines: { speaker?: string; text: string }[];
+          if (useGameStore.getState().session.vaultOpened) {
+            lines = npc.postVault;
           // Martha: contextual hint based on actual rooms with books this map
-          if (npc.id === 'martha') {
+          } else if (npc.id === 'martha') {
             const hintLine = await getMarthaBookHint(roomNames);
             lines = discovered
               ? [npc.return[0], { speaker: 'Martha', text: hintLine }]
@@ -173,21 +184,25 @@ export default function GameContainer() {
           unlockInteractions();
         }
       } else if (type === 'journal' && id) {
-        // Special handling for dynamic vault hint journal
-        if (id === 'journal-vault-hint') {
-          const vaultInfo = useGameStore.getState().session.vaultInfo;
-          if (vaultInfo) {
-            const formattedCode = vaultInfo.code.split('').join('-');
-            useGameStore.getState().actions.readJournal(id);
-            useGameStore.getState().actions.openDialogue([
-              { text: `If anyone finds this: the ${vaultInfo.roomName} vault code is ${formattedCode}. The director's birthday. They sealed it before they left. There's nothing down there worth dying for, they said. I think they were wrong.` }
-            ]);
-            setTimeout(() => {
-              EventBridge.emit('interactive-consumed', { type: 'journal', id });
-            }, 100);
-          } else {
+        const state = useGameStore.getState();
+        const vaultInfo = state.session.vaultInfo;
+        // Clues are namespaced to this generated vault and never persisted.
+        if (vaultInfo && id === vaultInfo.clueId) {
+          const vault = state.session.activeThemeId
+            ? getVaultByThemeSync(state.session.activeThemeId)
+            : undefined;
+          if (!vault || vault.id !== vaultInfo.contentId || vault.clue.id !== vaultInfo.clueContentId) {
             unlockInteractions();
+            return;
           }
+          state.actions.discoverVaultClue(vaultInfo.clueId);
+          state.actions.openDialogue(vault.clue.lines.map((line) => ({
+            text: line.text.replaceAll('{code}', vaultInfo.code.split('').join('-')),
+            voiceLineId: line.voiceLineId,
+          })));
+          setTimeout(() => {
+            EventBridge.emit('interactive-consumed', { type: 'journal', id });
+          }, 100);
         } else {
           const journal = await getJournalById(id);
           if (journal) {
@@ -227,38 +242,82 @@ export default function GameContainer() {
       } else if (type === 'vault') {
         const state = useGameStore.getState();
         const vaultInfo = state.session.vaultInfo;
-        const hasReadHint = state.exploration.readJournals.includes('journal-vault-hint');
+        const vault = state.session.activeThemeId
+          ? getVaultByThemeSync(state.session.activeThemeId)
+          : undefined;
+        const hasReadHint = vaultInfo
+          ? state.actions.hasDiscoveredVaultClue(vaultInfo.clueId)
+          : false;
         const vaultOpened = state.session.vaultOpened;
-        const gameloop = getGameloopCacheSync();
         
-        if (vaultOpened) {
-          const lines = gameloop.vault.alreadyOpened.map(line => ({ text: line.text }));
-          useGameStore.getState().actions.openDialogue(lines);
-        } else if (hasReadHint && vaultInfo) {
-          const formattedCode = vaultInfo.code.split('').join('-');
-          useGameStore.getState().actions.openVault();
-          
-          // Get the artifact from the vault
-          const artifact = vaultInfo.artifactId ? getArtifactById(vaultInfo.artifactId) : null;
-          
-          if (artifact) {
-            useGameStore.getState().actions.collectArtifact(artifact.id);
-            const lines = gameloop.vault.openWithArtifact.map(line => ({
-              text: line.text
-                .replace('{code}', formattedCode)
-                .replace('{artifactName}', artifact.name)
-                .replace('{artifactDescription}', artifact.description)
-            }));
-            useGameStore.getState().actions.openDialogue(lines);
+        if (!vaultInfo || !vault || vaultInfo.vaultId !== id || vault.id !== vaultInfo.contentId) {
+          unlockInteractions();
+        } else if (vaultOpened) {
+          const openedLines = vault.dialogue.opened.map((line) => ({ text: line.text }));
+          const pendingFragmentId = vaultInfo.reward.kind === 'fragment'
+            && !state.savedFragmentIds.includes(vaultInfo.reward.fragmentId)
+            ? vaultInfo.reward.fragmentId
+            : null;
+          if (pendingFragmentId) {
+            const pendingFragment = await getFragmentById(pendingFragmentId);
+            const pendingBook = pendingFragment
+              ? getBookCatalogSync().find((item) => item.id === pendingFragment.bookId)
+              : undefined;
+            state.actions.openDialogue([
+              ...openedLines,
+              {
+                text: `The recovered ${pendingBook?.title ?? 'excerpt'} is still waiting inside.`,
+                choices: [{
+                  label: 'Read recovered excerpt',
+                  key: 'r',
+                  action: `vault-reward-fragment:${pendingFragmentId}`,
+                }],
+              },
+            ]);
           } else {
-            const lines = gameloop.vault.openEmpty.map(line => ({
-              text: line.text.replace('{code}', formattedCode)
-            }));
-            useGameStore.getState().actions.openDialogue(lines);
+            state.actions.openDialogue(openedLines);
+          }
+        } else if (hasReadHint) {
+          const formattedCode = vaultInfo.code.split('').join('-');
+          state.actions.openVault();
+          EventBridge.emit('vault-opened', { vaultId: vaultInfo.vaultId });
+          const opening = vault.dialogue.opening.map((line) => ({
+            text: line.text.replaceAll('{code}', formattedCode),
+          }));
+
+          if (vaultInfo.reward.kind === 'fragment') {
+            const fragment = await getFragmentById(vaultInfo.reward.fragmentId);
+            if (!fragment) {
+              state.actions.openDialogue(opening);
+              return;
+            }
+            const book = getBookCatalogSync().find((item) => item.id === fragment.bookId);
+            state.actions.openDialogue([
+              ...opening,
+              {
+                text: `Inside is ${book?.title ?? 'a recovered text'}: ${fragment.label}.`,
+                choices: [{
+                  label: 'Read recovered excerpt',
+                  key: 'r',
+                  action: `vault-reward-fragment:${fragment.id}`,
+                }],
+              },
+            ]);
+          } else {
+            for (let battery = 0; battery < vaultInfo.reward.batteries; battery += 1) {
+              state.actions.addBattery();
+            }
+            state.actions.readJournal(
+              vaultInfo.reward.loreJournalId ?? `lore-${vaultInfo.contentId}`,
+            );
+            state.actions.openDialogue([
+              ...opening,
+              { text: vault.exhaustedReward.journalText },
+              { text: `The cache also contains ${vaultInfo.reward.batteries} spare batteries.` },
+            ]);
           }
         } else {
-          const lines = gameloop.vault.locked.map(line => ({ text: line.text }));
-          useGameStore.getState().actions.openDialogue(lines);
+          state.actions.openDialogue(vault.dialogue.locked.map((line) => ({ text: line.text })));
         }
       } else {
         const lines = getDialogueForInteraction(type, id);
@@ -281,9 +340,16 @@ export default function GameContainer() {
 
   // Handle dialogue choices (for transporter confirmation)
   useEffect(() => {
-    const onDialogueChoice = ({ action }: { action: string }) => {
+    const onDialogueChoice = async ({ action }: { action: string }) => {
       if (action === 'beam-up') {
         EventBridge.emit('beam-up-confirmed');
+      } else if (action.startsWith('vault-reward-fragment:')) {
+        const fragmentId = action.slice('vault-reward-fragment:'.length);
+        const fragment = await getFragmentById(fragmentId);
+        if (fragment) {
+          useGameStore.getState().actions.collectFragment(fragment);
+          EventBridge.emit('book-found', { fragmentId, bookId: fragment.bookId });
+        }
       }
       // 'stay' and 'cancel' just close dialogue (already handled)
     };
@@ -324,16 +390,28 @@ export default function GameContainer() {
   }, []);
 
   return (
-    <div className="game-container">
-      <PhaserGame />
-      <HUD />
-      <AccessibleLog />
-      <LibraryShelf />
-      <MapOverlay />
-      <DialogueBox />
-      <BookDetail />
-      <InteractionPrompt />
-      <DebugPanel />
+    <div className="game-container" data-motion={motionPreference}>
+      <div
+        id="game-controls"
+        className="game-shell"
+        tabIndex={launchGateOpen ? -1 : 0}
+        aria-label="Game controls. Use arrow keys or W A S D to move, E to interact, M for the map, and B for a battery."
+        inert={launchGateOpen}
+      >
+        <div className="game-world" inert={modalOpen} aria-hidden={modalOpen || undefined}>
+          <PhaserGame />
+          <HUD />
+          <AccessibleLog />
+          <LibraryShelf />
+          <InteractionPrompt />
+          <DebugPanel />
+        </div>
+        <MissionPicker />
+        <MapOverlay />
+        <DialogueBox />
+        <BookDetail />
+      </div>
+      <LaunchGate />
     </div>
   );
 }

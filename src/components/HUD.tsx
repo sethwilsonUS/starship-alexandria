@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { EventBridge } from '@/game/EventBridge';
 import { useGameStore } from '@/store/gameStore';
-import { getBookCatalogSync, type Book } from '@/data/books';
+import { getBookCatalogSync } from '@/data/books';
+import type { Book } from '@/types/books';
 
 function getTotalFragments(): number {
   try {
@@ -29,7 +30,7 @@ export default function HUD() {
   const explorableTileCount = useGameStore((s) => s.session.explorableTileCount);
   const currentMapId = useGameStore((s) => s.player.currentMapId);
   const contentReady = useGameStore((s) => s.session.contentReady);
-  const [areaName, setAreaName] = useState('Ruined Library Wing');
+  const [areaName, setAreaName] = useState('Starship Alexandria — Library Deck');
 
   const isOnShip = currentMapId === 'ship';
 

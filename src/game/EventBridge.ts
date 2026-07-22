@@ -1,5 +1,7 @@
 import { EventEmitter } from 'events';
 import type { GameInputAction } from './input/InputActionRouter';
+import type { SavedThemeId } from '@/store/saveMigration';
+import type { FootstepSurface } from './expeditions';
 
 /**
  * Typed event names for Phaser ↔ React communication.
@@ -7,7 +9,7 @@ import type { GameInputAction } from './input/InputActionRouter';
  */
 export type EventBridgeEvents = {
   'player-moving': void;
-  'player-moved': { x: number; y: number };
+  'player-moved': { x: number; y: number; surface: FootstepSurface };
   'movement-blocked': { reason: string };
   'interaction-available': { type: string; label?: string };
   'interaction-triggered': { type: string; id?: string };
@@ -18,11 +20,16 @@ export type EventBridgeEvents = {
   'battery-used': void;
   'npc-dialogue': { npcId: string; lines: string[] };
   'area-entered': { areaName: string };
+  'area-discovered': { areaName: string };
+  /** Accessible DOM counterpart for the destination title card rendered on canvas. */
+  'location-card': { title: string; kicker: string };
   'close-dialogue': void;
   'open-inventory': void;
   /** Ship scene events */
   'beam-up-confirmed': void;
-  'beam-down-requested': void;
+  'beam-down-requested': { themeId: SavedThemeId };
+  /** Fresh user gesture accepted; audio and onboarding may begin. */
+  'launch-accepted': void;
   /** Dialogue choice selection */
   'dialogue-choice': { action: string };
   /** Show welcome message to first-time players */
@@ -37,7 +44,24 @@ export type EventBridgeEvents = {
   'debug-despawn-all-books': void;
   /** Vault interaction - player attempts to open vault */
   'vault-interaction': { vaultId: string; code: string; roomName: string };
+  'vault-opened': { vaultId: string };
 };
+
+type MessageUnion<Keys extends keyof EventBridgeEvents> = {
+  [Key in Keys]: EventBridgeEvents[Key] extends void
+    ? { type: Key }
+    : { type: Key; payload: EventBridgeEvents[Key] }
+}[Keys];
+
+export type GameCommand = MessageUnion<
+  | 'input-action'
+  | 'beam-down-requested'
+  | 'beam-up-confirmed'
+  | 'dialogue-choice'
+  | 'launch-accepted'
+>;
+
+export type GameEvent = MessageUnion<Exclude<keyof EventBridgeEvents, GameCommand['type']>>;
 
 /**
  * Singleton EventBridge for Phaser ↔ React communication.
@@ -77,6 +101,22 @@ class EventBridgeClass extends EventEmitter {
     ) => void
   ): this {
     return super.off(event, listener as (...args: unknown[]) => void);
+  }
+
+  /** Subscribe with an exact, idempotent cleanup function for React Strict Mode. */
+  subscribe<K extends keyof EventBridgeEvents>(
+    event: K,
+    listener: (
+      ...args: EventBridgeEvents[K] extends void ? [] : [EventBridgeEvents[K]]
+    ) => void,
+  ): () => void {
+    this.on(event, listener);
+    let active = true;
+    return () => {
+      if (!active) return;
+      active = false;
+      this.off(event, listener);
+    };
   }
 }
 

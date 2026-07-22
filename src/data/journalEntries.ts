@@ -1,12 +1,12 @@
 /**
  * Journal entries: discovered lore, worldbuilding.
- * Phase 2.4 — NPCs & journal entries.
  * Shown in DialogueBox on interaction; consumed on read (removed from map).
  * 
- * Content is now loaded from content/journals.yaml
+ * Content is loaded from the canonical public/content/journals.yaml.
  */
 
 import type { DialogueLine } from '@/types/store';
+import type { ContentThemeId } from '@/types/content';
 import {
   loadJournals,
   getJournalById as getContentJournalById,
@@ -17,6 +17,8 @@ import {
 export interface JournalEntryDef {
   id: string;
   title: string;
+  /** Content journals have affinities; expedition-scoped dynamic notes may not. */
+  themeIds?: ContentThemeId[];
   lines: DialogueLine[];
 }
 
@@ -24,6 +26,7 @@ export function yamlToJournal(yaml: JournalYaml): JournalEntryDef {
   return {
     id: yaml.id,
     title: yaml.title,
+    themeIds: [...yaml.themeIds],
     lines: yaml.lines.map((line) => ({
       speaker: line.speaker,
       text: line.text,

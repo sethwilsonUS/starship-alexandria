@@ -3,12 +3,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { EventBridge } from '@/game/EventBridge';
 import { useGameStore } from '@/store/gameStore';
-import { getBookCatalogSync, type Book, type FragmentDef } from '@/data/books';
+import { getBookCatalogSync } from '@/data/books';
+import type { Book, FragmentDef } from '@/types/books';
 import { getJournalCacheSync } from '@/utils/contentLoaderSync';
 
 const DEBUG_VISIBLE =
   typeof window !== 'undefined' &&
   (window.location.search.includes('debug-log') || window.location.search.includes('debug'));
+
+export function formatLocationCardEntry({ title, kicker }: { title: string; kicker: string }): string {
+  return `Arrived at ${title}. ${kicker}`;
+}
 
 /**
  * ARIA live region for game events.
@@ -26,6 +31,12 @@ export default function AccessibleLog() {
     };
     const onAreaEntered = ({ areaName }: { areaName: string }) => {
       addEntry(`You entered ${areaName}`);
+    };
+    const onAreaDiscovered = ({ areaName }: { areaName: string }) => {
+      addEntry(`Discovered ${areaName}`);
+    };
+    const onLocationCard = (payload: { title: string; kicker: string }) => {
+      addEntry(formatLocationCardEntry(payload));
     };
     let lastFacingId: string | null = null;
     const onInteractionAvailable = (payload?: {
@@ -96,6 +107,8 @@ export default function AccessibleLog() {
 
     EventBridge.on('player-moved', onPlayerMoved);
     EventBridge.on('area-entered', onAreaEntered);
+    EventBridge.on('area-discovered', onAreaDiscovered);
+    EventBridge.on('location-card', onLocationCard);
     EventBridge.on('battery-found', onBatteryFound);
     EventBridge.on('battery-used', onBatteryUsed);
     EventBridge.on('interaction-available', onInteractionAvailable);
@@ -105,6 +118,8 @@ export default function AccessibleLog() {
     return () => {
       EventBridge.off('player-moved', onPlayerMoved);
       EventBridge.off('area-entered', onAreaEntered);
+      EventBridge.off('area-discovered', onAreaDiscovered);
+      EventBridge.off('location-card', onLocationCard);
       EventBridge.off('battery-found', onBatteryFound);
       EventBridge.off('battery-used', onBatteryUsed);
       EventBridge.off('interaction-available', onInteractionAvailable);

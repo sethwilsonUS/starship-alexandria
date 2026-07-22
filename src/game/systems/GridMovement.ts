@@ -5,6 +5,8 @@ import type { MovementController, MovementContext, Direction } from '@/types/gam
 import type { IControllablePlayer } from '@/types/game';
 import { TILE_SIZE, PLAYER_MOVE_DURATION, PLAYER_MOVE_DURATION_SLOW } from '@/config/gameConfig';
 import type { GameInputAction } from '@/game/input/InputActionRouter';
+import { resolveDirectionalMove } from '@/game/player/playerContract';
+import { shouldUseMotion } from '@/game/motionPolicy';
 
 const MOVEMENT_BLOCKED_PHASES: readonly string[] = ['dialogue', 'reading', 'viewing-map'];
 
@@ -63,24 +65,39 @@ export class GridMovement implements MovementController {
     if (MOVEMENT_BLOCKED_PHASES.includes(gamePhase)) return false;
 
     const pos = this.player.getGridPosition();
-    const { dx, dy } = directionDelta(direction);
-    const targetX = pos.x + dx;
-    const targetY = pos.y + dy;
+    const result = resolveDirectionalMove(
+      { position: pos, direction },
+      {
+        width: this.context.mapWidth,
+        height: this.context.mapHeight,
+        blockedEntityIdsAt: ({ x, y }) =>
+          this.context?.getBlockedTiles?.().has(`${x},${y}`) ? ['blocking-entity'] : [],
+        cellAt: ({ x, y }) => {
+          const semanticCell = this.context?.getSemanticCell?.(x, y);
+          if (semanticCell) return semanticCell;
+          const tile = this.context?.wallLayer.getTileAt(x, y);
+          const isBlocked = Boolean(tile && [4, 5].includes(tile.index));
+          const surface = this.context?.getSurfaceAt?.(x, y)
+            ?? (this.context?.getFloodedTiles?.().has(`${x},${y}`) ? 'water' : 'stone');
+          return { walkable: !isBlocked, surface };
+        },
+      },
+    );
 
-    // Check what type of obstacle we hit (if any)
-    const blockReason = this.getBlockReason(targetX, targetY);
-    if (blockReason) {
-      EventBridge.emit('movement-blocked', { reason: blockReason });
+    if (result.type === 'movement.blocked') {
+      EventBridge.emit('movement-blocked', { reason: result.reason });
       return false;
     }
 
-    const isFlooded = this.context!.getFloodedTiles?.().has(`${targetX},${targetY}`);
-    const duration = isFlooded ? PLAYER_MOVE_DURATION_SLOW : PLAYER_MOVE_DURATION;
+    const { x: targetX, y: targetY } = result.to;
+    const duration = result.surface === 'water' ? PLAYER_MOVE_DURATION_SLOW : PLAYER_MOVE_DURATION;
 
     this.isMoving = true;
     EventBridge.emit('player-moving');
     this.player.setDirection(direction);
-    this.player.beginStep?.(duration);
+    if (shouldUseMotion(useGameStore.getState().settings.motionPreference)) {
+      this.player.beginStep?.(duration);
+    }
 
     const pixelTargetX = targetX * TILE_SIZE + TILE_SIZE / 2;
     const pixelTargetY = targetY * TILE_SIZE + TILE_SIZE / 2;
@@ -95,41 +112,11 @@ export class GridMovement implements MovementController {
         this.player!.endStep?.();
         this.player!.setGridPosition(targetX, targetY);
         this.isMoving = false;
-        EventBridge.emit('player-moved', { x: targetX, y: targetY });
+        EventBridge.emit('player-moved', { x: targetX, y: targetY, surface: result.surface });
       },
     });
 
     return true;
   }
 
-  private getBlockReason(tx: number, ty: number): string | null {
-    if (!this.context) return 'unknown';
-    const { wallLayer, mapWidth, mapHeight, getBlockedTiles } = this.context;
-    
-    // Out of bounds
-    if (tx < 0 || tx >= mapWidth || ty < 0 || ty >= mapHeight) return 'edge';
-
-    // NPC or other entity blocking
-    if (getBlockedTiles?.().has(`${tx},${ty}`)) return 'npc';
-
-    // Wall or rubble
-    const tile = wallLayer.getTileAt(tx, ty);
-    if (tile && tile.index !== -1) {
-      const WALL_INDICES = [4, 5];
-      if (WALL_INDICES.includes(tile.index)) {
-        return tile.index === 5 ? 'rubble' : 'wall';
-      }
-    }
-    
-    return null; // Not blocked
-  }
-}
-
-function directionDelta(dir: Direction): { dx: number; dy: number } {
-  switch (dir) {
-    case 'up': return { dx: 0, dy: -1 };
-    case 'down': return { dx: 0, dy: 1 };
-    case 'left': return { dx: -1, dy: 0 };
-    case 'right': return { dx: 1, dy: 0 };
-  }
 }

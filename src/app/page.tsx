@@ -8,8 +8,11 @@ const GameContainer = dynamic(() => import('@/components/GameContainer'), {
 
 export default function Home() {
   return (
-    <main style={{ minHeight: '100vh' }}>
-      <GameContainer />
-    </main>
+    <>
+      <a className="skip-link" href="#game-controls">Skip to game controls</a>
+      <main id="main-content" style={{ minHeight: '100vh' }}>
+        <GameContainer />
+      </main>
+    </>
   );
 }
