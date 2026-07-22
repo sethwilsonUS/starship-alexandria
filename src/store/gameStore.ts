@@ -38,8 +38,6 @@ const createInitialPlayer = (): PlayerState => ({
   name: 'Explorer',
   position: { x: 0, y: 0 },
   currentMapId: 'ship',
-  flashlightBattery: 100,
-  spareBatteries: 0,
 });
 
 const initialExploration: ExplorationState = {
@@ -94,48 +92,6 @@ const createActions = (
     set((s) => ({
       player: { ...s.player, position },
     })),
-
-  decrementFlashlight: () =>
-    set((s) => ({
-      player: {
-        ...s.player,
-        flashlightBattery: Math.max(0, s.player.flashlightBattery - 1),
-      },
-    })),
-
-  restoreFlashlight: (amount: number) =>
-    set((s) => ({
-      player: {
-        ...s.player,
-        flashlightBattery: Math.min(100, s.player.flashlightBattery + amount),
-      },
-    })),
-
-  setFlashlight: (amount: number) =>
-    set((s) => ({
-      player: {
-        ...s.player,
-        flashlightBattery: Math.max(0, Math.min(100, amount)),
-      },
-    })),
-
-  addBattery: () =>
-    set((s) => ({
-      player: { ...s.player, spareBatteries: s.player.spareBatteries + 1 },
-    })),
-
-  useBattery: () => {
-    const { spareBatteries, flashlightBattery } = get().player;
-    if (spareBatteries <= 0 || flashlightBattery > 50) return false;
-    set((s) => ({
-      player: {
-        ...s.player,
-        spareBatteries: s.player.spareBatteries - 1,
-        flashlightBattery: Math.min(100, s.player.flashlightBattery + 50),
-      },
-    }));
-    return true;
-  },
 
   collectFragment: (fragment: BookFragment) =>
     set((s) => {
@@ -613,12 +569,10 @@ export const useGameStore = create<GameStore>()(
       name: STORAGE_KEY,
       storage: createJSONStorage(() => localStorage),
       partialize: (state): PersistedState => ({
-        schemaVersion: 5,
+        schemaVersion: 6,
         player: {
           id: state.player.id,
           name: state.player.name,
-          flashlightBattery: state.player.flashlightBattery,
-          spareBatteries: state.player.spareBatteries,
         },
         collectedFragmentIds: state.savedFragmentIds,
         exploration: state.exploration,
@@ -626,7 +580,7 @@ export const useGameStore = create<GameStore>()(
         settings: state.settings,
         previousThemeId: state.previousThemeId,
       }),
-      version: 5,
+      version: 6,
       onRehydrateStorage: () => (state) => {
         if (state?.settings?.narrationEnabled !== undefined) {
           setTTSEnabledGlobal(state.settings.narrationEnabled);
@@ -642,7 +596,7 @@ export const useGameStore = create<GameStore>()(
       },
       migrate: (persisted: unknown, version: number) => migratePersistedSave(persisted, version),
       merge: (persisted, current) => {
-        const save = migratePersistedSave(persisted, 5);
+        const save = migratePersistedSave(persisted, 6);
         return {
           ...current,
           player: {

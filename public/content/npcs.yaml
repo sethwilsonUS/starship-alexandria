@@ -31,7 +31,7 @@ npcs:
       - speaker: Eli
         text: "You with the Alexandria? Saw the beam. Hard entrance to miss."
       - speaker: Eli
-        text: "I trade batteries and canned peaches. Books I carry for free. People still want stories when the power’s out."
+        text: "I trade tools and canned peaches. Books I carry for free. People still want stories when the power’s out."
       - speaker: Eli
         text: "The copyists left loose pages all through the scriptorium. Check under the desks, not only on them."
     return:

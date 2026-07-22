@@ -142,10 +142,9 @@ vaults:
     exhaustedReward:
       journalTitle: Minutes of the last faculty meeting
       journalText: "Whatever survives us must remain available to students we will never meet."
-      batteries: 2
 ```
 
-At least one clue line and one opening line must include `{code}`. The runtime substitutes the expedition's deterministic code. `exhaustedReward` is used after every catalog excerpt has been collected; it supplies a lore note and batteries instead of inventing another excerpt.
+At least one clue line and one opening line must include `{code}`. The runtime substitutes the expedition's deterministic code. `exhaustedReward` is used after every catalog excerpt has been collected; it supplies a lore note instead of inventing another excerpt.
 
 The expedition registry also contains a structural vault definition—placement label, preferred zone, and content IDs. Keep it aligned with `vaults.yaml`.
 

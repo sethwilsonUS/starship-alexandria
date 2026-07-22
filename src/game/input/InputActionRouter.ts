@@ -9,7 +9,6 @@ export type GameInputAction =
   | 'closeMap'
   | 'advanceDialogue'
   | 'beamDown'
-  | 'useBattery'
   | 'hudSummary';
 
 export interface InputActionContext {
@@ -84,7 +83,6 @@ export class InputActionRouter {
       }
       // openMap is an intent request; the dispatcher handles the "map not found" dialogue.
       if (isKeyboardMatch(event, 'KeyM', 'm', 'keym')) return 'openMap';
-      if (isKeyboardMatch(event, 'KeyB', 'b', 'keyb')) return 'useBattery';
       if (isKeyboardMatch(event, 'KeyI', 'i', 'keyi')) return 'hudSummary';
     }
 

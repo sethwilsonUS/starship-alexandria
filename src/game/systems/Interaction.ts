@@ -171,7 +171,7 @@ export class InteractionSystem {
     this.lastAnnouncedId = interactive.id;
     
     // Play discovery chime for items (not transporter)
-    if (['book', 'journal', 'battery', 'map'].includes(interactive.type)) {
+    if (['book', 'journal', 'map'].includes(interactive.type)) {
       playDiscoveryChime();
     }
     
@@ -185,9 +185,6 @@ export class InteractionSystem {
         break;
       case 'journal':
         announcement = `Journal: ${interactive.label}. ${keyHint}.`;
-        break;
-      case 'battery':
-        announcement = `Battery. ${keyHint}.`;
         break;
       case 'map':
         announcement = `Area map. ${keyHint}.`;

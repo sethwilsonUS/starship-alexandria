@@ -176,7 +176,7 @@ function populateExpedition(options: {
   );
   const reward: VaultReward = rewardFragment
     ? { kind: 'fragment', fragmentId: rewardFragment.id }
-    : { kind: 'supplies', loreJournalId: catalog.journalIds[0] ?? null, batteries: 2 };
+    : { kind: 'lore', loreJournalId: catalog.journalIds[0] ?? null };
 
   const vault: PlacedVault = {
     id: vaultId,
@@ -262,7 +262,7 @@ function populateExpedition(options: {
       blocksMovement: false,
     });
   }
-  // Slots with no content should remain available for batteries/maps rather than becoming ghost pickups.
+  // Slots with no content should remain available for later interactives rather than becoming ghost pickups.
   for (let index = fragmentsToPlace.length; index < fragmentSlots.length; index += 1) {
     const key = pointKey(fragmentSlots[index].position);
     reserved.delete(key);
@@ -284,26 +284,6 @@ function populateExpedition(options: {
       id: `journal-${index}`,
       kind: 'journal',
       journalId: journalIds[index],
-      position: slot.position,
-      zoneId: slot.zoneId,
-      blocksMovement: false,
-    });
-  }
-
-  const batteryCount = 1 + contentPositionRandom.int(0, 1);
-  for (let index = 0; index < batteryCount; index += 1) {
-    const slot = takeProtectedSlot(
-      layout,
-      contentPositionRandom.shuffle(layout.zones),
-      contentPositionRandom,
-      reserved,
-      protectedInteractivePositions,
-      false
-    );
-    if (!slot) return null;
-    entities.push({
-      id: `battery-${index}`,
-      kind: 'battery',
       position: slot.position,
       zoneId: slot.zoneId,
       blocksMovement: false,
@@ -613,8 +593,7 @@ function isProtectedInteractive(entity: PlacedEntity): boolean {
   return (
     entity.kind === 'fragment' ||
     entity.kind === 'npc' ||
-    entity.kind === 'journal' ||
-    entity.kind === 'battery'
+    entity.kind === 'journal'
   );
 }
 

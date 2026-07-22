@@ -465,9 +465,6 @@ function validateVaults() {
       if (!isNonEmptyString(reward.journalText)) {
         addError('vaults.yaml', `${prefix}.exhaustedReward: Missing "journalText"`);
       }
-      if (!Number.isInteger(reward.batteries) || reward.batteries < 0) {
-        addError('vaults.yaml', `${prefix}.exhaustedReward: "batteries" must be a nonnegative integer`);
-      }
     }
   });
 

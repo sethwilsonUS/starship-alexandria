@@ -3,7 +3,7 @@ import type { BookFragment } from '@/types/books';
 export type MotionPreference = 'system' | 'reduce' | 'full';
 export type SavedThemeId = 'scriptorium' | 'cathedral' | 'university' | 'gardens';
 
-export interface SavedSettingsV5 {
+export interface SavedSettingsV6 {
   narrationEnabled: boolean;
   sfxEnabled: boolean;
   ambienceEnabled: boolean;
@@ -11,13 +11,11 @@ export interface SavedSettingsV5 {
   motionPreference: MotionPreference;
 }
 
-export interface SaveV5 {
-  schemaVersion: 5;
+export interface SaveV6 {
+  schemaVersion: 6;
   player: {
     id: string;
     name: string;
-    flashlightBattery: number;
-    spareBatteries: number;
   };
   collectedFragmentIds: string[];
   exploration: {
@@ -27,11 +25,11 @@ export interface SaveV5 {
     collectedArtifacts: string[];
   };
   hasSeenWelcome: boolean;
-  settings: SavedSettingsV5;
+  settings: SavedSettingsV6;
   previousThemeId: SavedThemeId | null;
 }
 
-const DEFAULT_SETTINGS: SavedSettingsV5 = {
+const DEFAULT_SETTINGS: SavedSettingsV6 = {
   narrationEnabled: true,
   sfxEnabled: true,
   ambienceEnabled: true,
@@ -64,22 +62,22 @@ function isMotionPreference(value: unknown): value is MotionPreference {
 }
 
 /**
- * Converts every historical persisted shape into the deliberately small v5 save.
+ * Converts every historical persisted shape into the deliberately small v6 save.
  * Active expedition state is intentionally discarded: loading always starts aboard ship.
  */
-export function migratePersistedSave(persisted: unknown, version: number): SaveV5 {
+export function migratePersistedSave(persisted: unknown, version: number): SaveV6 {
   const source = record(persisted);
   const player = record(source.player);
   const exploration = record(source.exploration);
   const oldSettings = record(source.settings);
 
-  const idsFromV5 = strings(source.collectedFragmentIds);
+  const idsFromCurrentSave = strings(source.collectedFragmentIds);
   const idsFromLegacyLibrary = Array.isArray(source.library)
     ? source.library
         .map((fragment) => record(fragment).id)
         .filter((id): id is string => typeof id === 'string' && id.length > 0)
     : [];
-  const collectedFragmentIds = [...new Set(idsFromV5.length > 0 ? idsFromV5 : idsFromLegacyLibrary)];
+  const collectedFragmentIds = [...new Set(idsFromCurrentSave.length > 0 ? idsFromCurrentSave : idsFromLegacyLibrary)];
 
   const legacyTts = typeof oldSettings.ttsEnabled === 'boolean' ? oldSettings.ttsEnabled : true;
   const narrationEnabled = typeof oldSettings.narrationEnabled === 'boolean'
@@ -91,12 +89,10 @@ export function migratePersistedSave(persisted: unknown, version: number): SaveV
   );
 
   return {
-    schemaVersion: 5,
+    schemaVersion: 6,
     player: {
       id: typeof player.id === 'string' && player.id ? player.id : 'explorer',
       name: typeof player.name === 'string' && player.name ? player.name : 'Explorer',
-      flashlightBattery: finiteNumber(player.flashlightBattery, 100, 0, 100),
-      spareBatteries: finiteNumber(player.spareBatteries, 0, 0),
     },
     collectedFragmentIds,
     exploration: {

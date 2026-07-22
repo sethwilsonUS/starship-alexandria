@@ -16,8 +16,6 @@ export type EventBridgeEvents = {
   /** Emitted by GameContainer after successfully handling an interaction. ExploreScene uses this to destroy/remove. */
   'interactive-consumed': { type: string; id?: string };
   'book-found': { fragmentId: string; bookId: string };
-  'battery-found': { batteryId: string };
-  'battery-used': void;
   'npc-dialogue': { npcId: string; lines: string[] };
   'area-entered': { areaName: string };
   'area-discovered': { areaName: string };

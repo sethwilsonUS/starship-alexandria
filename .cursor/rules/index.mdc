@@ -30,7 +30,7 @@ Phaser owns rendering, visibility, collision presentation, spatial movement effe
 
 ### Zustand
 
-Zustand is the source of truth for progression, preferences, and modal/game-phase state. Mutate it only through actions. Save schema v5 persists fragment IDs and compact progress/preferences, never excerpt bodies, coordinates, an active map, or expedition clues. Reloads safely recall the player to the ship.
+Zustand is the source of truth for progression, preferences, and modal/game-phase state. Mutate it only through actions. Save schema v6 persists fragment IDs and compact progress/preferences, never excerpt bodies, coordinates, an active map, or expedition clues. Reloads safely recall the player to the ship.
 
 ### Typed bridge and input
 
@@ -57,7 +57,7 @@ Themes are topology contracts, not palettes:
 
 ### Placement covenant
 
-Fragments, NPCs, journals, and batteries may not overlap or sit cardinally adjacent to one another, the spawn, or extraction. NPCs and fragments must occupy disjoint zones. The map, clue, props, and vault still obey their own reachability/collision contracts. Validate the finished output independently of the allocator.
+Fragments, NPCs, and journals may not overlap or sit cardinally adjacent to one another, the spawn, or extraction. NPCs and fragments must occupy disjoint zones. The map, clue, props, and vault still obey their own reachability/collision contracts. Validate the finished output independently of the allocator.
 
 ## Interaction behavior
 

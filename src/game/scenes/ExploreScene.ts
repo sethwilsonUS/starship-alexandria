@@ -4,7 +4,6 @@ import { getBookCatalogSync } from '@/data/books';
 import { getNPCCatalogSync } from '@/data/npcs';
 import { getJournalCacheSync } from '@/utils/contentLoaderSync';
 import { computeVisibleTiles } from '../systems/FOVSystem';
-import { getFovRadiusFromBattery } from '@/utils/flashlight';
 import { useGameStore } from '@/store/gameStore';
 import { EventBridge } from '../EventBridge';
 import { Player } from '../entities/Player';
@@ -61,11 +60,9 @@ export default class ExploreScene extends Scene {
   private vignetteOverlay!: Phaser.GameObjects.Graphics;
   private bookContainers = new Map<string, Phaser.GameObjects.Container>();
   private journalContainers = new Map<string, Phaser.GameObjects.Container>();
-  private batteryContainers = new Map<string, Phaser.GameObjects.Container>();
   private mapContainer: Phaser.GameObjects.Container | null = null;
   private vaultContainer: Phaser.GameObjects.Container | null = null;
   private blockedTiles = new Set<string>();
-  private moveCount = 0;
   private bookToRoomMap = new Map<string, string>();
   private roomContents = new Map<string, RoomContentSummary>();
   private announcedRooms = new Set<string>();
@@ -121,12 +118,9 @@ export default class ExploreScene extends Scene {
       this.mapData.walls,
       { x: spawnX, y: spawnY },
     );
-    state.actions.setFlashlight(100);
     state.actions.clearExploredTiles();
     state.actions.setExplorableTileCount(this.mapData.reachableTiles.size);
     state.actions.movePlayer({ x: spawnX, y: spawnY });
-    this.moveCount = 0;
-
     this.bindRuntimeEvents();
     this.checkRoomEntry(spawnX, spawnY, true);
     this.updateFOV(spawnX, spawnY);
@@ -178,8 +172,6 @@ export default class ExploreScene extends Scene {
     const onPlayerMoved = ({ x, y, surface }: { x: number; y: number; surface: FootstepSurface }) => {
       const actions = useGameStore.getState().actions;
       actions.movePlayer({ x, y });
-      this.moveCount += 1;
-      if (this.moveCount % 5 === 0) actions.decrementFlashlight();
       this.playFootstep(surface);
       this.checkRoomEntry(x, y);
       this.updateFOV(x, y);
@@ -309,19 +301,6 @@ export default class ExploreScene extends Scene {
           summarizeRoomContent(this.roomContents, roomName, 'journal');
           break;
         }
-        case 'battery': {
-          const container = this.addMarkedSprite(entity.position, ASSET_KEYS.sprites.battery, 0x5cb85c);
-          this.batteryContainers.set(entity.id, container);
-          this.interactionSystem.register({
-            id: entity.id,
-            type: 'battery',
-            gridX: entity.position.x,
-            gridY: entity.position.y,
-            label: 'Spare battery',
-          });
-          summarizeRoomContent(this.roomContents, roomName, 'battery');
-          break;
-        }
         case 'map': {
           this.mapContainer = this.addMarkedSprite(entity.position, ASSET_KEYS.sprites.map, 0x00ced1);
           this.interactionSystem.register({
@@ -435,9 +414,7 @@ export default class ExploreScene extends Scene {
       ? this.bookContainers
       : type === 'journal'
         ? this.journalContainers
-        : type === 'battery'
-          ? this.batteryContainers
-          : null;
+        : null;
     const container = containers?.get(id);
     if (container) {
       container.destroy();
@@ -491,16 +468,13 @@ export default class ExploreScene extends Scene {
     if (contents.books) parts.push(`${contents.books} book ${contents.books === 1 ? 'fragment' : 'fragments'}`);
     if (contents.journals) parts.push(`${contents.journals} ${contents.journals === 1 ? 'journal or clue' : 'journals or clues'}`);
     if (contents.npcs.length) parts.push(contents.npcs.join(' and '));
-    if (contents.batteries) parts.push(`${contents.batteries} ${contents.batteries === 1 ? 'battery' : 'batteries'}`);
     if (contents.maps) parts.push('area map');
     if (parts.length) speak(`Contains: ${parts.join(', ')}.`);
   }
 
   private updateFOV(originX: number, originY: number): void {
-    const battery = useGameStore.getState().player.flashlightBattery;
     const visible = computeVisibleTiles(originX, originY, {
       walls: this.mapData.walls,
-      radius: getFovRadiusFromBattery(battery),
     });
     const reachableVisible = [...visible].filter((coordinate) => this.mapData.reachableTiles.has(coordinate));
     useGameStore.getState().actions.addExploredTiles(reachableVisible);
@@ -648,7 +622,6 @@ export default class ExploreScene extends Scene {
     this.revealedZoneIds.clear();
     this.bookContainers.clear();
     this.journalContainers.clear();
-    this.batteryContainers.clear();
     this.blockedTiles.clear();
     this.bookToRoomMap.clear();
     this.roomContents.clear();

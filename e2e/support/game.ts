@@ -3,7 +3,7 @@ import type { Locator, Page } from '@playwright/test';
 import { expect } from '../fixtures';
 
 export type ThemeId = 'scriptorium' | 'cathedral' | 'university' | 'gardens';
-export type EntityKind = 'fragment' | 'npc' | 'journal' | 'battery' | 'map' | 'clue' | 'prop';
+export type EntityKind = 'fragment' | 'npc' | 'journal' | 'map' | 'clue' | 'prop';
 
 export interface Point {
   x: number;

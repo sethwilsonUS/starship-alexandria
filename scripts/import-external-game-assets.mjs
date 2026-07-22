@@ -336,7 +336,6 @@ const SPRITES = [
   { file: 'vault.png', sourceId: 'kenneyTinyDungeon', index: 89 },
   { file: 'book-pickup.png', projectSprite: 'book' },
   { file: 'journal-pickup.png', projectSprite: 'journal' },
-  { file: 'battery-pickup.png', projectSprite: 'battery' },
   { file: 'map-pickup.png', projectSprite: 'map' },
   { file: 'transporter-pad.png', projectSprite: 'transporter' },
   { file: 'paper-debris-prop.png', projectSprite: 'paper' },
@@ -351,10 +350,6 @@ const PROJECT_SPRITES = {
   journal: [
     ['#172638', 3, 2, 10, 13], ['#294c62', 4, 2, 9, 12], ['#142332', 5, 3, 7, 10],
     ['#c89b50', 4, 2, 1, 12], ['#e7c875', 6, 5, 5, 1], ['#e7c875', 6, 8, 4, 1],
-  ],
-  battery: [
-    ['#122a35', 5, 2, 6, 13], ['#c99c49', 6, 1, 4, 2], ['#67d7d0', 6, 4, 4, 8],
-    ['#d9f4df', 7, 5, 2, 4], ['#2f878a', 6, 11, 4, 2], ['#c99c49', 6, 14, 4, 1],
   ],
   map: [
     ['#8b603f', 2, 3, 12, 10], ['#ead39b', 3, 2, 10, 12], ['#c8aa72', 6, 3, 1, 10],

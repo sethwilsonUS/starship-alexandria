@@ -22,7 +22,7 @@ From the orbiting library ship *Alexandria*, choose a recovery signal, beam down
 - Four destinations with different map structures, tiles, room vocabularies, NPC pools, and vault stories.
 - Twenty-one sourced excerpts across ten public-domain works, including *Paradise Lost*, *The Canterbury Tales*, *The Faerie Queene*, *Frankenstein*, *A Vindication of the Rights of Woman*, and Frederick Douglass's *Narrative*.
 - Deterministic expeditions: a seed reproduces the layout, placements, clue, and reward.
-- A nonviolent collection loop with fog of war, a battery-powered flashlight, journals, maps, NPC dialogue, clue-driven vaults that never require code entry, and a browsable ship library.
+- A nonviolent collection loop with fog of war and a comfortable fixed field of view, journals, maps, NPC dialogue, clue-driven vaults that never require code entry, and a browsable ship library.
 - Accessible HTML for launch, settings, dialogue, reading, maps, and mission selection around a focused Phaser game region.
 - Narration, sound-effects, ambience, and motion preferences before play begins. Audio never starts before the player's launch gesture.
 - Visible game-event announcements and a textual map equivalent for information that would otherwise exist only on the canvas.
@@ -49,7 +49,6 @@ The game targets desktop keyboard play. Native controls inside dialogs continue 
 | `Space` or `E` | Interact with the adjacent object or person |
 | `Space` or `Enter` | Advance dialogue; open the destination picker from the ship |
 | `M` | Open or close the recovered area map |
-| `B` | Use a spare battery when the flashlight is at 50% or below |
 | `I` | Hear/read a concise status summary |
 | `Escape` | Close the active HTML overlay |
 | `Tab` / `Shift`+`Tab` | Move through HTML controls and dialog actions |
@@ -124,7 +123,7 @@ src/
 │   ├── scenes/              # Phaser boot, ship, and expedition scenes
 │   ├── systems/             # FOV, movement, placement, effects, and announcements
 │   └── EventBridge.ts       # Typed React ↔ Phaser boundary
-├── store/                   # Zustand state and save-v5 migration
+├── store/                   # Zustand state and save-v6 migration
 ├── data/                    # Typed catalog adapters
 ├── types/                   # Shared application/content contracts
 └── utils/                   # Content loading, narration, and focused helpers

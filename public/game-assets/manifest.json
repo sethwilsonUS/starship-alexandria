@@ -705,19 +705,6 @@
       "sha256": "deecf58bc851e89a348f3060cacaccb8fc969c3a666dfed563c14c45488badaa"
     },
     {
-      "path": "game-assets/sprites/battery-pickup.png",
-      "kind": "sprite",
-      "mediaType": "image/png",
-      "width": 32,
-      "height": 32,
-      "sourceIds": [
-        "project"
-      ],
-      "transformation": "Project-authored battery icon drawn on a 16px integer grid and scaled 2x with nearest-neighbor",
-      "bytes": 166,
-      "sha256": "324060af03e5db85bc521b67ccd9cdf2425516c0945c1cd80f319edef13fe4a7"
-    },
-    {
       "path": "game-assets/sprites/book-pickup.png",
       "kind": "sprite",
       "mediaType": "image/png",

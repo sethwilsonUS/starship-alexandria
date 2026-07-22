@@ -20,7 +20,6 @@ vaults:
     exhaustedReward:
       journalTitle: The final accession
       journalText: "No rare volume remained, only a librarian’s note: “A complete catalogue is not an ending. Leave room for what comes next.”"
-      batteries: 2
 
   - id: vault-cathedral-reliquary
     themeId: cathedral
@@ -43,7 +42,6 @@ vaults:
     exhaustedReward:
       journalTitle: A rest between verses
       journalText: "The choir director’s final note reads: “Silence is part of the music, but it must not have the last measure.”"
-      batteries: 2
 
   - id: vault-university-special-collections
     themeId: university
@@ -66,7 +64,6 @@ vaults:
     exhaustedReward:
       journalTitle: Minutes of the last faculty meeting
       journalText: "One motion passed unanimously: “Whatever survives us must remain available to students we will never meet.”"
-      batteries: 2
 
   - id: vault-gardens-seed-bank
     themeId: gardens
@@ -89,4 +86,3 @@ vaults:
     exhaustedReward:
       journalTitle: Germination record
       journalText: "The final entry reads: “Not every seed wakes in our season. Preserve it anyway.”"
-      batteries: 2

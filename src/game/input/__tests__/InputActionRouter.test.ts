@@ -37,13 +37,13 @@ describe('InputActionRouter', () => {
     expect(router.actionFromKeyboard(keyboard('KeyD'), context())).toBe('move.right');
   });
 
-  it('maps interact, map, battery, info, and beam-down keys', () => {
+  it('maps interact, map, info, and beam-down keys while leaving B unbound', () => {
     const router = new InputActionRouter();
 
     expect(router.actionFromKeyboard(keyboard('Space'), context())).toBe('interact');
     expect(router.actionFromKeyboard(keyboard('KeyE'), context())).toBe('interact');
     expect(router.actionFromKeyboard(keyboard('KeyM'), context())).toBe('openMap');
-    expect(router.actionFromKeyboard(keyboard('KeyB'), context())).toBe('useBattery');
+    expect(router.actionFromKeyboard(keyboard('KeyB'), context())).toBeNull();
     expect(router.actionFromKeyboard(keyboard('KeyI'), context())).toBe('hudSummary');
     expect(router.actionFromKeyboard(keyboard('Enter'), context({ phase: 'ship' }))).toBe('beamDown');
   });
@@ -76,7 +76,7 @@ describe('InputActionRouter', () => {
   it('ignores repeats for every non-movement command', () => {
     const router = new InputActionRouter();
 
-    for (const code of ['KeyE', 'KeyM', 'KeyB', 'KeyI']) {
+    for (const code of ['KeyE', 'KeyM', 'KeyI']) {
       expect(router.actionFromKeyboard(keyboard(code, true), context())).toBeNull();
     }
     expect(router.actionFromKeyboard(keyboard('Escape', true), context({ phase: 'viewing-map' }))).toBeNull();
@@ -94,7 +94,7 @@ describe('InputActionRouter', () => {
     const router = new InputActionRouter();
 
     expect(router.actionFromKeyboard(keyboard('KeyM'), context({ phase: 'ship' }))).toBeNull();
-    expect(router.actionFromKeyboard(keyboard('KeyB'), context({ phase: 'dialogue' }))).toBeNull();
+    expect(router.actionFromKeyboard(keyboard('KeyI'), context({ phase: 'dialogue' }))).toBeNull();
     expect(router.actionFromKeyboard(keyboard('Space'), context({ phase: 'viewing-map' }))).toBeNull();
   });
 

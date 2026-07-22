@@ -21,18 +21,16 @@ const catalog = YAML.parse(
 ) as BooksYaml;
 const allFragmentIds = catalog.books.flatMap((book) => book.fragments.map((fragment) => fragment.id));
 
-test('an exhausted catalog still allows expeditions and grants the vault supply reward', async ({ page }) => {
+test('an exhausted catalog still allows expeditions and grants the vault lore reward', async ({ page }) => {
   expect(allFragmentIds).toHaveLength(21);
   await page.addInitScript((fragmentIds) => {
     localStorage.setItem('starship-alexandria-save', JSON.stringify({
-      version: 5,
+      version: 6,
       state: {
-        schemaVersion: 5,
+        schemaVersion: 6,
         player: {
           id: 'complete-archivist',
           name: 'Complete Archivist',
-          flashlightBattery: 100,
-          spareBatteries: 0,
         },
         collectedFragmentIds: fragmentIds,
         exploration: {
@@ -80,7 +78,6 @@ test('an exhausted catalog still allows expeditions and grants the vault supply 
   await expect(vault).toContainText(/archive dials|misfiled card/i);
   await advanceDialogueUntil(vault, /complete catalogue|leave room for what comes next/i);
   await expect(vault).toContainText(/complete catalogue|leave room for what comes next/i);
-  await expect(page.getByLabel('Spare batteries. Press B to use.')).toContainText('2');
 });
 
 async function advanceDialogueUntil(dialog: import('@playwright/test').Locator, target: RegExp): Promise<void> {

@@ -165,8 +165,6 @@ test('legacy saves are migrated and recalled safely to the ship', async ({ page 
           name: 'Legacy Archivist',
           currentMapId: 'dangerous-old-expedition',
           position: { x: 41, y: 41 },
-          flashlightBattery: 62,
-          spareBatteries: 3,
         },
         library: [{ id: 'unknown-fragment', text: 'stale excerpt body' }],
         exploration: {

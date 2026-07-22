@@ -197,7 +197,6 @@ vaults:
     exhaustedReward:
       journalTitle: Note
       journalText: "Keep reading."
-      batteries: 2
   - <<: *vault
     id: vault-cathedral
     themeId: cathedral
@@ -207,7 +206,7 @@ vaults:
       locked: [{ text: "Locked." }]
       opening: [{ text: "You recall {code}." }]
       opened: [{ text: "Open." }]
-    exhaustedReward: { journalTitle: Note, journalText: "Keep reading.", batteries: 2 }
+    exhaustedReward: { journalTitle: Note, journalText: "Keep reading." }
   - <<: *vault
     id: vault-university
     themeId: university
@@ -217,7 +216,7 @@ vaults:
       locked: [{ text: "Locked." }]
       opening: [{ text: "You recall {code}." }]
       opened: [{ text: "Open." }]
-    exhaustedReward: { journalTitle: Note, journalText: "Keep reading.", batteries: 2 }
+    exhaustedReward: { journalTitle: Note, journalText: "Keep reading." }
   - <<: *vault
     id: vault-gardens
     themeId: gardens
@@ -227,7 +226,7 @@ vaults:
       locked: [{ text: "Locked." }]
       opening: [{ text: "You recall {code}." }]
       opened: [{ text: "Open." }]
-    exhaustedReward: { journalTitle: Note, journalText: "Keep reading.", batteries: 2 }
+    exhaustedReward: { journalTitle: Note, journalText: "Keep reading." }
 `
   );
   writeContentFile(root, 'gameloop.yaml', gameloopYaml);
