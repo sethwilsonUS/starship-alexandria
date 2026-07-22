@@ -13,9 +13,9 @@ From the orbiting library ship *Alexandria*, choose a recovery signal, beam down
 
 [Play the live demo](https://starship-alexandria.vercel.app)
 
-![An archivist stands on a blue transporter platform in a brass-lined starship library, with Earth above and four ruined destinations below.](public/images/starship-alexandria-key-art.png)
+![Starship Alexandria hovers above a moonlit Arcadian city of temples and a ruined cathedral while a lone archivist stands in a blue transporter beam.](public/images/starship-alexandria-key-art.png)
 
-*AI-generated concept key art for the Alexandria and its four recovery signals; generation details are recorded in the [image manifest](public/images/manifest.json).*
+*AI-generated “Celestial Acropolis” key art for Starship Alexandria; the same composition supplies the social-preview crop. Generation details are recorded in the [image manifest](public/images/manifest.json).*
 
 ## What is in the game
 
@@ -78,6 +78,7 @@ Open [http://localhost:8080](http://localhost:8080).
 | `npm run test:watch` | Run Vitest in watch mode |
 | `npm run test:e2e` | Run the Playwright browser suite |
 | `npm run test:e2e:update` | Intentionally refresh Playwright visual baselines |
+| `npm run generate:social-preview` | Rebuild the 1200×630 social card from the README key art |
 | `npm run smoke` | Run the representative browser smoke journey |
 | `npm run lint` | Check source files with ESLint |
 | `npm run typecheck` | Run strict TypeScript checks without emitting files |

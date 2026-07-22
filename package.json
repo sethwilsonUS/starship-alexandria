@@ -42,6 +42,7 @@
         "refresh-assets": "node scripts/import-external-game-assets.mjs",
         "generate-assets": "npm run generate:game-assets",
         "generate:game-assets": "node scripts/generate-game-assets.mjs",
+        "generate:social-preview": "node scripts/generate-social-preview.mjs",
         "import-external-assets": "node scripts/import-external-game-assets.mjs",
         "generate-voices:opening": "node scripts/generate-opening-voices.mjs"
     },

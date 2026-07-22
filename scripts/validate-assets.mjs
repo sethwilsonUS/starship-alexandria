@@ -163,25 +163,94 @@ async function main() {
   if (/sketchfab|poly\s*haven/i.test(importer)) fail('Importer still references removed thumbnail/photo-texture sources');
 
   const conceptManifest = JSON.parse(await fs.readFile(CONCEPT_MANIFEST_PATH, 'utf8'));
-  if (!conceptManifest.prompt || !conceptManifest.disclosure || !conceptManifest.tool) {
-    fail('Concept-art manifest must retain its prompt, tool, and AI disclosure');
+  if (conceptManifest.version !== 2) {
+    fail(`Unsupported concept-art manifest schema: ${conceptManifest.version}`);
   }
-  for (const output of conceptManifest.outputs ?? []) {
-    const resolved = path.resolve(PUBLIC_ROOT, output.path.replace(/^\//, ''));
-    if (!resolved.startsWith(`${PUBLIC_ROOT}${path.sep}`)) {
-      fail(`${output.path}: concept-art path escapes public/`);
+  if (!Array.isArray(conceptManifest.generations) || conceptManifest.generations.length === 0) {
+    fail('Concept-art manifest must include at least one generation');
+  }
+
+  const conceptOutputs = [];
+  const conceptGenerationIds = new Set();
+  const conceptOutputPaths = new Set();
+  for (const generation of conceptManifest.generations ?? []) {
+    if (typeof generation.id !== 'string' || generation.id.trim() === '') {
+      fail('Concept-art generations require a non-empty ID');
+    } else if (conceptGenerationIds.has(generation.id)) {
+      fail(`Duplicate concept-art generation ID: ${generation.id}`);
+    } else {
+      conceptGenerationIds.add(generation.id);
+    }
+    if (!generation.prompt || !generation.disclosure || !generation.tool || !generation.generatedAt) {
+      fail(`${generation.id ?? 'Unknown generation'}: prompt, tool, date, and AI disclosure are required`);
+    }
+    if (!Array.isArray(generation.outputs) || generation.outputs.length === 0) {
+      fail(`${generation.id ?? 'Unknown generation'}: generation has no outputs`);
       continue;
     }
-    try {
-      const buffer = await fs.readFile(resolved);
-      const metadata = await sharp(buffer).metadata();
-      if (sha256(buffer) !== output.sha256) fail(`${output.path}: concept-art SHA-256 does not match manifest`);
-      if (metadata.width !== output.width || metadata.height !== output.height) {
-        fail(`${output.path}: concept-art dimensions do not match manifest`);
+
+    for (const output of generation.outputs) {
+      conceptOutputs.push(output);
+      if (typeof output.path !== 'string' || !output.path.startsWith('/')) {
+        fail(`${generation.id}: concept-art output requires an absolute public path`);
+        continue;
       }
-    } catch {
-      fail(`${output.path}: missing concept-art output`);
+      if (conceptOutputPaths.has(output.path)) {
+        fail(`Duplicate concept-art output path: ${output.path}`);
+      }
+      conceptOutputPaths.add(output.path);
+      if (typeof output.role !== 'string' || output.role.trim() === '') {
+        fail(`${output.path}: concept-art output requires a role`);
+      }
+      if (typeof output.transformation !== 'string' || output.transformation.trim() === '') {
+        fail(`${output.path}: concept-art output requires a transformation record`);
+      }
+      if (!/^[a-f0-9]{64}$/.test(output.sha256 ?? '')) {
+        fail(`${output.path}: concept-art output requires a lowercase SHA-256 hash`);
+      }
+      if (!Number.isInteger(output.width) || output.width <= 0 || !Number.isInteger(output.height) || output.height <= 0) {
+        fail(`${output.path}: concept-art dimensions must be positive integers`);
+      }
+
+      const resolved = path.resolve(PUBLIC_ROOT, output.path.replace(/^\//, ''));
+      if (!resolved.startsWith(`${PUBLIC_ROOT}${path.sep}`)) {
+        fail(`${output.path}: concept-art path escapes public/`);
+        continue;
+      }
+      try {
+        const realPath = await fs.realpath(resolved);
+        if (!realPath.startsWith(`${PUBLIC_ROOT}${path.sep}`)) {
+          fail(`${output.path}: concept-art symlink escapes public/`);
+          continue;
+        }
+        const buffer = await fs.readFile(realPath);
+        const metadata = await sharp(buffer).metadata();
+        if (metadata.format !== 'png') fail(`${output.path}: concept-art output must be a PNG`);
+        if (sha256(buffer) !== output.sha256) fail(`${output.path}: concept-art SHA-256 does not match manifest`);
+        if (metadata.width !== output.width || metadata.height !== output.height) {
+          fail(`${output.path}: concept-art dimensions do not match manifest`);
+        }
+      } catch {
+        fail(`${output.path}: missing concept-art output`);
+      }
     }
+  }
+
+  for (const output of conceptOutputs) {
+    if (output.derivedFrom !== undefined && !conceptOutputPaths.has(output.derivedFrom)) {
+      fail(`${output.path}: derivedFrom does not reference a declared concept-art output`);
+    }
+  }
+
+  const socialCard = conceptOutputs.find((output) => output.path === '/images/og.png');
+  if (
+    !socialCard ||
+    socialCard.role !== 'social-card' ||
+    socialCard.width !== 1200 ||
+    socialCard.height !== 630 ||
+    socialCard.derivedFrom !== '/images/starship-alexandria-key-art.png'
+  ) {
+    fail('/images/og.png must be a 1200x630 social-card derived from the README key art');
   }
 
   if (errors.length > 0) {
@@ -190,7 +259,7 @@ async function main() {
     process.exitCode = 1;
     return;
   }
-  console.log(`Validated ${manifest.assets.length} assets, ${audioFormats.pairCount} audio pairs, ${themeNames.size} theme atlases, and ${conceptManifest.outputs?.length ?? 0} concept-art outputs.`);
+  console.log(`Validated ${manifest.assets.length} assets, ${audioFormats.pairCount} audio pairs, ${themeNames.size} theme atlases, and ${conceptOutputs.length} concept-art outputs.`);
 }
 
 main().catch((error) => {

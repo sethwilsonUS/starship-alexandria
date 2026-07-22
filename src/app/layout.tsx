@@ -18,6 +18,17 @@ const literata = localFont({
   weight: '200 900',
 });
 
+const socialImageAlt =
+  'Starship Alexandria hovers above a moonlit Arcadian city of temples and a ruined cathedral while a lone archivist stands in a blue transporter beam.';
+
+const socialImage = {
+  url: '/images/og.png',
+  width: 1200,
+  height: 630,
+  alt: socialImageAlt,
+  type: 'image/png',
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL('https://starship-alexandria.vercel.app'),
   title: 'Starship Alexandria — Recover the Lost Library',
@@ -28,27 +39,24 @@ export const metadata: Metadata = {
     shortcut: '/favicon.png',
     apple: '/favicon.png',
   },
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
     type: 'website',
+    url: '/',
     siteName: 'Starship Alexandria',
     title: 'Starship Alexandria',
     description:
       'A cozy roguelike web game — recover fragments of lost classic literature.',
-    images: [
-      {
-        url: '/images/og.png',
-        width: 1200,
-        height: 630,
-        alt: 'An archivist aboard the Starship Alexandria overlooks Earth and four recovered visions: a cathedral, scriptorium, university, and garden conservatory.',
-      },
-    ],
+    images: [socialImage],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Starship Alexandria',
     description:
       'A cozy roguelike web game — recover fragments of lost classic literature.',
-    images: ['/images/og.png'],
+    images: [socialImage],
   },
 };
 

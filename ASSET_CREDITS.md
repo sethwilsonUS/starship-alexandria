@@ -30,11 +30,14 @@ images are included.
 
 ## Concept key art
 
-`public/images/starship-alexandria-key-art.png` and its social-preview crop were
-generated with OpenAI image generation through Codex on 2026-07-17. They are
-showcase artwork only: no generated image controls collision, navigation, or
-tile semantics. `public/images/manifest.json` records the exact prompt,
-dimensions, transformations, SHA-256 hashes, and a visible AI disclosure.
+`public/images/starship-alexandria-key-art.png` was generated with OpenAI image
+generation through Codex on 2026-07-21. The selected “Celestial Acropolis”
+composition is both the README hero and the source for `public/images/og.png`;
+run `npm run generate:social-preview` to reproduce its 1200×630 social crop.
+The images are showcase artwork only: no generated image controls collision,
+navigation, or tile semantics. `public/images/manifest.json` records the
+generation prompt, dimensions, transformation, SHA-256 hashes, and visible AI
+disclosure.
 
 ## Audio
 
