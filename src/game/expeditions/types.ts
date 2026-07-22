@@ -136,10 +136,6 @@ export interface PlacedJournalEntity extends PlacedEntityBase {
   journalId: string;
 }
 
-export interface PlacedBatteryEntity extends PlacedEntityBase {
-  kind: 'battery';
-}
-
 export interface PlacedMapEntity extends PlacedEntityBase {
   kind: 'map';
 }
@@ -161,14 +157,13 @@ export type PlacedEntity =
   | PlacedFragmentEntity
   | PlacedNpcEntity
   | PlacedJournalEntity
-  | PlacedBatteryEntity
   | PlacedMapEntity
   | PlacedClueEntity
   | PlacedPropEntity;
 
 export type VaultReward =
   | { kind: 'fragment'; fragmentId: string }
-  | { kind: 'supplies'; loreJournalId: string | null; batteries: 2 };
+  | { kind: 'lore'; loreJournalId: string | null };
 
 export interface PlacedVault {
   id: string;

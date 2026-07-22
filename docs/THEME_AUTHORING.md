@@ -169,9 +169,9 @@ At minimum, verify:
 - spawn, extraction, clue, entities, vault, and each zone are reachable;
 - entities do not overlap and blocking entities have an accessible adjacent tile;
 - one or two nonduplicate NPCs come only from the theme pool;
-- fragment, journal, battery, map, clue, and vault counts are in range;
+- fragment, journal, map, clue, and vault counts are in range;
 - an affiliated uncollected fragment is preferred for the vault;
-- exhausted catalogs yield lore plus two batteries;
+- exhausted catalogs yield their authored lore note;
 - attempts are bounded at 20 and the fallback is valid;
 - rot.js RNG seed/state are restored;
 - the visual browser snapshot is distinct at both supported showcase sizes;

@@ -1,10 +1,10 @@
 /**
- * Runtime and v5 local-save state types.
+ * Runtime and v6 local-save state types.
  */
 
 import type { BookFragment } from './books';
 import type { Position } from './game';
-import type { MotionPreference, SaveV5, SavedThemeId } from '@/store/saveMigration';
+import type { MotionPreference, SaveV6, SavedThemeId } from '@/store/saveMigration';
 import type { VaultReward } from '@/game/expeditions';
 
 export interface DialogueChoice {
@@ -49,16 +49,14 @@ export interface SessionVaultInfo {
   reward: VaultReward;
 }
 
-/** Serialized v5 save. Runtime book objects are resolved from these IDs after content loads. */
-export type PersistedState = SaveV5;
+/** Serialized v6 save. Runtime book objects are resolved from these IDs after content loads. */
+export type PersistedState = SaveV6;
 
 export interface PlayerState {
   id: string;
   name: string;
   position: Position;
   currentMapId: string;
-  flashlightBattery: number; // 0–100, dims but never kills
-  spareBatteries: number; // collected pickups; press B to use
 }
 
 export interface ExplorationState {
@@ -147,11 +145,6 @@ export interface GameState {
 
 export interface GameActions {
   movePlayer: (position: Position) => void;
-  decrementFlashlight: () => void;
-  restoreFlashlight: (amount: number) => void;
-  setFlashlight: (amount: number) => void;
-  addBattery: () => void;
-  useBattery: () => boolean;
   collectFragment: (fragment: BookFragment) => void;
   markMapVisited: (mapId: string) => void;
   discoverNPC: (npcId: string) => void;

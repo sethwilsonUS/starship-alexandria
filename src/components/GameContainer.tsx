@@ -35,33 +35,8 @@ function getTotalFragments(): number {
   }
 }
 
-function handleUseBatteryAction(): void {
-  const { spareBatteries, flashlightBattery } = useGameStore.getState().player;
-
-  if (spareBatteries === 0) {
-    useGameStore.getState().actions.openDialogue([{ text: 'No spare batteries.' }]);
-    return;
-  }
-
-  if (flashlightBattery > 50) {
-    useGameStore.getState().actions.openDialogue([
-      { text: `Flashlight is at ${flashlightBattery} percent. Save the battery for when it drops below 50.` },
-    ]);
-    return;
-  }
-
-  if (useGameStore.getState().actions.useBattery()) {
-    EventBridge.emit('battery-used');
-    const newBattery = useGameStore.getState().player.flashlightBattery;
-    useGameStore.getState().actions.openDialogue([
-      { text: `Battery used. Flashlight recharged to ${newBattery} percent.` },
-    ]);
-  }
-}
-
 function handleHudSummaryAction(): void {
   const state = useGameStore.getState();
-  const { flashlightBattery, spareBatteries } = state.player;
   const { booksRemainingOnThisMap, exploredTiles, explorableTileCount } = state.session;
   const fragmentCount = state.library.length;
 
@@ -71,24 +46,6 @@ function handleHudSummaryAction(): void {
       : 0;
 
   const parts: string[] = [];
-
-  if (flashlightBattery > 75) {
-    parts.push(`Flashlight at ${flashlightBattery} percent. Good condition.`);
-  } else if (flashlightBattery > 50) {
-    parts.push(`Flashlight at ${flashlightBattery} percent.`);
-  } else if (flashlightBattery > 25) {
-    parts.push(`Flashlight at ${flashlightBattery} percent. Getting low.`);
-  } else {
-    parts.push(`Flashlight at ${flashlightBattery} percent. Critically low.`);
-  }
-
-  if (spareBatteries === 0) {
-    parts.push('No spare batteries.');
-  } else if (spareBatteries === 1) {
-    parts.push('1 spare battery.');
-  } else {
-    parts.push(`${spareBatteries} spare batteries.`);
-  }
 
   if (booksRemainingOnThisMap === 0) {
     parts.push('No book fragments left in this area.');
@@ -122,9 +79,7 @@ export default function GameContainer() {
 
   useEffect(() => {
     const onInputAction = ({ action }: { action: GameInputAction }) => {
-      if (action === 'useBattery') {
-        handleUseBatteryAction();
-      } else if (action === 'hudSummary') {
+      if (action === 'hudSummary') {
         handleHudSummaryAction();
       }
     };
@@ -215,15 +170,6 @@ export default function GameContainer() {
             unlockInteractions();
           }
         }
-      } else if (type === 'battery' && id) {
-        useGameStore.getState().actions.addBattery();
-        EventBridge.emit('battery-found', { batteryId: id });
-        EventBridge.emit('interactive-consumed', { type: 'battery', id });
-        // Show dialogue for audio feedback (accessibility)
-        const batteryCount = useGameStore.getState().player.spareBatteries;
-        useGameStore.getState().actions.openDialogue([
-          { text: `Battery collected! You now have ${batteryCount} spare ${batteryCount === 1 ? 'battery' : 'batteries'}. Press B to recharge your flashlight.` }
-        ]);
       } else if (type === 'transporter') {
         const state = useGameStore.getState();
         const newFragmentsThisTrip = state.library.length - state.session.fragmentsAtExpeditionStart;
@@ -304,16 +250,12 @@ export default function GameContainer() {
               },
             ]);
           } else {
-            for (let battery = 0; battery < vaultInfo.reward.batteries; battery += 1) {
-              state.actions.addBattery();
-            }
             state.actions.readJournal(
               vaultInfo.reward.loreJournalId ?? `lore-${vaultInfo.contentId}`,
             );
             state.actions.openDialogue([
               ...opening,
               { text: vault.exhaustedReward.journalText },
-              { text: `The cache also contains ${vaultInfo.reward.batteries} spare batteries.` },
             ]);
           }
         } else {
@@ -395,7 +337,7 @@ export default function GameContainer() {
         id="game-controls"
         className="game-shell"
         tabIndex={launchGateOpen ? -1 : 0}
-        aria-label="Game controls. Use arrow keys or W A S D to move, E to interact, M for the map, and B for a battery."
+        aria-label="Game controls. Use arrow keys or W A S D to move, E to interact, M for the map, and I for status."
         inert={launchGateOpen}
       >
         <div className="game-world" inert={modalOpen} aria-hidden={modalOpen || undefined}>

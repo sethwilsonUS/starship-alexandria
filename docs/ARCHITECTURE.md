@@ -18,7 +18,7 @@ flowchart LR
   E <--> R["React overlays"]
   R <--> Z["Zustand store"]
   PH <--> Z
-  Z --> V5["localStorage save v5"]
+  Z --> V6["localStorage save v6"]
 ```
 
 The arrows describe data flow, not import permission. In particular, the generator does not import Phaser, React, or Zustand.
@@ -98,7 +98,7 @@ type GeneratedExpedition = {
 
 Each semantic cell records terrain, walkability, opacity, footstep surface, render role, and zone ID. Game rules consume those meanings; an atlas only decides how a meaning looks.
 
-The generator owns topology, zones, spawn/extraction, NPCs, fragments, journals, batteries, the map pickup, props, clue/vault pairing, and vault reward. It is synchronous and performs no I/O.
+The generator owns topology, zones, spawn/extraction, NPCs, fragments, journals, the map pickup, props, clue/vault pairing, and vault reward. It is synchronous and performs no I/O.
 
 ### Determinism
 
@@ -127,18 +127,18 @@ The semantic adapter in `semanticTilemap.ts` converts this output to the compati
 
 See [Content authoring](CONTENT_AUTHORING.md) for exact schemas and [Theme authoring](THEME_AUTHORING.md) for registry wiring.
 
-## Save v5
+## Save v6
 
-The Zustand persistence key is `starship-alexandria-save`; schema version 5 stores only:
+The Zustand persistence key is `starship-alexandria-save`; schema version 6 stores only:
 
-- player identity, flashlight charge, and spare-battery count;
+- player identity;
 - collected fragment IDs;
 - visited maps, discovered NPCs, read non-vault journals, and collected artifacts;
 - whether the narrative welcome has been seen;
 - narration, SFX, ambience, master-volume, and motion preferences;
 - the previously selected destination.
 
-It does not store excerpt bodies, player coordinates, an active procedural map, modal state, or an expedition clue. On hydration, every historical save shape migrates to v5 and the player safely returns to the ship. After content loads, fragment IDs are resolved against the canonical catalog; unknown IDs are ignored.
+It does not store excerpt bodies, player coordinates, an active procedural map, modal state, or an expedition clue. On hydration, every historical save shape migrates to v6 and the player safely returns to the ship. After content loads, fragment IDs are resolved against the canonical catalog; unknown IDs are ignored.
 
 Vault clues are scoped to the active expedition and vault ID. They are never migrated into durable journal progress, so one discovered combination cannot unlock a future vault.
 

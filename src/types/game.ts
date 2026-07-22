@@ -13,7 +13,7 @@ export interface Position {
 export type Direction = 'up' | 'down' | 'left' | 'right';
 
 /** Interactive object types (register with Interaction system) */
-export type InteractiveType = 'book' | 'npc' | 'journal' | 'transporter' | 'battery' | 'map' | 'vault';
+export type InteractiveType = 'book' | 'npc' | 'journal' | 'transporter' | 'map' | 'vault';
 
 export interface Interactive {
   id: string;

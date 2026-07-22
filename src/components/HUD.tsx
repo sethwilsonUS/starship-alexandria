@@ -24,8 +24,6 @@ export default function HUD() {
   const fragmentCount = useGameStore((s) => s.library.length);
   const booksOnThisMap = useGameStore((s) => s.session.booksOnThisMap);
   const booksRemainingOnThisMap = useGameStore((s) => s.session.booksRemainingOnThisMap);
-  const battery = useGameStore((s) => s.player.flashlightBattery);
-  const spareBatteries = useGameStore((s) => s.player.spareBatteries);
   const exploredTiles = useGameStore((s) => s.session.exploredTiles);
   const explorableTileCount = useGameStore((s) => s.session.explorableTileCount);
   const currentMapId = useGameStore((s) => s.player.currentMapId);
@@ -63,14 +61,6 @@ export default function HUD() {
         </span>
         {!isOnShip && (
           <>
-            <span className="hud__battery" aria-label="Flashlight battery">
-              🔦 {battery}%
-            </span>
-            {spareBatteries > 0 && (
-              <span className="hud__spare-batteries" aria-label="Spare batteries. Press B to use.">
-                🔋 {spareBatteries} · B to use
-              </span>
-            )}
             {explorableTileCount > 0 && (
               <span className="hud__discovery" aria-label="Discovery progress">
                 🗺 {discoveryPercent}% explored

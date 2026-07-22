@@ -10,7 +10,6 @@ export function ensureProceduralFallbackTextures(scene: Phaser.Scene): void {
   if (!scene.textures.exists(ASSET_KEYS.sprites.player)) createPlayer(scene);
   if (!scene.textures.exists(ASSET_KEYS.sprites.npc)) createNpc(scene);
   if (!scene.textures.exists(ASSET_KEYS.sprites.journal)) createJournal(scene);
-  if (!scene.textures.exists(ASSET_KEYS.sprites.battery)) createBattery(scene);
   if (!scene.textures.exists(ASSET_KEYS.sprites.map)) createMapPickup(scene);
   if (!scene.textures.exists(ASSET_KEYS.sprites.vault)) createVault(scene);
   if (!scene.textures.exists(ASSET_KEYS.sprites.bookshelfProp)) createBookshelfProp(scene);
@@ -138,28 +137,6 @@ function createJournal(scene: Phaser.Scene): void {
   journal.fillRect(12, 4, 8, 4); // Rolled top
   journal.generateTexture(ASSET_KEYS.sprites.journal, 32, 32);
   journal.destroy();
-}
-
-function createBattery(scene: Phaser.Scene): void {
-  // Placeholder: battery pickup - bright yellow/green with lightning bolt
-  const battery = scene.add.graphics();
-  // Bright yellow-green body (high visibility)
-  battery.fillStyle(0x7cfc00, 1); // Lawn green - very bright
-  battery.fillRoundedRect(6, 4, 20, 24, 4);
-  // Dark outline for contrast
-  battery.lineStyle(3, 0x1a1a1a, 1);
-  battery.strokeRoundedRect(6, 4, 20, 24, 4);
-  // Positive terminal on top (distinct from journal)
-  battery.fillStyle(0xffff00, 1); // Bright yellow
-  battery.fillRect(12, 1, 8, 5);
-  battery.lineStyle(2, 0x1a1a1a, 1);
-  battery.strokeRect(12, 1, 8, 5);
-  // Lightning bolt symbol in center (makes purpose obvious)
-  battery.fillStyle(0x1a1a1a, 1);
-  battery.fillTriangle(18, 10, 14, 18, 17, 18); // Top part
-  battery.fillTriangle(14, 14, 18, 22, 15, 14); // Bottom part
-  battery.generateTexture(ASSET_KEYS.sprites.battery, 32, 32);
-  battery.destroy();
 }
 
 function createMapPickup(scene: Phaser.Scene): void {

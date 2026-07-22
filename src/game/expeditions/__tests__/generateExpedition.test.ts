@@ -150,13 +150,12 @@ describe('generateExpedition', () => {
     expect(expedition.entities.some((entity) => entity.kind === 'npc')).toBe(false);
     expect(expedition.entities.some((entity) => entity.kind === 'clue')).toBe(true);
     expect(expedition.vault.reward).toEqual({
-      kind: 'supplies',
+      kind: 'lore',
       loreJournalId: null,
-      batteries: 2,
     });
   });
 
-  it('uses the supplies reward after every known excerpt is collected', () => {
+  it('uses the lore reward after every known excerpt is collected', () => {
     const contentCatalog = {
       fragments: [
         { id: 'only-fragment', themeIds: ['gardens' as const] },
@@ -169,9 +168,9 @@ describe('generateExpedition', () => {
       contentCatalog,
     });
 
-    expect(expedition.vault.reward.kind).toBe('supplies');
-    if (expedition.vault.reward.kind === 'supplies') {
-      expect(expedition.vault.reward.batteries).toBe(2);
+    expect(expedition.vault.reward.kind).toBe('lore');
+    if (expedition.vault.reward.kind === 'lore') {
+      expect(expedition.vault.reward.loreJournalId).toBe(EXPEDITION_THEMES.gardens.journalIds[0]);
     }
   });
 
@@ -317,11 +316,8 @@ function assertExpeditionContract(expedition: GeneratedExpedition, themeId: Them
   expect(expedition.entities.filter((entity) => entity.kind === 'map')).toHaveLength(1);
   expect(expedition.entities.filter((entity) => entity.kind === 'clue')).toHaveLength(1);
   expect(expedition.entities.filter((entity) => entity.kind === 'journal')).toHaveLength(1);
-  const batteries = expedition.entities.filter((entity) => entity.kind === 'battery');
-  expect(batteries.length).toBeGreaterThanOrEqual(1);
-  expect(batteries.length).toBeLessThanOrEqual(2);
 
-  const spacedKinds = new Set(['fragment', 'npc', 'journal', 'battery']);
+  const spacedKinds = new Set(['fragment', 'npc', 'journal']);
   const spacingAnchors: Point[] = [expedition.spawn, expedition.extraction];
   for (const entity of expedition.entities) {
     if (!spacedKinds.has(entity.kind)) continue;

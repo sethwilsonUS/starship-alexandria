@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   migratePersistedSave,
   resolveSavedFragments,
-  type SaveV5,
+  type SaveV6,
 } from '../saveMigration';
 
 describe('save migration seam', () => {
-  it('migrates a v4 save to fragment ids and safely recalls the player to the ship', () => {
+  it('migrates a v4 save to v6 fragment ids and safely recalls the player to the ship', () => {
     const migrated = migratePersistedSave(
       {
         player: {
@@ -14,8 +14,6 @@ describe('save migration seam', () => {
           name: 'Explorer',
           position: { x: 17, y: 23 },
           currentMapId: 'earth-expedition-old',
-          flashlightBattery: 41,
-          spareBatteries: 2,
         },
         library: [
           { id: 'fragment-a', bookId: 'book-a', order: 1, label: 'A', text: 'old cached text' },
@@ -36,12 +34,10 @@ describe('save migration seam', () => {
     );
 
     expect(migrated).toMatchObject({
-      schemaVersion: 5,
+      schemaVersion: 6,
       player: {
         id: 'explorer-1',
         name: 'Explorer',
-        flashlightBattery: 41,
-        spareBatteries: 2,
       },
       collectedFragmentIds: ['fragment-a', 'fragment-b'],
       hasSeenWelcome: true,
@@ -61,14 +57,12 @@ describe('save migration seam', () => {
     expect(migrated.player).not.toHaveProperty('currentMapId');
   });
 
-  it('normalizes a v5 save without discarding valid preferences or progress', () => {
-    const input: SaveV5 = {
-      schemaVersion: 5,
+  it('normalizes a v6 save without discarding valid preferences or progress', () => {
+    const input: SaveV6 = {
+      schemaVersion: 6,
       player: {
         id: 'explorer-2',
         name: 'Reader',
-        flashlightBattery: 88,
-        spareBatteries: 3,
       },
       collectedFragmentIds: ['known', 'missing', 'known'],
       exploration: {
@@ -88,9 +82,43 @@ describe('save migration seam', () => {
       previousThemeId: 'cathedral',
     };
 
-    expect(migratePersistedSave(input, 5)).toEqual({
+    expect(migratePersistedSave(input, 6)).toEqual({
       ...input,
       collectedFragmentIds: ['known', 'missing'],
+    });
+  });
+
+  it('upgrades a compact v5 save to v6 without losing identity or progress', () => {
+    const migrated = migratePersistedSave({
+      schemaVersion: 5,
+      player: { id: 'v5-explorer', name: 'Archivist' },
+      collectedFragmentIds: ['known'],
+      exploration: {
+        visitedMaps: ['gardens'],
+        discoveredNPCs: ['noor'],
+        readJournals: ['journal-garden-log'],
+        collectedArtifacts: ['seed-vault'],
+      },
+      hasSeenWelcome: true,
+      settings: {
+        narrationEnabled: false,
+        sfxEnabled: true,
+        ambienceEnabled: false,
+        masterVolume: 0.5,
+        motionPreference: 'reduce',
+      },
+      previousThemeId: 'gardens',
+    }, 5);
+
+    expect(migrated).toMatchObject({
+      schemaVersion: 6,
+      player: { id: 'v5-explorer', name: 'Archivist' },
+      collectedFragmentIds: ['known'],
+      exploration: {
+        visitedMaps: ['gardens'],
+        collectedArtifacts: ['seed-vault'],
+      },
+      previousThemeId: 'gardens',
     });
   });
 

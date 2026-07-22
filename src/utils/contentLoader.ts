@@ -116,7 +116,6 @@ export interface VaultYaml {
   exhaustedReward: {
     journalTitle: string;
     journalText: string;
-    batteries: number;
   };
 }
 

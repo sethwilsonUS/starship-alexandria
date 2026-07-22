@@ -564,15 +564,7 @@ input:focus-visible,
   opacity: 0.9;
 }
 
-.hud__battery {
-  opacity: 0.95;
-}
-
 .hud__discovery {
-  opacity: 0.9;
-}
-
-.hud__spare-batteries {
   opacity: 0.9;
 }
 

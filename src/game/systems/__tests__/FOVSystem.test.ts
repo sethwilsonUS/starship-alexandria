@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { computeVisibleTiles } from '../FOVSystem';
 import { TILE } from '@/data/tilesets';
+import { FOV_RADIUS } from '@/config/gameConfig';
 
 /**
  * Helper: build a walls grid of given size, defaulting to all EMPTY (open).
@@ -16,6 +17,20 @@ function makeOpenGrid(width: number, height: number): number[][] {
 
 describe('computeVisibleTiles', () => {
   const SIZE = 15;
+
+  it('uses the fixed eight-tile gameplay radius by default', () => {
+    const size = 21;
+    const walls = makeOpenGrid(size, size);
+    const visible = computeVisibleTiles(10, 10, {
+      walls,
+      mapWidth: size,
+      mapHeight: size,
+    });
+
+    expect(FOV_RADIUS).toBe(8);
+    expect(visible.has('18,10')).toBe(true);
+    expect(visible.has('19,10')).toBe(false);
+  });
 
   it('always includes the origin tile', () => {
     const walls = makeOpenGrid(SIZE, SIZE);

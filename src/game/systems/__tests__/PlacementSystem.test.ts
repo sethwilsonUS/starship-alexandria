@@ -16,15 +16,12 @@ describe('PlacementSystem helpers', () => {
     summarizeRoomContent(summaries, 'Reading Room', 'book');
     summarizeRoomContent(summaries, 'Reading Room', 'book');
     summarizeRoomContent(summaries, 'Reading Room', 'journal');
-    summarizeRoomContent(summaries, 'Reading Room', 'battery');
-    summarizeRoomContent(summaries, 'Reading Room', 'battery');
     summarizeRoomContent(summaries, 'Reading Room', 'map');
 
     expect(summaries.get('Reading Room')).toEqual({
       books: 2,
       journals: 1,
       npcs: [],
-      batteries: 2,
       maps: 1,
     });
   });
@@ -39,14 +36,12 @@ describe('PlacementSystem helpers', () => {
       books: 1,
       journals: 0,
       npcs: [],
-      batteries: 0,
       maps: 0,
     });
     expect(summaries.get('Map Room')).toEqual({
       books: 0,
       journals: 0,
       npcs: [],
-      batteries: 0,
       maps: 1,
     });
   });
@@ -61,7 +56,6 @@ describe('PlacementSystem helpers', () => {
       books: 0,
       journals: 0,
       npcs: ['Martha', 'Cora'],
-      batteries: 0,
       maps: 0,
     });
   });
