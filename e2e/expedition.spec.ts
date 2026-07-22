@@ -12,6 +12,11 @@ import {
 } from './support/game';
 
 test('@cross-browser completes a keyboard-only expedition using independently computed BFS paths', async ({ page }) => {
+  // This journey waits for every real 150 ms movement tween. GitHub's slower
+  // Chromium runners have historically needed about 106 seconds, so keep its
+  // headroom local to this intentionally long test instead of relaxing the suite.
+  test.setTimeout(180_000);
+
   await launchToShip(page, { seed: 'keyboard-full-loop' });
   const picker = await openMissionPicker(page);
   await chooseTheme(page, picker, 'scriptorium');

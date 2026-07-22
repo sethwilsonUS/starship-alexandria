@@ -43,7 +43,9 @@ export default defineConfig({
     contextOptions: { reducedMotion: 'reduce' },
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    // A first-retry video preserves CI diagnostics without recording every
+    // attempt of the multi-minute keyboard expedition into enormous artifacts.
+    video: isCI ? 'on-first-retry' : 'retain-on-failure',
     extraHTTPHeaders: protectionHeaders,
   },
   projects: [
