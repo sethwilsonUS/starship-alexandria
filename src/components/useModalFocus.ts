@@ -14,6 +14,10 @@ const FOCUSABLE = [
 
 type ModalTabTarget = 'dialog' | 'first' | 'last' | null;
 
+export function shouldApplyModalAutofocus(focusIsInsideDialog: boolean): boolean {
+  return !focusIsInsideDialog;
+}
+
 export function resolveModalTabTarget({
   focusableCount,
   activeIndex,
@@ -44,7 +48,13 @@ export function useModalFocus(
 
     const focusables = () => Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE));
     const preferred = dialog.querySelector<HTMLElement>('[data-autofocus]') ?? focusables()[0] ?? dialog;
-    const frame = requestAnimationFrame(() => preferred.focus());
+    const frame = requestAnimationFrame(() => {
+      // A fast keyboard or automation action can move focus after the dialog
+      // opens but before this frame. Preserve any valid focus already inside.
+      if (shouldApplyModalAutofocus(dialog.contains(document.activeElement))) {
+        preferred.focus();
+      }
+    });
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.repeat) {
