@@ -9,12 +9,14 @@ import {
   PINNED_FFMPEG_VERSION,
   validateAudioFormatGroups,
 } from './lib/asset-validation.mjs';
+import { getHowToPlayVoiceLines } from './lib/how-to-play-voice-lines.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const PUBLIC_ROOT = path.join(PROJECT_ROOT, 'public');
 const MANIFEST_PATH = path.join(PUBLIC_ROOT, 'game-assets', 'manifest.json');
 const CONCEPT_MANIFEST_PATH = path.join(PUBLIC_ROOT, 'images', 'manifest.json');
+const VOICE_MANIFEST_PATH = path.join(PUBLIC_ROOT, 'audio', 'voices', 'manifest.json');
 const RUNTIME_EXTENSIONS = new Set(['.png', '.ogg', '.mp3']);
 const errors = [];
 
@@ -253,13 +255,68 @@ async function main() {
     fail('/images/og.png must be a 1200x630 social-card derived from the README key art');
   }
 
+  const voiceManifest = JSON.parse(await fs.readFile(VOICE_MANIFEST_PATH, 'utf8'));
+  if (voiceManifest.version !== 1 || !Array.isArray(voiceManifest.clips)) {
+    fail('Voice manifest must use version 1 and contain a clips array');
+  } else {
+    const seenVoiceIds = new Set();
+    const voicePaths = new Set();
+    for (const [index, clip] of voiceManifest.clips.entries()) {
+      if (!clip || typeof clip !== 'object') {
+        fail(`Voice manifest clip ${index} must be an object`);
+        continue;
+      }
+      if (!clip.lineId || seenVoiceIds.has(clip.lineId)) {
+        fail(`Voice manifest clip ${index} has a missing or duplicate lineId`);
+      }
+      seenVoiceIds.add(clip.lineId);
+      if (!clip.path?.startsWith('/audio/voices/') || path.extname(clip.path) !== '.mp3') {
+        fail(`${clip.lineId ?? `Voice clip ${index}`}: path must be an MP3 under /audio/voices/`);
+        continue;
+      }
+      if (!clip.textHash || !clip.model || !clip.voice) {
+        fail(`${clip.lineId}: textHash, model, and voice are required`);
+      }
+      voicePaths.add(clip.path);
+      const resolved = path.resolve(PUBLIC_ROOT, clip.path.replace(/^\//, ''));
+      if (!resolved.startsWith(`${PUBLIC_ROOT}${path.sep}`)) {
+        fail(`${clip.path}: voice path escapes public/`);
+        continue;
+      }
+      try {
+        const buffer = await fs.readFile(resolved);
+        if (buffer.byteLength === 0 || !isMp3(buffer)) fail(`${clip.path}: invalid or empty MP3`);
+      } catch {
+        fail(`${clip.path}: missing voice clip`);
+      }
+    }
+
+    const howToPlayContent = JSON.parse(
+      await fs.readFile(path.join(PUBLIC_ROOT, 'content', 'how-to-play.json'), 'utf8')
+    );
+    const [expectedGuide] = getHowToPlayVoiceLines(howToPlayContent);
+    const guideClip = voiceManifest.clips.find((clip) => clip.lineId === expectedGuide.lineId);
+    if (!guideClip) {
+      fail(`Voice manifest is missing ${expectedGuide.lineId}`);
+    } else if (guideClip.textHash !== expectedGuide.textHash) {
+      fail(`${expectedGuide.lineId}: recorded narration is stale; regenerate it`);
+    }
+
+    const voiceFiles = (await walk(path.dirname(VOICE_MANIFEST_PATH)))
+      .filter((filePath) => path.extname(filePath).toLowerCase() === '.mp3')
+      .map((filePath) => `/${path.relative(PUBLIC_ROOT, filePath).split(path.sep).join('/')}`);
+    for (const voiceFile of voiceFiles) {
+      if (!voicePaths.has(voiceFile)) fail(`${voiceFile}: voice file is missing from manifest`);
+    }
+  }
+
   if (errors.length > 0) {
     console.error(`Asset validation failed with ${errors.length} error${errors.length === 1 ? '' : 's'}:`);
     for (const error of errors) console.error(`- ${error}`);
     process.exitCode = 1;
     return;
   }
-  console.log(`Validated ${manifest.assets.length} assets, ${audioFormats.pairCount} audio pairs, ${themeNames.size} theme atlases, and ${conceptOutputs.length} concept-art outputs.`);
+  console.log(`Validated ${manifest.assets.length} assets, ${audioFormats.pairCount} audio pairs, ${themeNames.size} theme atlases, ${conceptOutputs.length} concept-art outputs, and the recorded narration manifest.`);
 }
 
 main().catch((error) => {

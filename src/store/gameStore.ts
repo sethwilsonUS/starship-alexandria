@@ -12,6 +12,7 @@ import type {
   DialogueLine,
   SettingsState,
   SessionVaultInfo,
+  UtilityOverlay,
 } from '@/types/store';
 import type { BookFragment } from '@/types/books';
 import type { Position } from '@/types/game';
@@ -80,6 +81,7 @@ const createInitialSession = () => ({
   launchGateOpen: true,
   audioUnlocked: false,
   contentError: null as string | null,
+  activeUtility: null as UtilityOverlay | null,
 });
 
 type GameStore = GameState;
@@ -330,11 +332,6 @@ const createActions = (
       },
     })),
 
-  setHasSeenWelcome: () =>
-    set(() => ({
-      hasSeenWelcome: true,
-    })),
-
   setContentReady: () =>
     set((s) => {
       let library = s.library;
@@ -354,7 +351,8 @@ const createActions = (
     }),
 
   resetGame: () => {
-    // Clear localStorage and reset all state
+    const settings = get().settings;
+    // Reset progress and onboarding while preserving accessibility preferences.
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem(STORAGE_KEY);
     }
@@ -363,9 +361,9 @@ const createActions = (
       library: [],
       savedFragmentIds: [],
       exploration: initialExploration,
-      hasSeenWelcome: false,
+      hasSeenHowToPlay: false,
       previousThemeId: null,
-      settings: initialSettings,
+      settings,
       session: createInitialSession(),
     }));
   },
@@ -471,6 +469,7 @@ const createActions = (
   acceptLaunchGate: () => {
     setAudioUnlockedGlobal(true);
     set((s) => ({
+      hasSeenHowToPlay: true,
       session: { ...s.session, launchGateOpen: false, audioUnlocked: true },
     }));
   },
@@ -481,6 +480,31 @@ const createActions = (
       session: { ...s.session, launchGateOpen: true, audioUnlocked: false },
     }));
   },
+
+  openHowToPlay: () =>
+    set((s) => {
+      const canOpen = !s.session.launchGateOpen
+        && s.session.activeUtility === null
+        && (s.session.gamePhase === 'ship' || s.session.gamePhase === 'exploring');
+      return canOpen
+        ? { session: { ...s.session, activeUtility: 'how-to' } }
+        : {};
+    }),
+
+  openSettings: () =>
+    set((s) => {
+      const canOpen = !s.session.launchGateOpen
+        && s.session.activeUtility === null
+        && (s.session.gamePhase === 'ship' || s.session.gamePhase === 'exploring');
+      return canOpen
+        ? { session: { ...s.session, activeUtility: 'settings' } }
+        : {};
+    }),
+
+  closeUtility: () =>
+    set((s) => ({
+      session: { ...s.session, activeUtility: null },
+    })),
 
   setContentError: (message: string | null) =>
     set((s) => ({
@@ -559,7 +583,7 @@ export const useGameStore = create<GameStore>()(
       library: [],
       savedFragmentIds: [],
       exploration: initialExploration,
-      hasSeenWelcome: false,
+      hasSeenHowToPlay: false,
       previousThemeId: null,
       settings: initialSettings,
       session: createInitialSession(),
@@ -569,18 +593,18 @@ export const useGameStore = create<GameStore>()(
       name: STORAGE_KEY,
       storage: createJSONStorage(() => localStorage),
       partialize: (state): PersistedState => ({
-        schemaVersion: 6,
+        schemaVersion: 7,
         player: {
           id: state.player.id,
           name: state.player.name,
         },
         collectedFragmentIds: state.savedFragmentIds,
         exploration: state.exploration,
-        hasSeenWelcome: state.hasSeenWelcome,
+        hasSeenHowToPlay: state.hasSeenHowToPlay,
         settings: state.settings,
         previousThemeId: state.previousThemeId,
       }),
-      version: 6,
+      version: 7,
       onRehydrateStorage: () => (state) => {
         if (state?.settings?.narrationEnabled !== undefined) {
           setTTSEnabledGlobal(state.settings.narrationEnabled);
@@ -596,7 +620,7 @@ export const useGameStore = create<GameStore>()(
       },
       migrate: (persisted: unknown, version: number) => migratePersistedSave(persisted, version),
       merge: (persisted, current) => {
-        const save = migratePersistedSave(persisted, 6);
+        const save = migratePersistedSave(persisted, 7);
         return {
           ...current,
           player: {
@@ -608,7 +632,7 @@ export const useGameStore = create<GameStore>()(
           library: [],
           savedFragmentIds: save.collectedFragmentIds,
           exploration: save.exploration,
-          hasSeenWelcome: save.hasSeenWelcome,
+          hasSeenHowToPlay: save.hasSeenHowToPlay,
           previousThemeId: save.previousThemeId,
           settings: save.settings,
           session: createInitialSession(),

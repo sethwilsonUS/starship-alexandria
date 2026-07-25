@@ -10,43 +10,120 @@ import {
   readSnapshot,
 } from './support/game';
 
-test('@cross-browser @smoke launch gate honors preferences and returns focus to the game', async ({ page }) => {
+test('@cross-browser @smoke onboarding and persistent utilities remain accessible across reload and New Game', async ({ page }) => {
+  const guideVoiceRequests: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/audio/voices/how-to-play/')) {
+      guideVoiceRequests.push(request.url());
+    }
+  });
   await page.goto('/?seed=launch-accessibility');
-  const gate = page.getByRole('dialog', { name: /library at the end of the world/i });
-  await expect(gate).toBeVisible();
-  await expect(gate.getByRole('status')).toContainText('Archive synchronized');
-  await expectAxeClean(page, 'launch gate');
+  const guide = page.getByRole('dialog', { name: 'How to Play' });
+  await expect(guide).toBeVisible();
+  await expect(guide.getByRole('heading', { name: 'How to Play', level: 1 })).toBeFocused();
+  await expect(guide.getByRole('heading', { name: 'Your recovery loop' })).toBeVisible();
+  await expect(guide).toContainText('There is no combat, death, or timer');
+  await expect(guide.locator('.launch-gate__status')).toContainText('Archive synchronized');
+  await expect(guide.getByRole('button', { name: 'Play narrated guide' })).toBeVisible();
+  expect(guideVoiceRequests).toEqual([]);
+  await expectAxeClean(page, 'first-run How to Play guide');
 
-  const reduceMotion = gate.getByRole('radio', { name: 'Reduce motion' });
-  await reduceMotion.focus();
-  await page.keyboard.press('Space');
-  await expect(reduceMotion).toBeChecked();
+  await page.keyboard.press('Escape');
+  await expect(guide).toBeVisible();
 
-  const narration = gate.getByRole('checkbox', { name: /Narration/ });
-  await narration.focus();
-  await page.keyboard.press('Space');
-  await expect(narration).not.toBeChecked();
+  const playGuide = guide.getByRole('button', { name: 'Play narrated guide' });
+  await playGuide.focus();
+  await page.keyboard.press('Enter');
+  await expect(guide.getByRole('button', { name: 'Stop narrated guide' })).toBeVisible();
+  await expect.poll(() => guideVoiceRequests.length).toBeGreaterThan(0);
+  await guide.getByRole('button', { name: 'Stop narrated guide' }).click();
+  await expect(guide.getByRole('button', { name: 'Play narrated guide' })).toBeVisible();
 
-  const begin = gate.getByRole('button', { name: /Begin the recovery mission/ });
+  const begin = guide.getByRole('button', { name: 'Begin recovery mission' });
   await expect(begin).toBeEnabled();
   await begin.focus();
   await page.keyboard.press('Enter');
 
-  const welcome = page.getByRole('dialog', { name: 'Dialogue' });
-  await expect(welcome).toBeVisible();
-  await expectAxeClean(page, 'welcome dialogue');
-  await welcome.getByRole('button', { name: 'Close dialogue' }).click();
+  await expect(guide).toBeHidden();
+  await expect(page.getByRole('dialog', { name: 'Dialogue' })).toHaveCount(0);
   await expect(page.locator('#game-controls')).toBeFocused();
   await expect(page.getByRole('region', { name: 'Library Collection' })).toBeVisible();
-  await expectAxeClean(page, 'ship library');
+  await expectAxeClean(page, 'ship library with utility controls');
+
+  const settingsButton = page.getByRole('button', { name: 'Settings' });
+  await settingsButton.focus();
+  await page.keyboard.press('Enter');
+  const settings = page.getByRole('dialog', { name: 'Settings' });
+  await expect(settings).toBeVisible();
+  await expect(settings.getByRole('heading', { name: 'Settings' })).toBeFocused();
+  await expectAxeClean(page, 'Settings dialog');
+
+  const reduceMotion = settings.getByRole('radio', { name: 'Reduce motion' });
+  await reduceMotion.focus();
+  await page.keyboard.press('Space');
+  await expect(reduceMotion).toBeChecked();
+
+  const narration = settings.getByRole('checkbox', { name: /Narration/ });
+  await narration.focus();
+  await page.keyboard.press('Space');
+  await expect(narration).not.toBeChecked();
+
+  const volume = settings.getByRole('slider', { name: 'Master volume' });
+  await volume.fill('0.35');
+  await expect(settings.getByText('35%')).toBeVisible();
+
+  const done = settings.getByRole('button', { name: 'Done' });
+  await done.focus();
+  await page.keyboard.press('Enter');
+  await expect(settings).toBeHidden();
+  await expect(settingsButton).toBeFocused();
+
+  await page.locator('#game-controls').focus();
+  await page.keyboard.press('Shift+/');
+  const refresher = page.getByRole('dialog', { name: 'How to Play' });
+  await expect(refresher).toBeVisible();
+  await expect(refresher.getByRole('heading', { name: 'How to Play', level: 2 })).toBeFocused();
+  await expect(refresher).toContainText('Prerecorded guide narration is off in Settings');
+  await expect(refresher.getByRole('button', { name: /narrated guide/ })).toHaveCount(0);
+  await expectAxeClean(page, 'How to Play refresher');
+  await page.keyboard.press('Escape');
+  await expect(refresher).toBeHidden();
+  await expect(page.locator('#game-controls')).toBeFocused();
+
+  const picker = await openMissionPicker(page);
+  await page.keyboard.press('Shift+/');
+  await expect(picker).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'How to Play' })).toHaveCount(0);
+  await page.keyboard.press('Escape');
 
   await page.reload();
   const resumeGate = page.getByRole('dialog', { name: /Welcome back, Archivist/ });
   await expect(resumeGate).toBeVisible();
-  await resumeGate.locator('summary').click();
-  await expect(resumeGate.getByRole('radio', { name: 'Reduce motion' })).toBeChecked();
-  await expect(resumeGate.getByRole('checkbox', { name: /Narration/ })).not.toBeChecked();
+  await expect(resumeGate.getByRole('checkbox')).toHaveCount(0);
+  await expect(resumeGate.getByRole('radio')).toHaveCount(0);
   await expectAxeClean(page, 'returning-player launch gate');
+
+  const resume = resumeGate.getByRole('button', { name: 'Resume aboard Alexandria' });
+  await resume.focus();
+  await page.keyboard.press('Enter');
+
+  await page.getByRole('button', { name: 'Settings' }).click();
+  const persistedSettings = page.getByRole('dialog', { name: 'Settings' });
+  await expect(persistedSettings.getByRole('radio', { name: 'Reduce motion' })).toBeChecked();
+  await expect(persistedSettings.getByRole('checkbox', { name: /Narration/ })).not.toBeChecked();
+  await expect(persistedSettings.getByRole('slider', { name: 'Master volume' })).toHaveValue('0.35');
+  await persistedSettings.getByRole('button', { name: 'Done' }).click();
+
+  page.once('dialog', (confirmation) => confirmation.accept());
+  await page.getByRole('button', { name: 'Start a new game from the beginning' }).click();
+  const resetGuide = page.getByRole('dialog', { name: 'How to Play' });
+  await expect(resetGuide).toBeVisible();
+  await resetGuide.getByRole('button', { name: 'Begin recovery mission' }).click();
+  await page.getByRole('button', { name: 'Settings' }).click();
+  const resetSettings = page.getByRole('dialog', { name: 'Settings' });
+  await expect(resetSettings.getByRole('radio', { name: 'Reduce motion' })).toBeChecked();
+  await expect(resetSettings.getByRole('checkbox', { name: /Narration/ })).not.toBeChecked();
+  await expect(resetSettings.getByRole('slider', { name: 'Master volume' })).toHaveValue('0.35');
 });
 
 test('@cross-browser @smoke reaches a themed surface without relying on the E2E bridge', async ({ page }) => {
@@ -139,15 +216,15 @@ test('content load failure presents a keyboard-operable retry and recovers', asy
   });
 
   await page.goto('/?seed=content-retry');
-  const gate = page.getByRole('dialog', { name: /library at the end of the world/i });
+  const gate = page.getByRole('dialog', { name: 'How to Play' });
   await expect(gate.getByRole('alert')).toContainText('Archive loading failed');
   const retry = gate.getByRole('button', { name: 'Retry synchronization' });
   await retry.focus();
   await page.keyboard.press('Enter');
 
-  const recoveredGate = page.getByRole('dialog', { name: /library at the end of the world/i });
+  const recoveredGate = page.getByRole('dialog', { name: 'How to Play' });
   await expect(recoveredGate.getByRole('status')).toContainText('Archive synchronized');
-  await expect(recoveredGate.getByRole('button', { name: /Begin the recovery mission/ })).toBeEnabled();
+  await expect(recoveredGate.getByRole('button', { name: /Begin recovery mission/ })).toBeEnabled();
 
   const expectedFailure = /Failed to load content|Failed to load resource.*503/i;
   for (let index = browserErrors.length - 1; index >= 0; index -= 1) {

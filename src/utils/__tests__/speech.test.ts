@@ -140,15 +140,18 @@ describe('speak', () => {
     const synth = installBrowserSpeech();
     installManifestFetch();
     const { instances, play } = installAudio();
+    const onStart = vi.fn();
 
     speak('Welcome aboard the Starship Alexandria.', {
       voiceLineId: 'opening.welcome.01',
+      onStart,
     });
     await flushPromises();
 
     expect(instances[0]?.src).toBe('/audio/voices/opening/opening.welcome.01.mp3');
     expect(play).toHaveBeenCalledTimes(1);
     expect(synth.speak).not.toHaveBeenCalled();
+    expect(onStart).toHaveBeenCalledTimes(1);
   });
 
   it('does not fall back to browser TTS for missing local clips by default', async () => {
@@ -156,12 +159,15 @@ describe('speak', () => {
     installManifestFetch({ ...voiceManifest, clips: [] });
     installAudio();
 
+    const onError = vi.fn();
     speak('Welcome aboard the Starship Alexandria.', {
       voiceLineId: 'opening.welcome.01',
+      onError,
     });
     await flushPromises();
 
     expect(synth.speak).not.toHaveBeenCalled();
+    expect(onError).toHaveBeenCalledTimes(1);
   });
 
   it('falls back to browser TTS for missing clips when explicitly allowed', async () => {

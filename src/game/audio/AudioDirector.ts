@@ -41,6 +41,11 @@ const activeAmbienceSounds = new Set<VolumeSound>();
 let requestedAmbience: { scene: Phaser.Scene; key: string } | null = null;
 
 function currentPolicy() {
+  // E2E exercises audio policy and asset requests without sending output to
+  // the workstation's speakers. Production bundles inline this as false.
+  if (process.env.NEXT_PUBLIC_E2E === '1') {
+    return { sfxVolume: 0, ambienceVolume: 0 };
+  }
   const state = useGameStore.getState();
   return resolveAudioPolicy({
     audioUnlocked: state.session.audioUnlocked,

@@ -18,7 +18,7 @@ flowchart LR
   E <--> R["React overlays"]
   R <--> Z["Zustand store"]
   PH <--> Z
-  Z --> V6["localStorage save v6"]
+  Z --> V7["localStorage save v7"]
 ```
 
 The arrows describe data flow, not import permission. In particular, the generator does not import Phaser, React, or Zustand.
@@ -29,7 +29,7 @@ The arrows describe data flow, not import permission. In particular, the generat
 
 React owns the parts of the experience that are documents rather than places:
 
-- the launch and preference gate;
+- first-run How to Play, the returning-player audio gate, and persistent settings;
 - destination selection;
 - dialogue choices and explicit close controls;
 - the library and reading view;
@@ -127,18 +127,18 @@ The semantic adapter in `semanticTilemap.ts` converts this output to the compati
 
 See [Content authoring](CONTENT_AUTHORING.md) for exact schemas and [Theme authoring](THEME_AUTHORING.md) for registry wiring.
 
-## Save v6
+## Save v7
 
-The Zustand persistence key is `starship-alexandria-save`; schema version 6 stores only:
+The Zustand persistence key is `starship-alexandria-save`; schema version 7 stores only:
 
 - player identity;
 - collected fragment IDs;
 - visited maps, discovered NPCs, read non-vault journals, and collected artifacts;
-- whether the narrative welcome has been seen;
+- whether How to Play onboarding has been completed;
 - narration, SFX, ambience, master-volume, and motion preferences;
 - the previously selected destination.
 
-It does not store excerpt bodies, player coordinates, an active procedural map, modal state, or an expedition clue. On hydration, every historical save shape migrates to v6 and the player safely returns to the ship. After content loads, fragment IDs are resolved against the canonical catalog; unknown IDs are ignored.
+It does not store excerpt bodies, player coordinates, an active procedural map, modal state, or an expedition clue. On hydration, every historical save shape migrates to v7 and the player safely returns to the ship. The v6 welcome flag maps to the onboarding flag so established players are not forced through the new guide. After content loads, fragment IDs are resolved against the canonical catalog; unknown IDs are ignored.
 
 Vault clues are scoped to the active expedition and vault ID. They are never migrated into durable journal progress, so one discovered combination cannot unlock a future vault.
 
@@ -146,24 +146,23 @@ This refresh intentionally has no mid-expedition resume.
 
 ## Audio and motion policy
 
-Every page load begins behind an HTML launch gate. Content and core assets must be ready before its Begin button is enabled. The click supplies the fresh browser gesture needed to unlock audio; neither a local clip, browser speech synthesis, nor Phaser audio may play before it.
+Every page load begins behind an HTML launch gate. New players receive How to Play; returning players receive a compact Resume gate. Content and core assets must be ready before its action is enabled. Begin/Resume supplies the fresh browser gesture needed to unlock game audio. The first-run guide's explicit Play narrated guide control may unlock only its prerecorded briefing; Phaser audio remains gated until Begin.
 
 Narration and game sound are coordinated but distinct:
 
 - Phaser owns local SFX, footsteps, and ambience;
-- browser narration owns recorded opening lines and optional speech synthesis;
+- the React narration layer owns committed voice clips plus optional browser speech synthesis for runtime-generated text;
 - settings and the global audio lock gate both systems;
 - footsteps occur only after a successful move and use the destination cell's semantic surface;
 - hidden pages pause ambience;
 - reduced-motion behavior is shared by CSS and Phaser through `system | reduce | full`.
-
-Recorded opening clips remain local and list model, voice, source-text hash, and path in `public/audio/voices/manifest.json`. The UI visibly identifies them as AI-generated.
 
 ## Accessibility boundary
 
 Canvas pixels are never the sole carrier of essential information. The HTML layer supplies:
 
 - a focusable game-controls region and centralized keyboard routing;
+- a single scrolling How to Play document and persistent, labeled utility controls;
 - modal focus trap and return, inert backgrounds, and explicit Close buttons;
 - ARIA live updates for movement, discoveries, and status;
 - semantic tabs and tab panels in the ship library;
@@ -179,8 +178,8 @@ Automated accessibility checks are useful but incomplete. The browser suite runs
 | Vitest unit tests | pure movement/interaction results, RNG behavior, migrations, loaders, audio gate, input routing |
 | Generator fuzz tests | 250 seeds per theme: dimensions, topology, reachability, collisions, placement counts, references, clue/vault access, retry bounds |
 | Integration tests | store/content boundaries, strict subscription cleanup, content/assets validation |
-| Playwright | launch/settings, all seeded themes, keyboard movement/interactions, persistence, focus, reduced motion, textual map, and failure/retry paths |
-| Visual snapshots | stable ship, picker, destination, map, and reader states at desktop sizes and HTML overlays at 200% zoom |
+| Playwright | onboarding/resume, persistent settings/help, all seeded themes, keyboard movement/interactions, persistence, focus, reduced motion, textual map, and failure/retry paths |
+| Visual snapshots | stable guide, settings, ship, picker, destination, map, and reader states at desktop sizes and HTML overlays at 200% zoom |
 
 Playwright derives routes through the semantic map with BFS and sends real keyboard input; it does not warp the player or depend on fixed sleeps. Development E2E builds may expose a read-only `window.__STARSHIP_E2E__` snapshot. The adapter must be absent unless the E2E build flag is enabled and must never ship in production.
 
@@ -188,14 +187,14 @@ Playwright derives routes through the semantic map with BFS and sends real keybo
 
 Automated checks cannot judge whether the canvas/HTML handoff forms a coherent screen-reader experience. Before a showcase release, test a production build in Safari with macOS VoiceOver, using a temporary browser profile or known fixture save:
 
-1. Traverse the launch gate without a pointer. Confirm its premise, loading status, audio settings, motion radio group, and disabled/enabled Begin state are announced in a sensible order.
-2. Turn in-game narration off for one pass so VoiceOver and browser speech do not talk over one another. Begin, confirm focus moves to the game-controls region, and request the `I` status summary.
+1. Traverse the first-run How to Play guide without a pointer. Confirm its heading structure, reading order, loading status, non-dismissible Escape behavior, and disabled/enabled Begin state are announced sensibly. Play and stop its prerecorded narration; verify the visible status changes and no browser speech voice replaces the committed clip.
+2. Begin, confirm focus moves to the game-controls region, open Settings, and turn narration off for one pass so VoiceOver and browser speech do not talk over one another. Close Settings, confirm focus returns to its HUD button, and request the `I` status summary.
 3. From the ship, open the destination picker with the keyboard. Read all four destination cards, choose one, and confirm the transition is announced once.
 4. Move, encounter a blocked tile, collect the area map, speak to an NPC, read a journal and excerpt, discover the expedition clue, open its vault, and return to extraction without using a pointer.
 5. Open the textual map with `M`. Confirm current zone, discovered zones, approximate directions/distances, known contents, and the return route are understandable without the canvas.
-6. At each dialogue, map, reader, mission picker, and settings view, verify focus enters the overlay, stays inside it, and returns to the invoking control/region after Close or `Escape`.
-7. Repeat the launch and one full interaction with narration on; confirm AI-voice disclosure is present and no audio begins before Begin.
-8. Repeat the major overlays at 200% browser zoom and with Reduce Motion enabled. Check that text is not clipped, focus remains visible, and motion-free state changes carry the same information.
+6. Open How to Play with both its HUD button and `?`. Play and stop the same prerecorded guide narration. At each guide, dialogue, map, reader, mission picker, and settings view, verify focus enters the overlay, stays inside it, and returns to the invoking control/region after Close or `Escape`. Confirm closing the guide stops narration and `?` does not stack a guide over another overlay.
+7. Reload into the compact Resume gate and repeat one full interaction with narration on; confirm no audio begins before Resume.
+8. Repeat the guide, settings, and other major overlays at 200% browser zoom and with Reduce Motion enabled. Check that text is not clipped, focus remains visible, and motion-free state changes carry the same information.
 
 Record the date, macOS/Safari versions, input commands used, save/seed, failures, and any intentionally deferred issue in the release notes. A pass is incomplete if essential state is available only through canvas position, color, animation, or sound.
 

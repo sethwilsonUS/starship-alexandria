@@ -496,20 +496,6 @@ function validateGameloop() {
     voiceLineIds.set(line.voiceLineId, location);
   }
 
-  // Validate welcome
-  if (!data.welcome) {
-    addError('gameloop.yaml', 'Missing "welcome" section');
-  } else if (!data.welcome.lines || !Array.isArray(data.welcome.lines)) {
-    addError('gameloop.yaml', 'welcome: Missing or invalid "lines" array');
-  } else {
-    data.welcome.lines.forEach((line, i) => {
-      if (!line.text) {
-        addError('gameloop.yaml', `welcome.lines[${i}]: Missing required field "text"`);
-      }
-      validateVoiceLineId(line, `welcome.lines[${i}]`);
-    });
-  }
-
   // Validate victory
   if (!data.victory) {
     addError('gameloop.yaml', 'Missing "victory" section');

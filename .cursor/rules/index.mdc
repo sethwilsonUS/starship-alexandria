@@ -30,7 +30,7 @@ Phaser owns rendering, visibility, collision presentation, spatial movement effe
 
 ### Zustand
 
-Zustand is the source of truth for progression, preferences, and modal/game-phase state. Mutate it only through actions. Save schema v6 persists fragment IDs and compact progress/preferences, never excerpt bodies, coordinates, an active map, or expedition clues. Reloads safely recall the player to the ship.
+Zustand is the source of truth for progression, preferences, and modal/game-phase state. Mutate it only through actions. Save schema v7 persists fragment IDs and compact progress/preferences, never excerpt bodies, coordinates, an active map, or expedition clues. Reloads safely recall the player to the ship.
 
 ### Typed bridge and input
 
@@ -83,7 +83,7 @@ Walkable pickups use on-tile interaction. NPCs and vaults intentionally block th
 - Preserve the stated Project Gutenberg edition wording and punctuation, strip Gutenberg boilerplate, and retain source/territory metadata.
 - Keep runtime media local and provenance-complete. Asset refresh recipes pin source hashes, transformations, licenses, and encoding toolchain requirements.
 - Runtime audio requires exactly one OGG and one MP3 per logical sound.
-- Keep the visible AI disclosure and model/voice/text-hash manifest for generated opening narration.
+- Keep the visible AI disclosure and model/voice/text-hash manifest for generated narration.
 
 ## Verification
 

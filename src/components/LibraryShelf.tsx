@@ -338,9 +338,6 @@ export default function LibraryShelf() {
               <p className="library-shelf__beam-hint">
                 Press Space or Enter to beam down
               </p>
-              <p className="library-shelf__voice-disclosure">
-                Opening narration uses AI-generated voice clips.
-              </p>
               <button
                 className="library-shelf__new-game-btn"
                 onClick={handleNewGame}

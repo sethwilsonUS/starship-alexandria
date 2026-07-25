@@ -9,11 +9,13 @@ export type GameInputAction =
   | 'closeMap'
   | 'advanceDialogue'
   | 'beamDown'
-  | 'hudSummary';
+  | 'hudSummary'
+  | 'openHowToPlay';
 
 export interface InputActionContext {
   phase: GamePhase;
   hasAreaMap: boolean;
+  utilityOpen: boolean;
   now: number;
 }
 
@@ -45,6 +47,14 @@ export class InputActionRouter {
   ): GameInputAction | null {
     if (this.transitionGuard && !this.transitionGuard.canAcceptAction(context.now)) return null;
     if (event.repeat) return null;
+    if (context.utilityOpen) return null;
+
+    if (
+      (context.phase === 'ship' || context.phase === 'exploring')
+      && isKeyboardMatch(event, 'Slash', '?')
+    ) {
+      return 'openHowToPlay';
+    }
 
     const moveAction = MOVE_KEYS[event.code];
     if (moveAction) {

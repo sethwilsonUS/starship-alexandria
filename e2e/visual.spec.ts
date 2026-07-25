@@ -9,18 +9,47 @@ import {
 
 test('@visual launch, ship, and destination registry remain visually stable', async ({ page }) => {
   await page.goto('/?seed=visual-shell');
-  const gate = page.getByRole('dialog', { name: /library at the end of the world/i });
+  const gate = page.getByRole('dialog', { name: 'How to Play' });
   await expect(gate.getByRole('status')).toContainText('Archive synchronized');
   await expect(page).toHaveScreenshot('launch-gate.png', { fullPage: true });
 
-  const reduceMotion = gate.getByRole('radio', { name: 'Reduce motion' });
-  await reduceMotion.check();
-  await gate.getByRole('checkbox', { name: /Narration/ }).uncheck();
-  await gate.getByRole('button', { name: /Begin the recovery mission/ }).click();
-  const welcome = page.getByRole('dialog', { name: 'Dialogue' });
-  await expect(welcome).toBeVisible();
-  await welcome.getByRole('button', { name: 'Close dialogue' }).click();
+  const desktopViewport = page.viewportSize();
+  if (!desktopViewport) throw new Error('Visual project must define a viewport');
+  await page.setViewportSize({
+    width: Math.floor(desktopViewport.width / 2),
+    height: Math.floor(desktopViewport.height / 2),
+  });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  const playNarration = gate.getByRole('button', { name: 'Play narrated guide' });
+  await playNarration.scrollIntoViewIfNeeded();
+  await expect(playNarration).toBeInViewport();
+  await playNarration.focus();
+  await expect(playNarration).toBeFocused();
+  const beginMission = gate.getByRole('button', { name: 'Begin recovery mission' });
+  await beginMission.scrollIntoViewIfNeeded();
+  await expect(beginMission).toBeInViewport();
+  await page.setViewportSize(desktopViewport);
+
+  await beginMission.click();
   await expect(page).toHaveScreenshot('ship.png', { fullPage: true });
+
+  await page.getByRole('button', { name: 'Settings' }).click();
+  const settings = page.getByRole('dialog', { name: 'Settings' });
+  await expect(settings).toBeVisible();
+  await expect(page).toHaveScreenshot('settings.png', { fullPage: true });
+  await page.setViewportSize({
+    width: Math.floor(desktopViewport.width / 2),
+    height: Math.floor(desktopViewport.height / 2),
+  });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  const closeSettings = settings.getByRole('button', { name: 'Close Settings' });
+  await closeSettings.scrollIntoViewIfNeeded();
+  await expect(closeSettings).toBeInViewport();
+  const doneSettings = settings.getByRole('button', { name: 'Done' });
+  await doneSettings.scrollIntoViewIfNeeded();
+  await expect(doneSettings).toBeInViewport();
+  await page.setViewportSize(desktopViewport);
+  await doneSettings.click();
 
   const picker = await openMissionPicker(page);
   const missionButtons = picker.locator('.mission-card__button');

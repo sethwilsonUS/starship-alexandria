@@ -1,51 +1,23 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { parse as parseYaml } from 'yaml';
-import { getOpeningVoiceLines } from './lib/opening-voice-lines.mjs';
+import { getHowToPlayVoiceLines } from './lib/how-to-play-voice-lines.mjs';
 
 const apiKey = process.env.OPENAI_API_KEY;
 
 if (!apiKey) {
-  console.error('OPENAI_API_KEY is required to generate opening voices.');
+  console.error('OPENAI_API_KEY is required to generate How to Play narration.');
   process.exit(1);
 }
 
 const root = process.cwd();
-const gameloopPath = path.join(root, 'public', 'content', 'gameloop.yaml');
-const outputDir = path.join(root, 'public', 'audio', 'voices', 'opening');
+const contentPath = path.join(root, 'public', 'content', 'how-to-play.json');
+const outputDir = path.join(root, 'public', 'audio', 'voices', 'how-to-play');
 const manifestPath = path.join(root, 'public', 'audio', 'voices', 'manifest.json');
 const model = process.env.OPENAI_TTS_MODEL || 'gpt-4o-mini-tts';
 const voice = process.env.OPENAI_TTS_VOICE || 'marin';
-const instructions = process.env.OPENAI_TTS_INSTRUCTIONS ||
-  'Warm, clear starship librarian narration. Calm, hopeful, intimate, and accessible. Avoid harsh sibilance or theatrical overacting.';
-async function readManifest(filePath) {
-  let raw;
-
-  try {
-    raw = await fs.readFile(filePath, 'utf8');
-  } catch (error) {
-    if (error?.code === 'ENOENT') {
-      return {
-        version: 1,
-        generatedAt: new Date(0).toISOString(),
-        clips: [],
-      };
-    }
-
-    throw error;
-  }
-
-  let manifest;
-  try {
-    manifest = JSON.parse(raw);
-  } catch (error) {
-    throw new Error(`Failed to parse voice manifest at ${filePath}: ${error.message}`);
-  }
-
-  validateManifest(manifest);
-  return manifest;
-}
+const instructions = process.env.OPENAI_TTS_INSTRUCTIONS
+  || 'Warm, clear starship librarian narration. Calm, hopeful, intimate, and accessible. Read keyboard letters distinctly. Avoid harsh sibilance or theatrical overacting.';
 
 function isPresentString(value) {
   return typeof value === 'string' && value.trim().length > 0;
@@ -55,15 +27,12 @@ function validateManifest(manifest) {
   if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
     throw new Error('Voice manifest must be an object.');
   }
-
   if (manifest.version !== 1) {
     throw new Error(`Unsupported voice manifest version: ${manifest.version}`);
   }
-
   if (!isPresentString(manifest.generatedAt)) {
     throw new Error('Voice manifest generatedAt must be a string.');
   }
-
   if (!Array.isArray(manifest.clips)) {
     throw new Error('Voice manifest clips must be an array.');
   }
@@ -73,25 +42,34 @@ function validateManifest(manifest) {
     if (!clip || typeof clip !== 'object' || Array.isArray(clip)) {
       throw new Error(`Voice manifest clip at index ${index} must be an object.`);
     }
-
     if (!isPresentString(clip.lineId)) {
       throw new Error(`Voice manifest clip at index ${index} is missing lineId.`);
     }
-
     if (seenLineIds.has(clip.lineId)) {
       throw new Error(`Duplicate voice manifest lineId "${clip.lineId}".`);
     }
     seenLineIds.add(clip.lineId);
-
     for (const field of ['textHash', 'path', 'model', 'voice']) {
       if (!isPresentString(clip[field])) {
         throw new Error(`Voice manifest clip "${clip.lineId}" is missing ${field}.`);
       }
     }
-
     if (typeof clip.durationMs !== 'number' && clip.durationMs !== null) {
       throw new Error(`Voice manifest clip "${clip.lineId}" durationMs must be a number or null.`);
     }
+  }
+}
+
+async function readManifest(filePath) {
+  try {
+    const manifest = JSON.parse(await fs.readFile(filePath, 'utf8'));
+    validateManifest(manifest);
+    return manifest;
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      return { version: 1, generatedAt: new Date(0).toISOString(), clips: [] };
+    }
+    throw error;
   }
 }
 
@@ -119,14 +97,8 @@ async function generateSpeech(line) {
   return Buffer.from(await response.arrayBuffer());
 }
 
-const gameloop = parseYaml(await fs.readFile(gameloopPath, 'utf8'));
-const lines = getOpeningVoiceLines(gameloop);
-
-if (lines.length === 0) {
-  console.error('No opening voice lines found in public/content/gameloop.yaml.');
-  process.exit(1);
-}
-
+const content = JSON.parse(await fs.readFile(contentPath, 'utf8'));
+const lines = getHowToPlayVoiceLines(content);
 await fs.mkdir(outputDir, { recursive: true });
 
 const manifest = await readManifest(manifestPath);
@@ -135,7 +107,7 @@ let didGenerateClip = false;
 
 for (const line of lines) {
   const fileName = `${line.lineId}.mp3`;
-  const publicPath = `/audio/voices/opening/${fileName}`;
+  const publicPath = `/audio/voices/how-to-play/${fileName}`;
   const outputPath = path.join(outputDir, fileName);
   const existing = clipsById.get(line.lineId);
 

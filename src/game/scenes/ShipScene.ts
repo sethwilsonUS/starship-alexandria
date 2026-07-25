@@ -59,7 +59,7 @@ export default class ShipScene extends Scene {
 
   private beginShipExperience(): void {
     startAmbience(this, ASSET_KEYS.audio.ambience.ship);
-    this.showArrivalDialogue();
+    this.showCompletionDialogue();
   }
   
   private isGameComplete(): boolean {
@@ -176,11 +176,8 @@ export default class ShipScene extends Scene {
     }
   }
   
-  private showArrivalDialogue(): void {
-    const hasSeenWelcome = useGameStore.getState().hasSeenWelcome;
-    if (!hasSeenWelcome) {
-      this.time.delayedCall(180, () => EventBridge.emit('show-welcome'));
-    } else if (this.isGameComplete() && !this.hasShownVictory) {
+  private showCompletionDialogue(): void {
+    if (this.isGameComplete() && !this.hasShownVictory) {
       this.hasShownVictory = true;
       this.time.delayedCall(300, () => EventBridge.emit('show-victory'));
     }

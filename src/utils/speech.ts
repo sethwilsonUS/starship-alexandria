@@ -16,6 +16,7 @@ let masterVolume = 0.7;
 let browserTtsFallbackEnabled = false;
 let activeVoiceAudio: HTMLAudioElement | null = null;
 let speechRequestId = 0;
+const e2eAudioMuted = process.env.NEXT_PUBLIC_E2E === '1';
 
 export function setTTSEnabledGlobal(enabled: boolean): void {
   ttsEnabled = enabled;
@@ -59,6 +60,9 @@ export function setBrowserTtsFallbackEnabled(enabled: boolean): void {
 export interface SpeakOptions {
   voiceLineId?: string;
   allowBrowserFallback?: boolean;
+  onStart?: () => void;
+  onEnd?: () => void;
+  onError?: () => void;
 }
 
 function getSynth(): SpeechSynthesis | null {
@@ -75,7 +79,13 @@ export function speak(text: string, options: SpeakOptions = {}): void {
 
   if (options.voiceLineId) {
     const allowFallback = options.allowBrowserFallback === true || browserTtsFallbackEnabled;
-    void speakLocalVoiceLine(options.voiceLineId, trimmedText, allowFallback, requestId);
+    void speakLocalVoiceLine(
+      options.voiceLineId,
+      trimmedText,
+      allowFallback,
+      requestId,
+      options
+    );
     return;
   }
 
@@ -92,41 +102,59 @@ async function speakLocalVoiceLine(
   lineId: string,
   fallbackText: string,
   allowBrowserFallback: boolean,
-  requestId: number
+  requestId: number,
+  lifecycle: Pick<SpeakOptions, 'onStart' | 'onEnd' | 'onError'>
 ): Promise<void> {
   const manifest = await loadVoiceManifest();
   if (!audioUnlocked || !ttsEnabled || requestId !== speechRequestId) return;
 
   const clip = manifest ? findVoiceClip(manifest, lineId) : null;
   if (!clip) {
-    if (allowBrowserFallback) speakWithBrowserTts(fallbackText);
+    if (allowBrowserFallback) {
+      speakWithBrowserTts(fallbackText);
+    } else {
+      lifecycle.onError?.();
+    }
     return;
   }
 
   try {
     const audio = new Audio(clip.path);
     audio.volume = masterVolume;
+    // Browser journeys verify loading and playback state without broadcasting
+    // narration through the developer's speakers.
+    audio.muted = e2eAudioMuted;
     activeVoiceAudio = audio;
     audio.addEventListener(
       'ended',
       () => {
         if (activeVoiceAudio === audio) {
           activeVoiceAudio = null;
+          lifecycle.onEnd?.();
         }
       },
       { once: true }
     );
     await audio.play();
+    if (requestId !== speechRequestId) {
+      audio.pause();
+      return;
+    }
+    lifecycle.onStart?.();
   } catch (error) {
     if (requestId !== speechRequestId) return;
     activeVoiceAudio = null;
     console.warn(`Voice clip failed for ${lineId}:`, error);
-    if (allowBrowserFallback) speakWithBrowserTts(fallbackText);
+    if (allowBrowserFallback) {
+      speakWithBrowserTts(fallbackText);
+    } else {
+      lifecycle.onError?.();
+    }
   }
 }
 
 function speakWithBrowserTts(text: string): void {
-  if (!audioUnlocked || !ttsEnabled) return;
+  if (e2eAudioMuted || !audioUnlocked || !ttsEnabled) return;
   const synth = getSynth();
   if (!synth || !text.trim()) return;
 
@@ -156,7 +184,13 @@ function cancelCurrentPlayback(): void {
 let audioContext: AudioContext | null = null;
 
 function getAudioContext(): AudioContext | null {
-  if (!audioUnlocked || !sfxEnabled || masterVolume <= 0 || typeof window === 'undefined') return null;
+  if (
+    e2eAudioMuted
+    || !audioUnlocked
+    || !sfxEnabled
+    || masterVolume <= 0
+    || typeof window === 'undefined'
+  ) return null;
   if (!audioContext) {
     const AudioContextConstructor = window.AudioContext
       || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;

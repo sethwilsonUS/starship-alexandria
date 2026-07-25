@@ -23,8 +23,8 @@ From the orbiting library ship *Alexandria*, choose a recovery signal, beam down
 - Twenty-one sourced excerpts across ten public-domain works, including *Paradise Lost*, *The Canterbury Tales*, *The Faerie Queene*, *Frankenstein*, *A Vindication of the Rights of Woman*, and Frederick Douglass's *Narrative*.
 - Deterministic expeditions: a seed reproduces the layout, placements, clue, and reward.
 - A nonviolent collection loop with fog of war and a comfortable fixed field of view, journals, maps, NPC dialogue, clue-driven vaults that never require code entry, and a browsable ship library.
-- Accessible HTML for launch, settings, dialogue, reading, maps, and mission selection around a focused Phaser game region.
-- Narration, sound-effects, ambience, and motion preferences before play begins. Audio never starts before the player's launch gesture.
+- Accessible HTML for first-run instructions, persistent settings, dialogue, reading, maps, and mission selection around a focused Phaser game region.
+- A reusable How to Play guide with deterministic prerecorded narration, plus sound-effects, ambience, volume, and motion preferences available from both ship and surface. Audio never starts without the player's gesture.
 - Visible game-event announcements and a textual map equivalent for information that would otherwise exist only on the canvas.
 - A small versioned local save that preserves progress and preferences while safely returning every reload to the ship.
 
@@ -50,6 +50,7 @@ The game targets desktop keyboard play. Native controls inside dialogs continue 
 | `Space` or `Enter` | Advance dialogue; open the destination picker from the ship |
 | `M` | Open or close the recovered area map |
 | `I` | Hear/read a concise status summary |
+| `?` | Open How to Play during normal play |
 | `Escape` | Close the active HTML overlay |
 | `Tab` / `Shift`+`Tab` | Move through HTML controls and dialog actions |
 
@@ -78,6 +79,7 @@ Open [http://localhost:8080](http://localhost:8080).
 | `npm run test:e2e` | Run the Playwright browser suite |
 | `npm run test:e2e:update` | Intentionally refresh Playwright visual baselines |
 | `npm run generate:social-preview` | Rebuild the 1200×630 social card from the README key art |
+| `npm run generate-voices:how-to-play` | Regenerate the committed How to Play narration with OpenAI TTS |
 | `npm run smoke` | Run the representative browser smoke journey |
 | `npm run lint` | Check source files with ESLint |
 | `npm run typecheck` | Run strict TypeScript checks without emitting files |
@@ -110,10 +112,10 @@ See [Architecture](docs/ARCHITECTURE.md) for the generator contract, state bound
 
 ```text
 public/
-├── content/                 # Sole source for YAML narrative data and excerpt text
+├── audio/voices/            # Committed prerecorded narration and disclosure manifest
+├── content/                 # Sole source for narrative data and excerpt text
 ├── game-assets/             # Committed local tiles, sprites, audio, and provenance manifest
-├── fonts/                   # Self-hosted OFL interface and reading fonts
-└── audio/voices/            # Opening narration and generation manifest
+└── fonts/                   # Self-hosted OFL interface and reading fonts
 src/
 ├── app/                     # Next.js App Router entry points and metadata
 ├── components/              # Accessible React overlays and game shell
@@ -123,11 +125,11 @@ src/
 │   ├── scenes/              # Phaser boot, ship, and expedition scenes
 │   ├── systems/             # FOV, movement, placement, effects, and announcements
 │   └── EventBridge.ts       # Typed React ↔ Phaser boundary
-├── store/                   # Zustand state and save-v6 migration
+├── store/                   # Zustand state and save-v7 migration
 ├── data/                    # Typed catalog adapters
 ├── types/                   # Shared application/content contracts
 └── utils/                   # Content loading, narration, and focused helpers
-scripts/                     # Content, asset, and voice maintenance tools
+scripts/                     # Content and asset maintenance tools
 docs/                        # Architecture and authoring guides
 ```
 
@@ -148,4 +150,4 @@ Project code is available under the [MIT License](LICENSE). Bundled literature i
 
 Runtime game art and sound are local—there are no remote runtime asset requests. The bundle uses compatible CC0 sources, primarily Kenney and OpenGameArt contributors, with human-readable credits in [`ASSET_CREDITS.md`](ASSET_CREDITS.md) and hashes/transformations in [`public/game-assets/manifest.json`](public/game-assets/manifest.json). Atkinson Hyperlegible and Literata are self-hosted under the SIL Open Font License; their license files ship beside the fonts.
 
-The four opening narration clips are AI-generated with OpenAI text-to-speech. Their model, voice, source-text hash, and local path are recorded in [`public/audio/voices/manifest.json`](public/audio/voices/manifest.json), and the interface discloses their origin. Dynamic narration uses the browser's optional speech synthesis.
+How to Play uses a committed OpenAI-generated `marin` recording so its voice is consistent across browsers. The visible AI disclosure and model, voice, and text hash live with the local recording in [`public/audio/voices/manifest.json`](public/audio/voices/manifest.json). Dynamic room, status, dialogue, and reading narration may still use browser speech synthesis because those combinations are generated at runtime. Essential information always remains available as visible text.

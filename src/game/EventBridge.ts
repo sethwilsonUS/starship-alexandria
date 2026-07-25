@@ -30,8 +30,6 @@ export type EventBridgeEvents = {
   'launch-accepted': void;
   /** Dialogue choice selection */
   'dialogue-choice': { action: string };
-  /** Show welcome message to first-time players */
-  'show-welcome': void;
   /** Room announcement TTS completed */
   'room-announcements-complete': void;
   /** Show victory message when all fragments collected */
