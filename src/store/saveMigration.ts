@@ -3,7 +3,7 @@ import type { BookFragment } from '@/types/books';
 export type MotionPreference = 'system' | 'reduce' | 'full';
 export type SavedThemeId = 'scriptorium' | 'cathedral' | 'university' | 'gardens';
 
-export interface SavedSettingsV6 {
+export interface SavedSettingsV7 {
   narrationEnabled: boolean;
   sfxEnabled: boolean;
   ambienceEnabled: boolean;
@@ -11,8 +11,8 @@ export interface SavedSettingsV6 {
   motionPreference: MotionPreference;
 }
 
-export interface SaveV6 {
-  schemaVersion: 6;
+export interface SaveV7 {
+  schemaVersion: 7;
   player: {
     id: string;
     name: string;
@@ -24,12 +24,12 @@ export interface SaveV6 {
     readJournals: string[];
     collectedArtifacts: string[];
   };
-  hasSeenWelcome: boolean;
-  settings: SavedSettingsV6;
+  hasSeenHowToPlay: boolean;
+  settings: SavedSettingsV7;
   previousThemeId: SavedThemeId | null;
 }
 
-const DEFAULT_SETTINGS: SavedSettingsV6 = {
+const DEFAULT_SETTINGS: SavedSettingsV7 = {
   narrationEnabled: true,
   sfxEnabled: true,
   ambienceEnabled: true,
@@ -62,10 +62,10 @@ function isMotionPreference(value: unknown): value is MotionPreference {
 }
 
 /**
- * Converts every historical persisted shape into the deliberately small v6 save.
+ * Converts every historical persisted shape into the deliberately small v7 save.
  * Active expedition state is intentionally discarded: loading always starts aboard ship.
  */
-export function migratePersistedSave(persisted: unknown, version: number): SaveV6 {
+export function migratePersistedSave(persisted: unknown, version: number): SaveV7 {
   const source = record(persisted);
   const player = record(source.player);
   const exploration = record(source.exploration);
@@ -89,7 +89,7 @@ export function migratePersistedSave(persisted: unknown, version: number): SaveV
   );
 
   return {
-    schemaVersion: 6,
+    schemaVersion: 7,
     player: {
       id: typeof player.id === 'string' && player.id ? player.id : 'explorer',
       name: typeof player.name === 'string' && player.name ? player.name : 'Explorer',
@@ -101,9 +101,11 @@ export function migratePersistedSave(persisted: unknown, version: number): SaveV
       readJournals,
       collectedArtifacts: strings(exploration.collectedArtifacts),
     },
-    hasSeenWelcome: typeof source.hasSeenWelcome === 'boolean'
-      ? source.hasSeenWelcome
-      : version < 3,
+    hasSeenHowToPlay: typeof source.hasSeenHowToPlay === 'boolean'
+      ? source.hasSeenHowToPlay
+      : typeof source.hasSeenWelcome === 'boolean'
+        ? source.hasSeenWelcome
+        : version < 3,
     settings: {
       narrationEnabled,
       sfxEnabled: typeof oldSettings.sfxEnabled === 'boolean'

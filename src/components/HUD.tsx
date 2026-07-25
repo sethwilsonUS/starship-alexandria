@@ -3,17 +3,7 @@
 import { useState, useEffect } from 'react';
 import { EventBridge } from '@/game/EventBridge';
 import { useGameStore } from '@/store/gameStore';
-import { getBookCatalogSync } from '@/data/books';
-import type { Book } from '@/types/books';
-
-function getTotalFragments(): number {
-  try {
-    const catalog = getBookCatalogSync();
-    return catalog.reduce((n: number, b: Book) => n + b.fragments.length, 0);
-  } catch {
-    return 0;
-  }
-}
+import { getTotalFragments } from '@/utils/library';
 
 /**
  * Top-level HUD: current area name, fragment count.
@@ -28,6 +18,8 @@ export default function HUD() {
   const explorableTileCount = useGameStore((s) => s.session.explorableTileCount);
   const currentMapId = useGameStore((s) => s.player.currentMapId);
   const contentReady = useGameStore((s) => s.session.contentReady);
+  const openHowToPlay = useGameStore((s) => s.actions.openHowToPlay);
+  const openSettings = useGameStore((s) => s.actions.openSettings);
   const [areaName, setAreaName] = useState('Starship Alexandria — Library Deck');
 
   const isOnShip = currentMapId === 'ship';
@@ -75,6 +67,12 @@ export default function HUD() {
           📚 {fragmentCount}/{totalFragments ?? '...'} total
         </span>
       </div>
+      <nav className="hud__utilities" aria-label="Game utilities">
+        <button type="button" onClick={openHowToPlay}>
+          How to Play <kbd aria-hidden="true">?</kbd>
+        </button>
+        <button type="button" onClick={openSettings}>Settings</button>
+      </nav>
     </header>
   );
 }

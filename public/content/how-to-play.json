@@ -1,0 +1,99 @@
+{
+  "eyebrow": "Alexandria Expeditionary Archive · Field briefing",
+  "title": "How to Play",
+  "intro": "Recover lost literature from Earth's ruins and bring it home to the Starship Alexandria. There is no combat, death, or timer—explore at your own pace.",
+  "voiceLineId": "how-to-play.guide.01",
+  "sections": [
+    {
+      "id": "mission",
+      "heading": "Your recovery loop",
+      "kind": "ordered",
+      "items": [
+        "Choose an expedition from the ship's archive.",
+        "Explore the destination, meet survivors, and recover book fragments.",
+        "Follow the local clue to the vault and inspect what it protects.",
+        "Find the transporter pad to return your discoveries to the ship."
+      ]
+    },
+    {
+      "id": "controls",
+      "heading": "Controls",
+      "kind": "controls",
+      "items": [
+        {
+          "keyGroups": [["Arrow keys"], ["W", "A", "S", "D"]],
+          "keyGroupJoiner": "or",
+          "description": "Move one tile while exploring.",
+          "spoken": "Use the arrow keys, or W, A, S, and D, to move one tile while exploring."
+        },
+        {
+          "keyGroups": [["Space"], ["E"]],
+          "keyGroupJoiner": "or",
+          "description": "Interact with the nearby person, object, or transporter.",
+          "spoken": "Press Space or E to interact with a nearby person, object, or transporter."
+        },
+        {
+          "keyGroups": [["Space"], ["Enter"]],
+          "keyGroupJoiner": "or",
+          "description": "Advance dialogue or open the expedition picker while aboard ship.",
+          "spoken": "Press Space or Enter to advance dialogue, or open the expedition picker while aboard ship."
+        },
+        {
+          "keyGroups": [["M"]],
+          "keyGroupJoiner": "or",
+          "description": "Open or close the area map after you recover it.",
+          "spoken": "Press M to open or close the area map after you recover it."
+        },
+        {
+          "keyGroups": [["I"]],
+          "keyGroupJoiner": "or",
+          "description": "Hear or read a concise expedition status summary.",
+          "spoken": "Press I to hear or read a concise expedition status summary."
+        },
+        {
+          "keyGroups": [["Tab"], ["Shift", "Tab"]],
+          "keyGroupJoiner": "/",
+          "description": "Move through buttons, choices, tabs, and other HTML controls.",
+          "spoken": "Use Tab or Shift plus Tab to move through buttons, choices, tabs, and other controls."
+        },
+        {
+          "keyGroups": [["Escape"]],
+          "keyGroupJoiner": "or",
+          "description": "Close the active map, reader, dialogue, or utility window.",
+          "spoken": "Press Escape to close the active map, reader, dialogue, or utility window."
+        },
+        {
+          "keyGroups": [["?"]],
+          "keyGroupJoiner": "or",
+          "description": "Open this guide during normal play.",
+          "spoken": "Press the question mark key to open this guide during normal play."
+        }
+      ]
+    },
+    {
+      "id": "expeditions",
+      "heading": "Reading the ruins",
+      "kind": "prose",
+      "paragraphs": [
+        "A visible prompt tells you when something is close enough to interact with. Recovering an area map unlocks both the visual map and a textual description of known rooms, contents, directions, and distances.",
+        "Journals reveal each expedition's vault clue. You never need to memorize or type a code: after reading the clue, inspect the vault and the Archivist handles the mechanism."
+      ]
+    },
+    {
+      "id": "archive",
+      "heading": "The ship's archive",
+      "kind": "prose",
+      "paragraphs": [
+        "Returned fragments appear in the Alexandria Archives, organized by book. You can reread recovered excerpts, inspect curiosities, track the collection, or begin another expedition."
+      ]
+    },
+    {
+      "id": "access",
+      "heading": "Accessibility and settings",
+      "kind": "prose",
+      "paragraphs": [
+        "The game provides visible and spoken equivalents for essential sounds and canvas details. Use the always-visible Settings button during normal play to change narration, sound effects, ambience, master volume, or motion. Use How to Play whenever you want this briefing again."
+      ]
+    }
+  ]
+}

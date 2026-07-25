@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   migratePersistedSave,
   resolveSavedFragments,
-  type SaveV6,
+  type SaveV7,
 } from '../saveMigration';
 
 describe('save migration seam', () => {
-  it('migrates a v4 save to v6 fragment ids and safely recalls the player to the ship', () => {
+  it('migrates a v4 save to v7 fragment ids and treats a welcomed player as onboarded', () => {
     const migrated = migratePersistedSave(
       {
         player: {
@@ -34,13 +34,13 @@ describe('save migration seam', () => {
     );
 
     expect(migrated).toMatchObject({
-      schemaVersion: 6,
+      schemaVersion: 7,
       player: {
         id: 'explorer-1',
         name: 'Explorer',
       },
       collectedFragmentIds: ['fragment-a', 'fragment-b'],
-      hasSeenWelcome: true,
+      hasSeenHowToPlay: true,
       previousThemeId: null,
       settings: {
         narrationEnabled: false,
@@ -57,9 +57,9 @@ describe('save migration seam', () => {
     expect(migrated.player).not.toHaveProperty('currentMapId');
   });
 
-  it('normalizes a v6 save without discarding valid preferences or progress', () => {
-    const input: SaveV6 = {
-      schemaVersion: 6,
+  it('normalizes a v7 save without discarding valid preferences or progress', () => {
+    const input: SaveV7 = {
+      schemaVersion: 7,
       player: {
         id: 'explorer-2',
         name: 'Reader',
@@ -71,7 +71,7 @@ describe('save migration seam', () => {
         readJournals: [],
         collectedArtifacts: [],
       },
-      hasSeenWelcome: true,
+      hasSeenHowToPlay: true,
       settings: {
         narrationEnabled: true,
         sfxEnabled: false,
@@ -82,13 +82,13 @@ describe('save migration seam', () => {
       previousThemeId: 'cathedral',
     };
 
-    expect(migratePersistedSave(input, 6)).toEqual({
+    expect(migratePersistedSave(input, 7)).toEqual({
       ...input,
       collectedFragmentIds: ['known', 'missing'],
     });
   });
 
-  it('upgrades a compact v5 save to v6 without losing identity or progress', () => {
+  it('upgrades a compact v5 save to v7 without losing identity or progress', () => {
     const migrated = migratePersistedSave({
       schemaVersion: 5,
       player: { id: 'v5-explorer', name: 'Archivist' },
@@ -111,7 +111,7 @@ describe('save migration seam', () => {
     }, 5);
 
     expect(migrated).toMatchObject({
-      schemaVersion: 6,
+      schemaVersion: 7,
       player: { id: 'v5-explorer', name: 'Archivist' },
       collectedFragmentIds: ['known'],
       exploration: {
@@ -120,6 +120,31 @@ describe('save migration seam', () => {
       },
       previousThemeId: 'gardens',
     });
+  });
+
+  it('maps an incomplete v6 welcome to incomplete How to Play onboarding', () => {
+    const migrated = migratePersistedSave({
+      schemaVersion: 6,
+      player: { id: 'new-reader', name: 'Reader' },
+      collectedFragmentIds: [],
+      exploration: {
+        visitedMaps: [],
+        discoveredNPCs: [],
+        readJournals: [],
+        collectedArtifacts: [],
+      },
+      hasSeenWelcome: false,
+      settings: {
+        narrationEnabled: true,
+        sfxEnabled: true,
+        ambienceEnabled: true,
+        masterVolume: 0.7,
+        motionPreference: 'system',
+      },
+      previousThemeId: null,
+    }, 6);
+
+    expect(migrated.hasSeenHowToPlay).toBe(false);
   });
 
   it('resolves ids against the current catalog and filters retired fragments', () => {

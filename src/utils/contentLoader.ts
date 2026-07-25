@@ -91,9 +91,6 @@ export interface GameloopDialogueLineYaml {
 }
 
 export interface GameloopYaml {
-  welcome: {
-    lines: GameloopDialogueLineYaml[];
-  };
   victory: {
     lines: GameloopDialogueLineYaml[];
   };

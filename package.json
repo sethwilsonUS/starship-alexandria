@@ -43,8 +43,8 @@
         "generate-assets": "npm run generate:game-assets",
         "generate:game-assets": "node scripts/generate-game-assets.mjs",
         "generate:social-preview": "node scripts/generate-social-preview.mjs",
-        "import-external-assets": "node scripts/import-external-game-assets.mjs",
-        "generate-voices:opening": "node scripts/generate-opening-voices.mjs"
+        "generate-voices:how-to-play": "node --env-file-if-exists=.env.local scripts/generate-how-to-play-voice.mjs",
+        "import-external-assets": "node scripts/import-external-game-assets.mjs"
     },
     "dependencies": {
         "next": "^16.2.11",

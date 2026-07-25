@@ -17,11 +17,17 @@ export function getInputActionContext(now = Date.now()): InputActionContext {
   return {
     phase: state.session.gamePhase,
     hasAreaMap: state.session.hasAreaMap,
+    utilityOpen: state.session.activeUtility !== null,
     now,
   };
 }
 
 export function dispatchGameInputAction(action: GameInputAction): boolean {
+  if (action === 'openHowToPlay') {
+    useGameStore.getState().actions.openHowToPlay();
+    return true;
+  }
+
   if (action === 'beamDown') {
     useGameStore.getState().actions.openMissionPicker();
     return true;

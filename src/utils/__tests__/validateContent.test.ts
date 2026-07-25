@@ -249,30 +249,26 @@ afterEach(() => {
 });
 
 describe('validate-content gameloop voiceLineId validation', () => {
-  it('rejects duplicate gameloop voiceLineId values across welcome and victory lines', () => {
+  it('rejects duplicate gameloop voiceLineId values across victory lines', () => {
     const root = createValidContentTree(`
-welcome:
-  lines:
-    - text: "Welcome aboard."
-      voiceLineId: opening.welcome.01
 victory:
   lines:
     - text: "You made it."
-      voiceLineId: opening.welcome.01
+      voiceLineId: victory.complete.01
+    - text: "The archive endures."
+      voiceLineId: victory.complete.01
 `);
 
     const result = runValidator(root);
     const output = `${result.stdout}\n${result.stderr}`;
 
     expect(result.status).toBe(1);
-    expect(output).toContain('Duplicate voiceLineId "opening.welcome.01"');
+    expect(output).toContain('Duplicate voiceLineId "victory.complete.01"');
   });
 });
 
 describe('validate-content literary and destination schema validation', () => {
   const validGameloop = `
-welcome:
-  lines: [{ text: "Welcome aboard." }]
 victory:
   lines: [{ text: "You made it." }]
 `;

@@ -1,10 +1,10 @@
 /**
- * Runtime and v6 local-save state types.
+ * Runtime and v7 local-save state types.
  */
 
 import type { BookFragment } from './books';
 import type { Position } from './game';
-import type { MotionPreference, SaveV6, SavedThemeId } from '@/store/saveMigration';
+import type { MotionPreference, SaveV7, SavedThemeId } from '@/store/saveMigration';
 import type { VaultReward } from '@/game/expeditions';
 
 export interface DialogueChoice {
@@ -49,8 +49,8 @@ export interface SessionVaultInfo {
   reward: VaultReward;
 }
 
-/** Serialized v6 save. Runtime book objects are resolved from these IDs after content loads. */
-export type PersistedState = SaveV6;
+/** Serialized v7 save. Runtime book objects are resolved from these IDs after content loads. */
+export type PersistedState = SaveV7;
 
 export interface PlayerState {
   id: string;
@@ -116,9 +116,12 @@ export interface SessionState {
   launchGateOpen: boolean;
   audioUnlocked: boolean;
   contentError: string | null;
+  /** Utility overlays preserve the underlying ship/exploration phase. */
+  activeUtility: UtilityOverlay | null;
 }
 
 export type GamePhase = 'exploring' | 'ship' | 'mission-select' | 'dialogue' | 'reading' | 'viewing-map';
+export type UtilityOverlay = 'how-to' | 'settings';
 
 /** Settings state (persisted) */
 export interface SettingsState {
@@ -136,7 +139,7 @@ export interface GameState {
   /** Canonical IDs used to reconstruct `library` after YAML content loads. */
   savedFragmentIds: string[];
   exploration: ExplorationState;
-  hasSeenWelcome: boolean;
+  hasSeenHowToPlay: boolean;
   previousThemeId: SavedThemeId | null;
   settings: SettingsState;
   session: SessionState;
@@ -167,8 +170,6 @@ export interface GameActions {
   setNpcPositionsOnMap: (npcs: Array<{ id: string; name: string; x: number; y: number; roomName: string }>) => void;
   setExplorableTileCount: (count: number) => void;
   startExpedition: () => void;
-  /** Mark welcome as seen (first ship arrival) */
-  setHasSeenWelcome: () => void;
   /** Mark YAML content as loaded (called by BootScene) */
   setContentReady: () => void;
   /** Reset all game state for "New Game" */
@@ -193,6 +194,9 @@ export interface GameActions {
   setMotionPreference: (preference: MotionPreference) => void;
   acceptLaunchGate: () => void;
   reopenLaunchGate: () => void;
+  openHowToPlay: () => void;
+  openSettings: () => void;
+  closeUtility: () => void;
   setContentError: (message: string | null) => void;
   openMissionPicker: () => void;
   closeMissionPicker: () => void;

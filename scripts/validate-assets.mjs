@@ -9,12 +9,14 @@ import {
   PINNED_FFMPEG_VERSION,
   validateAudioFormatGroups,
 } from './lib/asset-validation.mjs';
+import { getHowToPlayVoiceLines } from './lib/how-to-play-voice-lines.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const PUBLIC_ROOT = path.join(PROJECT_ROOT, 'public');
 const MANIFEST_PATH = path.join(PUBLIC_ROOT, 'game-assets', 'manifest.json');
 const CONCEPT_MANIFEST_PATH = path.join(PUBLIC_ROOT, 'images', 'manifest.json');
+const VOICE_MANIFEST_PATH = path.join(PUBLIC_ROOT, 'audio', 'voices', 'manifest.json');
 const RUNTIME_EXTENSIONS = new Set(['.png', '.ogg', '.mp3']);
 const errors = [];
 
@@ -253,13 +255,141 @@ async function main() {
     fail('/images/og.png must be a 1200x630 social-card derived from the README key art');
   }
 
+  const voiceManifest = JSON.parse(await fs.readFile(VOICE_MANIFEST_PATH, 'utf8'));
+  if (voiceManifest.version !== 1 || !Array.isArray(voiceManifest.clips)) {
+    fail('Voice manifest must use version 1 and contain a clips array');
+  } else {
+    const seenVoiceIds = new Set();
+    const voicePaths = new Set();
+    for (const [index, clip] of voiceManifest.clips.entries()) {
+      if (!clip || typeof clip !== 'object') {
+        fail(`Voice manifest clip ${index} must be an object`);
+        continue;
+      }
+      if (!clip.lineId || seenVoiceIds.has(clip.lineId)) {
+        fail(`Voice manifest clip ${index} has a missing or duplicate lineId`);
+      }
+      seenVoiceIds.add(clip.lineId);
+      if (!clip.path?.startsWith('/audio/voices/') || path.extname(clip.path) !== '.mp3') {
+        fail(`${clip.lineId ?? `Voice clip ${index}`}: path must be an MP3 under /audio/voices/`);
+      }
+      if (!clip.textHash || !clip.model || !clip.voice) {
+        fail(`${clip.lineId}: textHash, model, and voice are required`);
+      }
+
+      if (!Array.isArray(clip.formats)) {
+        fail(`${clip.lineId}: formats must contain exactly one MP3 and one OGG`);
+        continue;
+      }
+
+      const formatGroups = validateAudioFormatGroups(
+        clip.formats.map((format) => ({
+          kind: 'audio',
+          logicalName: clip.lineId,
+          path: format?.path,
+        }))
+      );
+      for (const error of formatGroups.errors) fail(error);
+
+      const mp3Format = clip.formats.find((format) => format?.format === 'mp3');
+      if (mp3Format?.path !== clip.path) {
+        fail(`${clip.lineId}: primary path must match the MP3 rendition`);
+      }
+
+      for (const [formatIndex, format] of clip.formats.entries()) {
+        const label = `${clip.lineId} format ${formatIndex}`;
+        if (!format || typeof format !== 'object') {
+          fail(`${label}: rendition must be an object`);
+          continue;
+        }
+        if (!['mp3', 'ogg'].includes(format.format)) {
+          fail(`${label}: format must be mp3 or ogg`);
+        }
+        if (
+          !format.path?.startsWith('/audio/voices/')
+          || path.extname(format.path).slice(1) !== format.format
+        ) {
+          fail(`${label}: path must match its format under /audio/voices/`);
+          continue;
+        }
+        if (voicePaths.has(format.path)) {
+          fail(`Duplicate voice rendition path: ${format.path}`);
+        }
+        voicePaths.add(format.path);
+        if (!Number.isInteger(format.bytes) || format.bytes <= 0) {
+          fail(`${format.path}: byte count must be a positive integer`);
+        }
+        if (!/^[a-f0-9]{64}$/.test(format.sha256 ?? '')) {
+          fail(`${format.path}: lowercase SHA-256 hash is required`);
+        }
+        const provenance = format.provenance;
+        if (!provenance?.encoder || !provenance.encoderVersion || !provenance.sourceFormat) {
+          fail(`${format.path}: complete encoding provenance is required`);
+        }
+        if (
+          provenance?.encoder === 'ffmpeg'
+          && provenance.encoderVersion !== PINNED_FFMPEG_VERSION
+        ) {
+          fail(`${format.path}: ffmpeg provenance must pin ${PINNED_FFMPEG_VERSION}`);
+        }
+
+        const resolved = path.resolve(PUBLIC_ROOT, format.path.replace(/^\//, ''));
+        if (!resolved.startsWith(`${PUBLIC_ROOT}${path.sep}`)) {
+          fail(`${format.path}: voice path escapes public/`);
+          continue;
+        }
+        try {
+          const realPath = await fs.realpath(resolved);
+          if (!realPath.startsWith(`${PUBLIC_ROOT}${path.sep}`)) {
+            fail(`${format.path}: voice symlink escapes public/`);
+            continue;
+          }
+          const buffer = await fs.readFile(realPath);
+          if (buffer.byteLength === 0) fail(`${format.path}: empty voice rendition`);
+          if (format.bytes !== buffer.byteLength) {
+            fail(`${format.path}: byte count does not match manifest`);
+          }
+          if (format.sha256 !== sha256(buffer)) {
+            fail(`${format.path}: SHA-256 does not match manifest`);
+          }
+          if (format.format === 'mp3' && !isMp3(buffer)) {
+            fail(`${format.path}: invalid MP3 signature`);
+          }
+          if (format.format === 'ogg' && buffer.subarray(0, 4).toString('ascii') !== 'OggS') {
+            fail(`${format.path}: invalid OGG signature`);
+          }
+        } catch {
+          fail(`${format.path}: missing voice rendition`);
+        }
+      }
+    }
+
+    const howToPlayContent = JSON.parse(
+      await fs.readFile(path.join(PUBLIC_ROOT, 'content', 'how-to-play.json'), 'utf8')
+    );
+    const [expectedGuide] = getHowToPlayVoiceLines(howToPlayContent);
+    const guideClip = voiceManifest.clips.find((clip) => clip.lineId === expectedGuide.lineId);
+    if (!guideClip) {
+      fail(`Voice manifest is missing ${expectedGuide.lineId}`);
+    } else if (guideClip.textHash !== expectedGuide.textHash) {
+      fail(`${expectedGuide.lineId}: recorded narration is stale; regenerate it`);
+    }
+
+    const voiceFiles = (await walk(path.dirname(VOICE_MANIFEST_PATH)))
+      .filter((filePath) => ['.mp3', '.ogg'].includes(path.extname(filePath).toLowerCase()))
+      .map((filePath) => `/${path.relative(PUBLIC_ROOT, filePath).split(path.sep).join('/')}`);
+    for (const voiceFile of voiceFiles) {
+      if (!voicePaths.has(voiceFile)) fail(`${voiceFile}: voice file is missing from manifest`);
+    }
+  }
+
   if (errors.length > 0) {
     console.error(`Asset validation failed with ${errors.length} error${errors.length === 1 ? '' : 's'}:`);
     for (const error of errors) console.error(`- ${error}`);
     process.exitCode = 1;
     return;
   }
-  console.log(`Validated ${manifest.assets.length} assets, ${audioFormats.pairCount} audio pairs, ${themeNames.size} theme atlases, and ${conceptOutputs.length} concept-art outputs.`);
+  console.log(`Validated ${manifest.assets.length} assets, ${audioFormats.pairCount} audio pairs, ${themeNames.size} theme atlases, ${conceptOutputs.length} concept-art outputs, and the recorded narration manifest.`);
 }
 
 main().catch((error) => {

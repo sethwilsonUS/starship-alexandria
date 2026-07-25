@@ -25,15 +25,9 @@ import InteractionPrompt from './InteractionPrompt';
 import DebugPanel from './DebugPanel';
 import LaunchGate from './LaunchGate';
 import MissionPicker from './MissionPicker';
-
-function getTotalFragments(): number {
-  try {
-    const catalog = getBookCatalogSync();
-    return catalog.reduce((n, b) => n + b.fragments.length, 0);
-  } catch {
-    return 0;
-  }
-}
+import HowToPlayModal from './HowToPlayModal';
+import SettingsModal from './SettingsModal';
+import { getTotalFragments } from '@/utils/library';
 
 function handleHudSummaryAction(): void {
   const state = useGameStore.getState();
@@ -70,7 +64,12 @@ export default function GameContainer() {
   const launchGateOpen = useGameStore((state) => state.session.launchGateOpen);
   const motionPreference = useGameStore((state) => state.settings.motionPreference);
   const gamePhase = useGameStore((state) => state.session.gamePhase);
-  const modalOpen = gamePhase === 'mission-select' || gamePhase === 'dialogue' || gamePhase === 'reading' || gamePhase === 'viewing-map';
+  const activeUtility = useGameStore((state) => state.session.activeUtility);
+  const modalOpen = activeUtility !== null
+    || gamePhase === 'mission-select'
+    || gamePhase === 'dialogue'
+    || gamePhase === 'reading'
+    || gamePhase === 'viewing-map';
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyboardInput);
@@ -301,23 +300,6 @@ export default function GameContainer() {
     };
   }, []);
 
-  // Handle welcome message for first-time players
-  useEffect(() => {
-    const onShowWelcome = () => {
-      const gameloop = getGameloopCacheSync();
-      const welcomeLines = gameloop.welcome.lines.map(line => ({
-        text: line.text,
-        voiceLineId: line.voiceLineId,
-      }));
-      useGameStore.getState().actions.openDialogue(welcomeLines);
-      useGameStore.getState().actions.setHasSeenWelcome();
-    };
-    EventBridge.on('show-welcome', onShowWelcome);
-    return () => {
-      EventBridge.off('show-welcome', onShowWelcome);
-    };
-  }, []);
-
   // Handle victory message when all fragments collected
   useEffect(() => {
     const onShowVictory = () => {
@@ -337,7 +319,7 @@ export default function GameContainer() {
         id="game-controls"
         className="game-shell"
         tabIndex={launchGateOpen ? -1 : 0}
-        aria-label="Game controls. Use arrow keys or W A S D to move, E to interact, M for the map, and I for status."
+        aria-label="Game controls. Use arrow keys or W A S D to move, E to interact, M for the map, I for status, and question mark for How to Play."
         inert={launchGateOpen}
       >
         <div className="game-world" inert={modalOpen} aria-hidden={modalOpen || undefined}>
@@ -352,6 +334,8 @@ export default function GameContainer() {
         <MapOverlay />
         <DialogueBox />
         <BookDetail />
+        <HowToPlayModal />
+        <SettingsModal />
       </div>
       <LaunchGate />
     </div>

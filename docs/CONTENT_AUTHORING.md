@@ -14,7 +14,8 @@ No TypeScript change is required when editing an existing excerpt, NPC line, jou
 | `public/content/journals.yaml` | Themed environmental writing |
 | `public/content/vaults.yaml` | One clue/vault narrative loop per destination |
 | `public/content/dialogue.yaml` | Transporter choices and dynamic hint templates |
-| `public/content/gameloop.yaml` | Ship welcome and collection-completion dialogue |
+| `public/content/gameloop.yaml` | Collection-completion dialogue |
+| `public/content/how-to-play.json` | Shared visible guide copy and spoken control phrasing |
 | `public/content/artifacts.yaml` | Persistent curiosity metadata |
 
 ## Add a public-domain excerpt
@@ -152,16 +153,24 @@ The expedition registry also contains a structural vault definition—placement 
 
 `dialogue.yaml` contains the three transporter states: no new fragments, fragments still present, and all fragments recovered. Choice `action` values are runtime contracts; reuse existing values instead of inventing prose-like action names.
 
-`gameloop.yaml` contains the one-time narrative welcome and completion sequence. A line may include a stable `voiceLineId`:
+`gameloop.yaml` contains the completion sequence shown when the archive is complete:
 
 ```yaml
-welcome:
+victory:
   lines:
-    - text: Welcome aboard the Starship Alexandria.
-      voiceLineId: opening.welcome.01
+    - text: The final fragment has been recovered.
 ```
 
-Voice-line IDs must be unique across the file. Recorded clips are optional enhancements: every line must remain complete as visible text and browser narration. When welcome text changes, its existing clip's text hash no longer matches; regenerate and review the voice manifest intentionally.
+## How to Play narration
+
+`public/content/how-to-play.json` is the single source for both the visible guide and its prerecorded briefing. Keep each control's `spoken` value natural when read aloud; key names should be unambiguous rather than copied as punctuation. After changing guide copy, run:
+
+```bash
+npm run generate-voices:how-to-play
+npm run validate-assets
+```
+
+Generation requires `OPENAI_API_KEY` in the local environment. The script uses `gpt-4o-mini-tts` with the `marin` voice by default, then uses the project-pinned ffmpeg version to derive the matching OGG rendition from that same performance. Commit both the MP3 and OGG plus the disclosure manifest; the key is never shipped. The manifest records each rendition's byte count, SHA-256 hash, and encoding provenance. Asset validation checks both formats and compares the authored-text hash with the manifest so missing, modified, or stale narration fails CI.
 
 ## YAML style
 

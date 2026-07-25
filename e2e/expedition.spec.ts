@@ -21,6 +21,22 @@ test('@cross-browser completes a keyboard-only expedition using independently co
   const picker = await openMissionPicker(page);
   await chooseTheme(page, picker, 'scriptorium');
 
+  const beforeGuide = await readSnapshot(page);
+  await page.getByRole('button', { name: /How to Play/ }).click();
+  const surfaceGuide = page.getByRole('dialog', { name: 'How to Play' });
+  await expect(surfaceGuide).toBeVisible();
+  await page.keyboard.press('ArrowRight');
+  await expectAxeClean(page, 'surface How to Play guide');
+  await page.keyboard.press('Escape');
+  const afterGuide = await readSnapshot(page);
+  expect(afterGuide.player).toEqual(beforeGuide.player);
+
+  await page.getByRole('button', { name: 'Settings' }).click();
+  const surfaceSettings = page.getByRole('dialog', { name: 'Settings' });
+  await expect(surfaceSettings).toBeVisible();
+  await expectAxeClean(page, 'surface Settings dialog');
+  await surfaceSettings.getByRole('button', { name: 'Done' }).click();
+
   await moveToEntity(page, 'map');
   await expectInteractionPrompt(page, /Area map/i);
   const mapPickup = await interact(page);

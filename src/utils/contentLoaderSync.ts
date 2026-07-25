@@ -44,7 +44,6 @@ interface GameloopDialogueLine {
 }
 
 export interface GameloopContent {
-  welcome: { lines: GameloopDialogueLine[] };
   victory: { lines: GameloopDialogueLine[] };
 }
 

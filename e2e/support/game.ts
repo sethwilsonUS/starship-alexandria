@@ -49,39 +49,18 @@ export async function launchToShip(page: Page, options: { seed?: string; returni
   await page.goto(`/?${query.toString()}`);
 
   const gate = page.getByRole('dialog', {
-    name: options.returning ? /Welcome back, Archivist/ : /library at the end of the world/i,
+    name: options.returning ? /Welcome back, Archivist/ : 'How to Play',
   });
   await expect(gate).toBeVisible();
   await expect(gate.getByRole('status')).toContainText('Archive synchronized');
 
-  if (options.returning) {
-    await gate.locator('summary').click();
-  }
-
-  const reduceMotion = gate.getByRole('radio', { name: 'Reduce motion' });
-  await reduceMotion.focus();
-  await page.keyboard.press('Space');
-  await expect(reduceMotion).toBeChecked();
-
-  const narration = gate.getByRole('checkbox', { name: /Narration/ });
-  if (await narration.isChecked()) {
-    await narration.focus();
-    await page.keyboard.press('Space');
-  }
-
   const begin = gate.getByRole('button', {
-    name: options.returning ? /Resume aboard Alexandria/ : /Begin the recovery mission/,
+    name: options.returning ? /Resume aboard Alexandria/ : /Begin recovery mission/,
   });
   await expect(begin).toBeEnabled();
   await begin.focus();
   await page.keyboard.press('Enter');
   await expect(gate).toBeHidden();
-
-  if (!options.returning) {
-    const welcome = page.getByRole('dialog', { name: 'Dialogue' });
-    await expect(welcome).toBeVisible();
-    await welcome.getByRole('button', { name: 'Close dialogue' }).click();
-  }
 
   await expect(page.getByRole('region', { name: 'Library Collection' })).toBeVisible();
   await expect(page.locator('#game-controls')).toBeFocused();
