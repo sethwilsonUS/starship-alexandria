@@ -3,17 +3,7 @@
 import { useState, useEffect } from 'react';
 import { EventBridge } from '@/game/EventBridge';
 import { useGameStore } from '@/store/gameStore';
-import { getBookCatalogSync } from '@/data/books';
-import type { Book } from '@/types/books';
-
-function getTotalFragments(): number {
-  try {
-    const catalog = getBookCatalogSync();
-    return catalog.reduce((n: number, b: Book) => n + b.fragments.length, 0);
-  } catch {
-    return 0;
-  }
-}
+import { getTotalFragments } from '@/utils/library';
 
 /**
  * Top-level HUD: current area name, fragment count.

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-25T14:37:53.574Z",
+  "generatedAt": "2026-07-25T15:14:05.009Z",
   "clips": [
     {
       "lineId": "how-to-play.guide.01",
@@ -8,7 +8,31 @@
       "path": "/audio/voices/how-to-play/how-to-play.guide.01.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "marin",
-      "durationMs": null
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/how-to-play/how-to-play.guide.01.mp3",
+          "bytes": 1992192,
+          "sha256": "3070cf8ee3ad452e906acbd0f9c19b21476af67043febd8a507fc0317d61fb88",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/how-to-play/how-to-play.guide.01.ogg",
+          "bytes": 1068470,
+          "sha256": "4fe287871862a6ab0b93ccba0fa20d08de6c404241bacafd0d3d941dc5322572",
+          "provenance": {
+            "encoder": "ffmpeg",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
     }
   ]
 }

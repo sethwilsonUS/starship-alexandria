@@ -23,7 +23,7 @@ test('@cross-browser @smoke onboarding and persistent utilities remain accessibl
   await expect(guide.getByRole('heading', { name: 'How to Play', level: 1 })).toBeFocused();
   await expect(guide.getByRole('heading', { name: 'Your recovery loop' })).toBeVisible();
   await expect(guide).toContainText('There is no combat, death, or timer');
-  await expect(guide.locator('.launch-gate__status')).toContainText('Archive synchronized');
+  await expect(guide.getByRole('status')).toContainText('Archive synchronized');
   await expect(guide.getByRole('button', { name: 'Play narrated guide' })).toBeVisible();
   expect(guideVoiceRequests).toEqual([]);
   await expectAxeClean(page, 'first-run How to Play guide');
@@ -106,6 +106,8 @@ test('@cross-browser @smoke onboarding and persistent utilities remain accessibl
   const resume = resumeGate.getByRole('button', { name: 'Resume aboard Alexandria' });
   await resume.focus();
   await page.keyboard.press('Enter');
+  await expect(resumeGate).toBeHidden();
+  await expect(page.locator('#game-controls')).toBeFocused();
 
   await page.getByRole('button', { name: 'Settings' }).click();
   const persistedSettings = page.getByRole('dialog', { name: 'Settings' });

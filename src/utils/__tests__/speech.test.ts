@@ -23,6 +23,30 @@ const voiceManifest: VoiceManifest = {
       model: 'gpt-4o-mini-tts',
       voice: 'marin',
       durationMs: null,
+      formats: [
+        {
+          format: 'mp3',
+          path: '/audio/voices/opening/opening.welcome.01.mp3',
+          bytes: 100,
+          sha256: 'a'.repeat(64),
+          provenance: {
+            encoder: 'openai-audio-speech',
+            encoderVersion: 'gpt-4o-mini-tts',
+            sourceFormat: 'text',
+          },
+        },
+        {
+          format: 'ogg',
+          path: '/audio/voices/opening/opening.welcome.01.ogg',
+          bytes: 90,
+          sha256: 'b'.repeat(64),
+          provenance: {
+            encoder: 'ffmpeg',
+            encoderVersion: '8.1',
+            sourceFormat: 'mp3',
+          },
+        },
+      ],
     },
   ],
 };

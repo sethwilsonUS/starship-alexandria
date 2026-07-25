@@ -1,3 +1,15 @@
+export type VoiceClipFormat = {
+  format: 'mp3' | 'ogg';
+  path: string;
+  bytes: number;
+  sha256: string;
+  provenance: {
+    encoder: string;
+    encoderVersion: string;
+    sourceFormat: string;
+  };
+};
+
 export type VoiceClip = {
   lineId: string;
   textHash: string;
@@ -5,6 +17,7 @@ export type VoiceClip = {
   model: string;
   voice: string;
   durationMs: number | null;
+  formats: VoiceClipFormat[];
 };
 
 export type VoiceManifest = {
@@ -81,6 +94,47 @@ export function validateVoiceManifest(manifest: unknown): string[] {
 
     if (typeof clip.durationMs !== 'number' && clip.durationMs !== null) {
       errors.push(`clip durationMs must be a number or null at index ${index}`);
+    }
+
+    if (!Array.isArray(clip.formats)) {
+      errors.push(`clip formats must be an array at index ${index}`);
+      return;
+    }
+
+    const seenFormats = new Set<string>();
+    clip.formats.forEach((format, formatIndex) => {
+      if (!isRecord(format)) {
+        errors.push(`clip format at index ${index}.${formatIndex} must be an object`);
+        return;
+      }
+      if (format.format !== 'mp3' && format.format !== 'ogg') {
+        errors.push(`unsupported clip format at index ${index}.${formatIndex}`);
+      } else if (seenFormats.has(format.format)) {
+        errors.push(`duplicate ${format.format} clip format at index ${index}`);
+      } else {
+        seenFormats.add(format.format);
+      }
+      if (!isPresentString(format.path)) {
+        errors.push(`missing clip format path at index ${index}.${formatIndex}`);
+      }
+      if (!Number.isInteger(format.bytes) || (format.bytes as number) <= 0) {
+        errors.push(`clip format bytes must be a positive integer at index ${index}.${formatIndex}`);
+      }
+      if (!isPresentString(format.sha256)) {
+        errors.push(`missing clip format sha256 at index ${index}.${formatIndex}`);
+      }
+      if (!isRecord(format.provenance)) {
+        errors.push(`missing clip format provenance at index ${index}.${formatIndex}`);
+      } else {
+        for (const field of ['encoder', 'encoderVersion', 'sourceFormat']) {
+          if (!isPresentString(format.provenance[field])) {
+            errors.push(`missing clip format provenance ${field} at index ${index}.${formatIndex}`);
+          }
+        }
+      }
+    });
+    if (seenFormats.size !== 2 || !seenFormats.has('mp3') || !seenFormats.has('ogg')) {
+      errors.push(`clip formats must contain exactly one MP3 and one OGG at index ${index}`);
     }
   });
 

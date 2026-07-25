@@ -170,7 +170,7 @@ npm run generate-voices:how-to-play
 npm run validate-assets
 ```
 
-Generation requires `OPENAI_API_KEY` in the local environment. The script uses `gpt-4o-mini-tts` with the `marin` voice by default, commits only the MP3 and disclosure manifest, and never ships the key. Asset validation compares the authored-text hash with the manifest so stale narration fails CI.
+Generation requires `OPENAI_API_KEY` in the local environment. The script uses `gpt-4o-mini-tts` with the `marin` voice by default, then uses the project-pinned ffmpeg version to derive the matching OGG rendition from that same performance. Commit both the MP3 and OGG plus the disclosure manifest; the key is never shipped. The manifest records each rendition's byte count, SHA-256 hash, and encoding provenance. Asset validation checks both formats and compares the authored-text hash with the manifest so missing, modified, or stale narration fails CI.
 
 ## YAML style
 

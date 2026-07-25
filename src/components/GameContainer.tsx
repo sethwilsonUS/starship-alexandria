@@ -27,15 +27,7 @@ import LaunchGate from './LaunchGate';
 import MissionPicker from './MissionPicker';
 import HowToPlayModal from './HowToPlayModal';
 import SettingsModal from './SettingsModal';
-
-function getTotalFragments(): number {
-  try {
-    const catalog = getBookCatalogSync();
-    return catalog.reduce((n, b) => n + b.fragments.length, 0);
-  } catch {
-    return 0;
-  }
-}
+import { getTotalFragments } from '@/utils/library';
 
 function handleHudSummaryAction(): void {
   const state = useGameStore.getState();

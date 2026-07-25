@@ -1,6 +1,12 @@
 #!/usr/bin/env node
+import crypto from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import {
+  assertFfmpegVersion,
+  PINNED_FFMPEG_VERSION,
+} from './lib/asset-validation.mjs';
 import { getHowToPlayVoiceLines } from './lib/how-to-play-voice-lines.mjs';
 
 const apiKey = process.env.OPENAI_API_KEY;
@@ -21,6 +27,10 @@ const instructions = process.env.OPENAI_TTS_INSTRUCTIONS
 
 function isPresentString(value) {
   return typeof value === 'string' && value.trim().length > 0;
+}
+
+function sha256(buffer) {
+  return crypto.createHash('sha256').update(buffer).digest('hex');
 }
 
 function validateManifest(manifest) {
@@ -56,6 +66,11 @@ function validateManifest(manifest) {
     }
     if (typeof clip.durationMs !== 'number' && clip.durationMs !== null) {
       throw new Error(`Voice manifest clip "${clip.lineId}" durationMs must be a number or null.`);
+    }
+    // Accept legacy clips without formats so this generator can upgrade the
+    // disclosure manifest. Every newly written clip includes the strict pair.
+    if (clip.formats !== undefined && !Array.isArray(clip.formats)) {
+      throw new Error(`Voice manifest clip "${clip.lineId}" formats must be an array.`);
     }
   }
 }
@@ -97,45 +112,137 @@ async function generateSpeech(line) {
   return Buffer.from(await response.arrayBuffer());
 }
 
+function assertFfmpegAvailable() {
+  const result = spawnSync('ffmpeg', ['-version'], { encoding: 'utf8' });
+  if (result.error) throw result.error;
+  if (result.status !== 0) {
+    throw new Error(`ffmpeg -version failed: ${result.stderr || result.stdout}`);
+  }
+  assertFfmpegVersion(result.stdout, PINNED_FFMPEG_VERSION);
+}
+
+async function encodeOgg(mp3Path, oggPath) {
+  const tempPath = `${oggPath}.${process.pid}.tmp`;
+  const result = spawnSync('ffmpeg', [
+    '-nostdin',
+    '-hide_banner',
+    '-loglevel', 'error',
+    '-y',
+    '-i', mp3Path,
+    '-map_metadata', '-1',
+    '-vn',
+    '-ac', '2',
+    '-ar', '24000',
+    '-c:a', 'vorbis',
+    '-strict', '-2',
+    '-q:a', '5',
+    '-f', 'ogg',
+    tempPath,
+  ], { encoding: 'utf8' });
+
+  if (result.error) throw result.error;
+  if (result.status !== 0) {
+    await fs.rm(tempPath, { force: true });
+    throw new Error(`ffmpeg OGG encoding failed: ${result.stderr || result.stdout}`);
+  }
+  await fs.rename(tempPath, oggPath);
+}
+
+async function fileExists(filePath) {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function describeFormat({ filePath, publicPath, format, provenance }) {
+  const buffer = await fs.readFile(filePath);
+  return {
+    format,
+    path: publicPath,
+    bytes: buffer.byteLength,
+    sha256: sha256(buffer),
+    provenance,
+  };
+}
+
 const content = JSON.parse(await fs.readFile(contentPath, 'utf8'));
 const lines = getHowToPlayVoiceLines(content);
 await fs.mkdir(outputDir, { recursive: true });
 
 const manifest = await readManifest(manifestPath);
 const clipsById = new Map(manifest.clips.map((clip) => [clip.lineId, clip]));
-let didGenerateClip = false;
+let didUpdateManifest = false;
+
+assertFfmpegAvailable();
 
 for (const line of lines) {
-  const fileName = `${line.lineId}.mp3`;
-  const publicPath = `/audio/voices/how-to-play/${fileName}`;
-  const outputPath = path.join(outputDir, fileName);
+  const mp3FileName = `${line.lineId}.mp3`;
+  const oggFileName = `${line.lineId}.ogg`;
+  const mp3PublicPath = `/audio/voices/how-to-play/${mp3FileName}`;
+  const oggPublicPath = `/audio/voices/how-to-play/${oggFileName}`;
+  const mp3OutputPath = path.join(outputDir, mp3FileName);
+  const oggOutputPath = path.join(outputDir, oggFileName);
   const existing = clipsById.get(line.lineId);
 
-  if (existing?.textHash === line.textHash && existing.path === publicPath) {
-    try {
-      await fs.access(outputPath);
-      console.log(`Skipping unchanged ${line.lineId}`);
-      continue;
-    } catch {
-      // Missing file; regenerate below.
-    }
+  const canReuseMp3 = existing?.textHash === line.textHash
+    && existing.path === mp3PublicPath
+    && existing.model === model
+    && existing.voice === voice
+    && await fileExists(mp3OutputPath);
+
+  if (!canReuseMp3) {
+    console.log(`Generating ${line.lineId} MP3 with OpenAI`);
+    const audio = await generateSpeech(line);
+    const tempMp3Path = `${mp3OutputPath}.${process.pid}.tmp`;
+    await fs.writeFile(tempMp3Path, audio);
+    await fs.rename(tempMp3Path, mp3OutputPath);
+  } else {
+    console.log(`Reusing unchanged ${line.lineId} MP3`);
   }
 
-  console.log(`Generating ${line.lineId}`);
-  const audio = await generateSpeech(line);
-  await fs.writeFile(outputPath, audio);
-  didGenerateClip = true;
-  clipsById.set(line.lineId, {
+  if (!canReuseMp3 || !await fileExists(oggOutputPath)) {
+    console.log(`Encoding ${line.lineId} OGG with ffmpeg ${PINNED_FFMPEG_VERSION}`);
+    await encodeOgg(mp3OutputPath, oggOutputPath);
+  }
+
+  const nextClip = {
     lineId: line.lineId,
     textHash: line.textHash,
-    path: publicPath,
+    path: mp3PublicPath,
     model,
     voice,
     durationMs: null,
-  });
+    formats: [
+      await describeFormat({
+        filePath: mp3OutputPath,
+        publicPath: mp3PublicPath,
+        format: 'mp3',
+        provenance: {
+          encoder: 'openai-audio-speech',
+          encoderVersion: model,
+          sourceFormat: 'text',
+        },
+      }),
+      await describeFormat({
+        filePath: oggOutputPath,
+        publicPath: oggPublicPath,
+        format: 'ogg',
+        provenance: {
+          encoder: 'ffmpeg',
+          encoderVersion: PINNED_FFMPEG_VERSION,
+          sourceFormat: 'mp3',
+        },
+      }),
+    ],
+  };
+  if (JSON.stringify(existing) !== JSON.stringify(nextClip)) didUpdateManifest = true;
+  clipsById.set(line.lineId, nextClip);
 }
 
-if (!didGenerateClip) {
+if (!didUpdateManifest) {
   console.log('No voice clips changed; manifest left as-is.');
 } else {
   const nextManifest = {

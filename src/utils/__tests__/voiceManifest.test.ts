@@ -18,6 +18,30 @@ const baseManifest: VoiceManifest = {
       model: 'tts-test',
       voice: 'voice-test',
       durationMs: 1200,
+      formats: [
+        {
+          format: 'mp3',
+          path: '/audio/voices/opening.arrival.1.mp3',
+          bytes: 100,
+          sha256: 'a'.repeat(64),
+          provenance: {
+            encoder: 'openai-audio-speech',
+            encoderVersion: 'tts-test',
+            sourceFormat: 'text',
+          },
+        },
+        {
+          format: 'ogg',
+          path: '/audio/voices/opening.arrival.1.ogg',
+          bytes: 90,
+          sha256: 'b'.repeat(64),
+          provenance: {
+            encoder: 'ffmpeg',
+            encoderVersion: '8.1',
+            sourceFormat: 'mp3',
+          },
+        },
+      ],
     },
   ],
 };
@@ -62,12 +86,14 @@ describe('validateVoiceManifest', () => {
           model: 'tts-test',
           voice: 'voice-test',
           durationMs: null,
+          formats: [],
         },
       ],
     });
 
     expect(errors).toContain('missing clip lineId at index 0');
     expect(errors).toContain('missing clip path at index 0');
+    expect(errors).toContain('clip formats must contain exactly one MP3 and one OGG at index 0');
   });
 
   it('reports duplicate line ids', () => {
@@ -146,6 +172,7 @@ describe('loadVoiceManifest', () => {
             model: 'tts-test',
             voice: 'voice-test',
             durationMs: null,
+            formats: baseManifest.clips[0].formats,
           },
         ],
       }),

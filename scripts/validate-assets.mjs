@@ -272,22 +272,95 @@ async function main() {
       seenVoiceIds.add(clip.lineId);
       if (!clip.path?.startsWith('/audio/voices/') || path.extname(clip.path) !== '.mp3') {
         fail(`${clip.lineId ?? `Voice clip ${index}`}: path must be an MP3 under /audio/voices/`);
-        continue;
       }
       if (!clip.textHash || !clip.model || !clip.voice) {
         fail(`${clip.lineId}: textHash, model, and voice are required`);
       }
-      voicePaths.add(clip.path);
-      const resolved = path.resolve(PUBLIC_ROOT, clip.path.replace(/^\//, ''));
-      if (!resolved.startsWith(`${PUBLIC_ROOT}${path.sep}`)) {
-        fail(`${clip.path}: voice path escapes public/`);
+
+      if (!Array.isArray(clip.formats)) {
+        fail(`${clip.lineId}: formats must contain exactly one MP3 and one OGG`);
         continue;
       }
-      try {
-        const buffer = await fs.readFile(resolved);
-        if (buffer.byteLength === 0 || !isMp3(buffer)) fail(`${clip.path}: invalid or empty MP3`);
-      } catch {
-        fail(`${clip.path}: missing voice clip`);
+
+      const formatGroups = validateAudioFormatGroups(
+        clip.formats.map((format) => ({
+          kind: 'audio',
+          logicalName: clip.lineId,
+          path: format?.path,
+        }))
+      );
+      for (const error of formatGroups.errors) fail(error);
+
+      const mp3Format = clip.formats.find((format) => format?.format === 'mp3');
+      if (mp3Format?.path !== clip.path) {
+        fail(`${clip.lineId}: primary path must match the MP3 rendition`);
+      }
+
+      for (const [formatIndex, format] of clip.formats.entries()) {
+        const label = `${clip.lineId} format ${formatIndex}`;
+        if (!format || typeof format !== 'object') {
+          fail(`${label}: rendition must be an object`);
+          continue;
+        }
+        if (!['mp3', 'ogg'].includes(format.format)) {
+          fail(`${label}: format must be mp3 or ogg`);
+        }
+        if (
+          !format.path?.startsWith('/audio/voices/')
+          || path.extname(format.path).slice(1) !== format.format
+        ) {
+          fail(`${label}: path must match its format under /audio/voices/`);
+          continue;
+        }
+        if (voicePaths.has(format.path)) {
+          fail(`Duplicate voice rendition path: ${format.path}`);
+        }
+        voicePaths.add(format.path);
+        if (!Number.isInteger(format.bytes) || format.bytes <= 0) {
+          fail(`${format.path}: byte count must be a positive integer`);
+        }
+        if (!/^[a-f0-9]{64}$/.test(format.sha256 ?? '')) {
+          fail(`${format.path}: lowercase SHA-256 hash is required`);
+        }
+        const provenance = format.provenance;
+        if (!provenance?.encoder || !provenance.encoderVersion || !provenance.sourceFormat) {
+          fail(`${format.path}: complete encoding provenance is required`);
+        }
+        if (
+          provenance?.encoder === 'ffmpeg'
+          && provenance.encoderVersion !== PINNED_FFMPEG_VERSION
+        ) {
+          fail(`${format.path}: ffmpeg provenance must pin ${PINNED_FFMPEG_VERSION}`);
+        }
+
+        const resolved = path.resolve(PUBLIC_ROOT, format.path.replace(/^\//, ''));
+        if (!resolved.startsWith(`${PUBLIC_ROOT}${path.sep}`)) {
+          fail(`${format.path}: voice path escapes public/`);
+          continue;
+        }
+        try {
+          const realPath = await fs.realpath(resolved);
+          if (!realPath.startsWith(`${PUBLIC_ROOT}${path.sep}`)) {
+            fail(`${format.path}: voice symlink escapes public/`);
+            continue;
+          }
+          const buffer = await fs.readFile(realPath);
+          if (buffer.byteLength === 0) fail(`${format.path}: empty voice rendition`);
+          if (format.bytes !== buffer.byteLength) {
+            fail(`${format.path}: byte count does not match manifest`);
+          }
+          if (format.sha256 !== sha256(buffer)) {
+            fail(`${format.path}: SHA-256 does not match manifest`);
+          }
+          if (format.format === 'mp3' && !isMp3(buffer)) {
+            fail(`${format.path}: invalid MP3 signature`);
+          }
+          if (format.format === 'ogg' && buffer.subarray(0, 4).toString('ascii') !== 'OggS') {
+            fail(`${format.path}: invalid OGG signature`);
+          }
+        } catch {
+          fail(`${format.path}: missing voice rendition`);
+        }
       }
     }
 
@@ -303,7 +376,7 @@ async function main() {
     }
 
     const voiceFiles = (await walk(path.dirname(VOICE_MANIFEST_PATH)))
-      .filter((filePath) => path.extname(filePath).toLowerCase() === '.mp3')
+      .filter((filePath) => ['.mp3', '.ogg'].includes(path.extname(filePath).toLowerCase()))
       .map((filePath) => `/${path.relative(PUBLIC_ROOT, filePath).split(path.sep).join('/')}`);
     for (const voiceFile of voiceFiles) {
       if (!voicePaths.has(voiceFile)) fail(`${voiceFile}: voice file is missing from manifest`);
