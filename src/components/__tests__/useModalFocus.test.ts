@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { resolveModalTabTarget } from '../useModalFocus';
+import { resolveModalTabTarget, shouldApplyModalAutofocus } from '../useModalFocus';
+
+describe('shouldApplyModalAutofocus', () => {
+  it('moves focus into a newly opened modal when focus is still outside', () => {
+    expect(shouldApplyModalAutofocus(false)).toBe(true);
+  });
+
+  it('preserves focus that has already moved inside the modal', () => {
+    expect(shouldApplyModalAutofocus(true)).toBe(false);
+  });
+});
 
 describe('resolveModalTabTarget', () => {
   it('redirects focus into the modal when focus starts outside it', () => {

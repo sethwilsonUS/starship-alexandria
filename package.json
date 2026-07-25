@@ -47,7 +47,7 @@
         "generate-voices:opening": "node scripts/generate-opening-voices.mjs"
     },
     "dependencies": {
-        "next": "^16.2.10",
+        "next": "^16.2.11",
         "phaser": "^4.1.0",
         "react": "19.2.5",
         "react-dom": "19.2.5",
@@ -64,13 +64,14 @@
         "@types/react-dom": "^19",
         "@types/uuid": "^10.0.0",
         "eslint": "^9.39.4",
-        "eslint-config-next": "^16.2.10",
-        "sharp": "^0.34.5",
+        "eslint-config-next": "^16.2.11",
+        "sharp": "^0.35.3",
         "ts-node": "^10.9.2",
         "typescript": "^5",
         "vitest": "^4.1.10"
     },
     "overrides": {
-        "postcss": "8.5.19"
+        "postcss": "8.5.19",
+        "sharp": "$sharp"
     }
 }
