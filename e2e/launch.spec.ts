@@ -101,9 +101,11 @@ test('@cross-browser @smoke onboarding and persistent utilities remain accessibl
   await expect(resumeGate).toBeVisible();
   await expect(resumeGate.getByRole('checkbox')).toHaveCount(0);
   await expect(resumeGate.getByRole('radio')).toHaveCount(0);
+  await expect(resumeGate.getByRole('status')).toContainText('Archive synchronized');
   await expectAxeClean(page, 'returning-player launch gate');
 
   const resume = resumeGate.getByRole('button', { name: 'Resume aboard Alexandria' });
+  await expect(resume).toBeEnabled();
   await resume.focus();
   await page.keyboard.press('Enter');
   await expect(resumeGate).toBeHidden();
