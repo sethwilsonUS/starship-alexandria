@@ -50,13 +50,13 @@ test('@cross-browser @smoke onboarding and persistent utilities remain accessibl
   await expect(page.getByRole('region', { name: 'Library Collection' })).toBeVisible();
   await expectAxeClean(page, 'ship library with utility controls');
 
-  const settingsButton = page.getByRole('button', { name: 'Settings' });
+  const settingsButton = page.getByRole('button', { name: 'Options' });
   await settingsButton.focus();
   await page.keyboard.press('Enter');
-  const settings = page.getByRole('dialog', { name: 'Settings' });
+  const settings = page.getByRole('dialog', { name: 'Options' });
   await expect(settings).toBeVisible();
-  await expect(settings.getByRole('heading', { name: 'Settings' })).toBeFocused();
-  await expectAxeClean(page, 'Settings dialog');
+  await expect(settings.getByRole('heading', { name: 'Options' })).toBeFocused();
+  await expectAxeClean(page, 'Options dialog');
 
   const reduceMotion = settings.getByRole('radio', { name: 'Reduce motion' });
   await reduceMotion.focus();
@@ -78,12 +78,20 @@ test('@cross-browser @smoke onboarding and persistent utilities remain accessibl
   await expect(settings).toBeHidden();
   await expect(settingsButton).toBeFocused();
 
-  await page.locator('#game-controls').focus();
+  const gameControls = page.locator('#game-controls');
+  await gameControls.focus();
+  await page.keyboard.press('KeyO');
+  await expect(settings).toBeVisible();
+  await expect(settings.getByRole('heading', { name: 'Options' })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(settings).toBeHidden();
+  await expect(gameControls).toBeFocused();
+
   await page.keyboard.press('Shift+/');
   const refresher = page.getByRole('dialog', { name: 'How to Play' });
   await expect(refresher).toBeVisible();
   await expect(refresher.getByRole('heading', { name: 'How to Play', level: 2 })).toBeFocused();
-  await expect(refresher).toContainText('Prerecorded guide narration is off in Settings');
+  await expect(refresher).toContainText('Prerecorded guide narration is off in Options');
   await expect(refresher.getByRole('button', { name: /narrated guide/ })).toHaveCount(0);
   await expectAxeClean(page, 'How to Play refresher');
   await page.keyboard.press('Escape');
@@ -92,8 +100,10 @@ test('@cross-browser @smoke onboarding and persistent utilities remain accessibl
 
   const picker = await openMissionPicker(page);
   await page.keyboard.press('Shift+/');
+  await page.keyboard.press('KeyO');
   await expect(picker).toBeVisible();
   await expect(page.getByRole('dialog', { name: 'How to Play' })).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: 'Options' })).toHaveCount(0);
   await page.keyboard.press('Escape');
 
   await page.reload();
@@ -111,8 +121,8 @@ test('@cross-browser @smoke onboarding and persistent utilities remain accessibl
   await expect(resumeGate).toBeHidden();
   await expect(page.locator('#game-controls')).toBeFocused();
 
-  await page.getByRole('button', { name: 'Settings' }).click();
-  const persistedSettings = page.getByRole('dialog', { name: 'Settings' });
+  await page.getByRole('button', { name: 'Options' }).click();
+  const persistedSettings = page.getByRole('dialog', { name: 'Options' });
   await expect(persistedSettings.getByRole('radio', { name: 'Reduce motion' })).toBeChecked();
   await expect(persistedSettings.getByRole('checkbox', { name: /Narration/ })).not.toBeChecked();
   await expect(persistedSettings.getByRole('slider', { name: 'Master volume' })).toHaveValue('0.35');
@@ -123,8 +133,8 @@ test('@cross-browser @smoke onboarding and persistent utilities remain accessibl
   const resetGuide = page.getByRole('dialog', { name: 'How to Play' });
   await expect(resetGuide).toBeVisible();
   await resetGuide.getByRole('button', { name: 'Begin recovery mission' }).click();
-  await page.getByRole('button', { name: 'Settings' }).click();
-  const resetSettings = page.getByRole('dialog', { name: 'Settings' });
+  await page.getByRole('button', { name: 'Options' }).click();
+  const resetSettings = page.getByRole('dialog', { name: 'Options' });
   await expect(resetSettings.getByRole('radio', { name: 'Reduce motion' })).toBeChecked();
   await expect(resetSettings.getByRole('checkbox', { name: /Narration/ })).not.toBeChecked();
   await expect(resetSettings.getByRole('slider', { name: 'Master volume' })).toHaveValue('0.35');

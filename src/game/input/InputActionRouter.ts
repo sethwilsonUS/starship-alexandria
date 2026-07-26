@@ -10,7 +10,8 @@ export type GameInputAction =
   | 'advanceDialogue'
   | 'beamDown'
   | 'hudSummary'
-  | 'openHowToPlay';
+  | 'openHowToPlay'
+  | 'openSettings';
 
 export interface InputActionContext {
   phase: GamePhase;
@@ -54,6 +55,13 @@ export class InputActionRouter {
       && isKeyboardMatch(event, 'Slash', '?')
     ) {
       return 'openHowToPlay';
+    }
+
+    if (
+      (context.phase === 'ship' || context.phase === 'exploring')
+      && isKeyboardMatch(event, 'KeyO', 'o', 'keyo')
+    ) {
+      return 'openSettings';
     }
 
     const moveAction = MOVE_KEYS[event.code];

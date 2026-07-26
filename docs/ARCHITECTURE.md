@@ -29,7 +29,7 @@ The arrows describe data flow, not import permission. In particular, the generat
 
 React owns the parts of the experience that are documents rather than places:
 
-- first-run How to Play, the returning-player audio gate, and persistent settings;
+- first-run How to Play, the returning-player audio gate, and persistent player options;
 - destination selection;
 - dialogue choices and explicit close controls;
 - the library and reading view;
@@ -162,7 +162,7 @@ Narration and game sound are coordinated but distinct:
 Canvas pixels are never the sole carrier of essential information. The HTML layer supplies:
 
 - a focusable game-controls region and centralized keyboard routing;
-- a single scrolling How to Play document and persistent, labeled utility controls;
+- a single scrolling How to Play document and persistent, labeled utility controls with discoverable keyboard shortcuts;
 - modal focus trap and return, inert backgrounds, and explicit Close buttons;
 - ARIA live updates for movement, discoveries, and status;
 - semantic tabs and tab panels in the ship library;
@@ -188,13 +188,13 @@ Playwright derives routes through the semantic map with BFS and sends real keybo
 Automated checks cannot judge whether the canvas/HTML handoff forms a coherent screen-reader experience. Before a showcase release, test a production build in Safari with macOS VoiceOver, using a temporary browser profile or known fixture save:
 
 1. Traverse the first-run How to Play guide without a pointer. Confirm its heading structure, reading order, loading status, non-dismissible Escape behavior, and disabled/enabled Begin state are announced sensibly. Play and stop its prerecorded narration; verify the visible status changes and no browser speech voice replaces the committed clip.
-2. Begin, confirm focus moves to the game-controls region, open Settings, and turn narration off for one pass so VoiceOver and browser speech do not talk over one another. Close Settings, confirm focus returns to its HUD button, and request the `I` status summary.
+2. Begin, confirm focus moves to the game-controls region, open Options with both its HUD button and `O`, and turn narration off for one pass so VoiceOver and browser speech do not talk over one another. Close Options after each route, confirm focus returns to its invoking button or the game-controls region, and request the `I` status summary.
 3. From the ship, open the destination picker with the keyboard. Read all four destination cards, choose one, and confirm the transition is announced once.
 4. Move, encounter a blocked tile, collect the area map, speak to an NPC, read a journal and excerpt, discover the expedition clue, open its vault, and return to extraction without using a pointer.
 5. Open the textual map with `M`. Confirm current zone, discovered zones, approximate directions/distances, known contents, and the return route are understandable without the canvas.
-6. Open How to Play with both its HUD button and `?`. Play and stop the same prerecorded guide narration. At each guide, dialogue, map, reader, mission picker, and settings view, verify focus enters the overlay, stays inside it, and returns to the invoking control/region after Close or `Escape`. Confirm closing the guide stops narration and `?` does not stack a guide over another overlay.
+6. Open How to Play with both its HUD button and `?`. Play and stop the same prerecorded guide narration. At each guide, dialogue, map, reader, mission picker, and Options view, verify focus enters the overlay, stays inside it, and returns to the invoking control/region after Close or `Escape`. Confirm closing the guide stops narration and neither utility shortcut stacks a dialog over another overlay.
 7. Reload into the compact Resume gate and repeat one full interaction with narration on; confirm no audio begins before Resume.
-8. Repeat the guide, settings, and other major overlays at 200% browser zoom and with Reduce Motion enabled. Check that text is not clipped, focus remains visible, and motion-free state changes carry the same information.
+8. Repeat the guide, Options, and other major overlays at 200% browser zoom and with Reduce Motion enabled. Check that text is not clipped, focus remains visible, and motion-free state changes carry the same information.
 
 Record the date, macOS/Safari versions, input commands used, save/seed, failures, and any intentionally deferred issue in the release notes. A pass is incomplete if essential state is available only through canvas position, color, animation, or sound.
 

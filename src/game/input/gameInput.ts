@@ -23,6 +23,11 @@ export function getInputActionContext(now = Date.now()): InputActionContext {
 }
 
 export function dispatchGameInputAction(action: GameInputAction): boolean {
+  if (action === 'openSettings') {
+    useGameStore.getState().actions.openSettings();
+    return true;
+  }
+
   if (action === 'openHowToPlay') {
     useGameStore.getState().actions.openHowToPlay();
     return true;

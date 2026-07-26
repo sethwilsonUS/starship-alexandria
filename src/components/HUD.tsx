@@ -71,7 +71,9 @@ export default function HUD() {
         <button type="button" onClick={openHowToPlay}>
           How to Play <kbd aria-hidden="true">?</kbd>
         </button>
-        <button type="button" onClick={openSettings}>Settings</button>
+        <button type="button" onClick={openSettings}>
+          Options <kbd aria-hidden="true">O</kbd>
+        </button>
       </nav>
     </header>
   );

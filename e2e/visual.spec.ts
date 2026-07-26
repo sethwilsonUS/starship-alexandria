@@ -33,8 +33,8 @@ test('@visual launch, ship, and destination registry remain visually stable', as
   await beginMission.click();
   await expect(page).toHaveScreenshot('ship.png', { fullPage: true });
 
-  await page.getByRole('button', { name: 'Settings' }).click();
-  const settings = page.getByRole('dialog', { name: 'Settings' });
+  await page.getByRole('button', { name: 'Options' }).click();
+  const settings = page.getByRole('dialog', { name: 'Options' });
   await expect(settings).toBeVisible();
   await expect(page).toHaveScreenshot('settings.png', { fullPage: true });
   await page.setViewportSize({
@@ -42,7 +42,7 @@ test('@visual launch, ship, and destination registry remain visually stable', as
     height: Math.floor(desktopViewport.height / 2),
   });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  const closeSettings = settings.getByRole('button', { name: 'Close Settings' });
+  const closeSettings = settings.getByRole('button', { name: 'Close Options' });
   await closeSettings.scrollIntoViewIfNeeded();
   await expect(closeSettings).toBeInViewport();
   const doneSettings = settings.getByRole('button', { name: 'Done' });

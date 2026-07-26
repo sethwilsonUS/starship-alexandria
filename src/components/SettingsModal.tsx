@@ -29,12 +29,12 @@ export default function SettingsModal() {
         <header className="utility-modal__header">
           <div>
             <p className="how-to-guide__eyebrow">Personal console</p>
-            <h2 id="settings-title" tabIndex={-1} data-autofocus>Settings</h2>
+            <h2 id="settings-title" tabIndex={-1} data-autofocus>Options</h2>
             <p id="settings-description">
               Changes apply immediately and stay with this browser, including after New Game.
             </p>
           </div>
-          <button type="button" className="modal-close" onClick={close} aria-label="Close Settings">
+          <button type="button" className="modal-close" onClick={close} aria-label="Close Options">
             <span aria-hidden="true">×</span>
           </button>
         </header>
@@ -108,7 +108,7 @@ export default function SettingsModal() {
         </div>
 
         <footer className="utility-modal__footer">
-          <p role="status">Settings save automatically.</p>
+          <p role="status">Options save automatically.</p>
           <button type="button" className="archive-button archive-button--primary" onClick={close}>
             Done
           </button>
