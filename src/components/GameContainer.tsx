@@ -319,7 +319,7 @@ export default function GameContainer() {
         id="game-controls"
         className="game-shell"
         tabIndex={launchGateOpen ? -1 : 0}
-        aria-label="Game controls. Use arrow keys or W A S D to move, E to interact, M for the map, I for status, and question mark for How to Play."
+        aria-label="Game controls. Use arrow keys or W A S D to move, E to interact, M for the map, I for status, O for Options, and question mark for How to Play."
         inert={launchGateOpen}
       >
         <div className="game-world" inert={modalOpen} aria-hidden={modalOpen || undefined}>

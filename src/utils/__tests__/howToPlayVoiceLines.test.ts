@@ -11,6 +11,7 @@ describe('How to Play recorded narration', () => {
     expect(line.text).toBe(buildHowToPlayNarration(HOW_TO_PLAY));
     expect(line.text).toContain('There is no combat, death, or timer');
     expect(line.text).toContain('Press the question mark key');
+    expect(line.text).toContain('Press O to open Options');
     expect(line.textHash).toMatch(/^[a-f0-9]{16}$/);
   });
 

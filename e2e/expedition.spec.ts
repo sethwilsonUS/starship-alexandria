@@ -31,11 +31,19 @@ test('@cross-browser completes a keyboard-only expedition using independently co
   const afterGuide = await readSnapshot(page);
   expect(afterGuide.player).toEqual(beforeGuide.player);
 
-  await page.getByRole('button', { name: 'Settings' }).click();
-  const surfaceSettings = page.getByRole('dialog', { name: 'Settings' });
+  const gameControls = page.locator('#game-controls');
+  await gameControls.focus();
+  await page.keyboard.press('KeyO');
+  const surfaceSettings = page.getByRole('dialog', { name: 'Options' });
   await expect(surfaceSettings).toBeVisible();
-  await expectAxeClean(page, 'surface Settings dialog');
-  await surfaceSettings.getByRole('button', { name: 'Done' }).click();
+  await expect(surfaceSettings.getByRole('heading', { name: 'Options' })).toBeFocused();
+  const beforeOptionsInput = await readSnapshot(page);
+  await page.keyboard.press('ArrowRight');
+  expect((await readSnapshot(page)).player).toEqual(beforeOptionsInput.player);
+  await expectAxeClean(page, 'surface Options dialog');
+  await page.keyboard.press('Escape');
+  await expect(surfaceSettings).toBeHidden();
+  await expect(gameControls).toBeFocused();
 
   await moveToEntity(page, 'map');
   await expectInteractionPrompt(page, /Area map/i);
@@ -44,7 +52,7 @@ test('@cross-browser completes a keyboard-only expedition using independently co
   await expectAxeClean(page, 'map pickup dialogue');
   await mapPickup.getByRole('button', { name: 'Close dialogue' }).click();
 
-  await page.locator('#game-controls').focus();
+  await gameControls.focus();
   await page.keyboard.press('KeyM');
   const map = page.getByRole('dialog', { name: 'Area Map' });
   await expect(map).toBeVisible();

@@ -39,7 +39,7 @@ export default function HowToPlayNarration() {
   if (!narrationEnabled) {
     return (
       <p className="how-to-guide__voice-note">
-        Prerecorded guide narration is off in Settings.
+        Prerecorded guide narration is off in Options.
       </p>
     );
   }

@@ -67,6 +67,12 @@
           "keyGroupJoiner": "or",
           "description": "Open this guide during normal play.",
           "spoken": "Press the question mark key to open this guide during normal play."
+        },
+        {
+          "keyGroups": [["O"]],
+          "keyGroupJoiner": "or",
+          "description": "Open Options during normal play.",
+          "spoken": "Press O to open Options during normal play."
         }
       ]
     },
@@ -89,10 +95,10 @@
     },
     {
       "id": "access",
-      "heading": "Accessibility and settings",
+      "heading": "Accessibility and options",
       "kind": "prose",
       "paragraphs": [
-        "The game provides visible and spoken equivalents for essential sounds and canvas details. Use the always-visible Settings button during normal play to change narration, sound effects, ambience, master volume, or motion. Use How to Play whenever you want this briefing again."
+        "The game provides visible and spoken equivalents for essential sounds and canvas details. Use the always-visible Options button or press O during normal play to change narration, sound effects, ambience, master volume, or motion. Use How to Play whenever you want this briefing again."
       ]
     }
   ]

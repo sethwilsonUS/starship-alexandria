@@ -121,7 +121,7 @@ export default function LaunchGate() {
             )}
           </div>
           <p className="launch-gate__note">
-            Audio stays silent until you choose Play narrated guide or Begin. How to Play and Settings
+            Audio stays silent until you choose Play narrated guide or Begin. How to Play and Options
             remain available during normal play.
           </p>
         </footer>

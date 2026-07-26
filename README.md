@@ -23,7 +23,7 @@ From the orbiting library ship *Alexandria*, choose a recovery signal, beam down
 - Twenty-one sourced excerpts across ten public-domain works, including *Paradise Lost*, *The Canterbury Tales*, *The Faerie Queene*, *Frankenstein*, *A Vindication of the Rights of Woman*, and Frederick Douglass's *Narrative*.
 - Deterministic expeditions: a seed reproduces the layout, placements, clue, and reward.
 - A nonviolent collection loop with fog of war and a comfortable fixed field of view, journals, maps, NPC dialogue, clue-driven vaults that never require code entry, and a browsable ship library.
-- Accessible HTML for first-run instructions, persistent settings, dialogue, reading, maps, and mission selection around a focused Phaser game region.
+- Accessible HTML for first-run instructions, persistent options, dialogue, reading, maps, and mission selection around a focused Phaser game region.
 - A reusable How to Play guide with deterministic prerecorded narration, plus sound-effects, ambience, volume, and motion preferences available from both ship and surface. Audio never starts without the player's gesture.
 - Visible game-event announcements and a textual map equivalent for information that would otherwise exist only on the canvas.
 - A small versioned local save that preserves progress and preferences while safely returning every reload to the ship.
@@ -51,6 +51,7 @@ The game targets desktop keyboard play. Native controls inside dialogs continue 
 | `M` | Open or close the recovered area map |
 | `I` | Hear/read a concise status summary |
 | `?` | Open How to Play during normal play |
+| `O` | Open Options during normal play |
 | `Escape` | Close the active HTML overlay |
 | `Tab` / `Shift`+`Tab` | Move through HTML controls and dialog actions |
 
