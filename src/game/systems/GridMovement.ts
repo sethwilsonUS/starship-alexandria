@@ -10,6 +10,13 @@ import { shouldUseMotion } from '@/game/motionPolicy';
 
 const MOVEMENT_BLOCKED_PHASES: readonly string[] = ['dialogue', 'reading', 'viewing-map'];
 
+let playerMidStep = false;
+
+/** Observability for the E2E snapshot: true while a movement tween is carrying the player between tiles. */
+export function isPlayerMidStep(): boolean {
+  return playerMidStep;
+}
+
 /**
  * Grid-based movement controller.
  * Listens for arrow keys / WASD, checks collision, tweens sprite.
@@ -40,6 +47,9 @@ export class GridMovement implements MovementController {
     if (this.boundHandler) {
       EventBridge.off('input-action', this.boundHandler);
     }
+    // A shutdown can interrupt the movement tween before its onComplete runs;
+    // don't let a stale mid-step flag leak into the next scene's snapshots.
+    playerMidStep = false;
     this.scene = null;
     this.player = null;
     this.context = null;
@@ -93,6 +103,7 @@ export class GridMovement implements MovementController {
     const duration = result.surface === 'water' ? PLAYER_MOVE_DURATION_SLOW : PLAYER_MOVE_DURATION;
 
     this.isMoving = true;
+    playerMidStep = true;
     EventBridge.emit('player-moving');
     this.player.setDirection(direction);
     if (shouldUseMotion(useGameStore.getState().settings.motionPreference)) {
@@ -112,6 +123,7 @@ export class GridMovement implements MovementController {
         this.player!.endStep?.();
         this.player!.setGridPosition(targetX, targetY);
         this.isMoving = false;
+        playerMidStep = false;
         EventBridge.emit('player-moved', { x: targetX, y: targetY, surface: result.surface });
       },
     });
