@@ -49,3 +49,7 @@ next-env.d.ts
 
 # Downloaded source assets used to generate committed Phaser PNGs
 .asset-cache/
+
+# Claude Code local settings and launch config
+.claude/settings.local.json
+.claude/launch.json

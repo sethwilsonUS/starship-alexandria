@@ -51,7 +51,21 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      grepInvert: /@motion/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1024, height: 768 } },
+    },
+    {
+      // The default projects force reducedMotion, which sends every scene
+      // transition down its instant code path. This project is the only
+      // coverage the animated paths (beam-down tweens, location card fade,
+      // movement tweens) get, so keep at least one @motion test green.
+      name: 'chromium-motion',
+      grep: /@motion/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1024, height: 768 },
+        contextOptions: { reducedMotion: 'no-preference' },
+      },
     },
     {
       name: 'chromium-wide',
