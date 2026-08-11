@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures';
-import type { E2ESnapshot, Point } from './support/game';
-import { chooseTheme, launchToShip, openMissionPicker, readSnapshot } from './support/game';
+import type { E2ESnapshot, PathStep } from './support/game';
+import { chooseTheme, launchToShip, openMissionPicker, planPath, readSnapshot } from './support/game';
 
 type E2EWindow = Window & { __STARSHIP_E2E__?: E2ESnapshot };
 
@@ -20,14 +20,32 @@ test.describe('animated transitions @motion', () => {
     const snapshot = await chooseTheme(page, picker, 'scriptorium');
     expect(snapshot.themeId).toBe('scriptorium');
 
+    // Prove this project actually routed down the animated branch: the scene
+    // resolved the motion preference to full motion, so the beam-down and the
+    // step animations below ran their tween chains rather than the instant path.
+    const motionEnabled = await page.evaluate(
+      () => (window as E2EWindow).__STARSHIP_E2E__?.motionEnabled,
+    );
+    expect(motionEnabled).toBe(true);
+
     await page.waitForFunction(
       () => (window as E2EWindow).__STARSHIP_E2E__?.inputReady === true,
     );
 
-    // One real movement step with movement tweens enabled.
-    const step = firstWalkableStep(snapshot);
+    // One real movement step, route derived with BFS. The player spawns on the
+    // transporter pad, so route toward the vault (never the spawn tile), with
+    // the other entities as fallback targets.
+    const step = firstRouteStep(snapshot);
     await page.locator('#game-controls').focus();
+
+    // Arm the mid-step observer before pressing so the 150ms tween cannot
+    // finish before we start watching for it.
+    const midStepSeen = page.waitForFunction(
+      () => (window as E2EWindow).__STARSHIP_E2E__?.playerMidStep === true,
+    );
     await page.keyboard.press(step.key);
+    await midStepSeen;
+
     await page.waitForFunction(({ x, y }) => {
       const player = (window as E2EWindow).__STARSHIP_E2E__?.player;
       return player?.x === x && player?.y === y;
@@ -38,27 +56,22 @@ test.describe('animated transitions @motion', () => {
   });
 });
 
-interface WalkableStep {
-  key: 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight';
-  to: Point;
-}
-
-function firstWalkableStep(snapshot: E2ESnapshot): WalkableStep {
-  const { player, cells, entities, vault } = snapshot;
-  const blocked = new Set(
-    entities.filter((entity) => entity.blocksMovement).map((entity) => `${entity.position.x},${entity.position.y}`),
-  );
-  blocked.add(`${vault.position.x},${vault.position.y}`);
-
-  const candidates: WalkableStep[] = [
-    { key: 'ArrowRight', to: { x: player.x + 1, y: player.y } },
-    { key: 'ArrowLeft', to: { x: player.x - 1, y: player.y } },
-    { key: 'ArrowDown', to: { x: player.x, y: player.y + 1 } },
-    { key: 'ArrowUp', to: { x: player.x, y: player.y - 1 } },
+/** First step of the first non-empty BFS route to the vault or any other entity. */
+function firstRouteStep(snapshot: E2ESnapshot): PathStep {
+  const candidates: Array<{ target: { x: number; y: number }; range: 'on' | 'adjacent' }> = [
+    { target: snapshot.vault.position, range: 'adjacent' },
+    ...snapshot.entities.map((entity) => ({
+      target: entity.position,
+      range: entity.blocksMovement ? ('adjacent' as const) : ('on' as const),
+    })),
   ];
-  for (const candidate of candidates) {
-    const { x, y } = candidate.to;
-    if (cells[y]?.[x]?.walkable && !blocked.has(`${x},${y}`)) return candidate;
+  for (const { target, range } of candidates) {
+    try {
+      const path = planPath(snapshot, target, range);
+      if (path.length) return path[0];
+    } catch {
+      // Unreachable from spawn — try the next candidate.
+    }
   }
-  throw new Error(`Player at ${player.x},${player.y} has no walkable neighbor`);
+  throw new Error('No BFS route with at least one step from the spawn tile');
 }

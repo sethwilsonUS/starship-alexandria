@@ -12,6 +12,8 @@ export interface Point {
 
 export interface E2ESnapshot {
   inputReady: boolean;
+  motionEnabled: boolean;
+  playerMidStep: boolean;
   seed: string;
   themeId: ThemeId;
   cells: Array<Array<{ walkable: boolean; surface: string; zoneId: string | null }>>;
@@ -106,8 +108,8 @@ export async function moveToEntity(page: Page, kind: EntityKind, range: 'on' | '
   await moveToPoint(page, entity.position, range);
 }
 
-export async function moveToPoint(page: Page, target: Point, range: 'on' | 'adjacent' = 'on'): Promise<void> {
-  const snapshot = await readSnapshot(page);
+/** BFS keyboard route from the snapshot's player position to the target, honoring blockers. */
+export function planPath(snapshot: E2ESnapshot, target: Point, range: 'on' | 'adjacent' = 'on'): PathStep[] {
   const blocked = new Set(
     snapshot.entities
       .filter((entity) => entity.blocksMovement)
@@ -120,6 +122,12 @@ export async function moveToPoint(page: Page, target: Point, range: 'on' | 'adja
     : neighbors(target).filter((point) => isWalkable(snapshot, point) && !blocked.has(pointKey(point)));
   const path = bfs(snapshot, snapshot.player, goals, blocked);
   if (!path) throw new Error(`No keyboard path from ${pointKey(snapshot.player)} to ${range} ${pointKey(target)}`);
+  return path;
+}
+
+export async function moveToPoint(page: Page, target: Point, range: 'on' | 'adjacent' = 'on'): Promise<void> {
+  const snapshot = await readSnapshot(page);
+  const path = planPath(snapshot, target, range);
 
   await page.locator('#game-controls').focus();
   await page.waitForFunction(() => {
@@ -150,7 +158,7 @@ export async function expectInteractionPrompt(page: Page, name: RegExp): Promise
   return prompt;
 }
 
-interface PathStep {
+export interface PathStep {
   key: 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight';
   to: Point;
 }

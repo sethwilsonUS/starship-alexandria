@@ -7,7 +7,7 @@ import { computeVisibleTiles } from '../systems/FOVSystem';
 import { useGameStore } from '@/store/gameStore';
 import { EventBridge } from '../EventBridge';
 import { Player } from '../entities/Player';
-import { GridMovement } from '../systems/GridMovement';
+import { GridMovement, isPlayerMidStep } from '../systems/GridMovement';
 import { InteractionSystem } from '../systems/Interaction';
 import { AnnouncementQueue, createSceneAnnouncementScheduler } from '../systems/AnnouncementQueue';
 import { FxController } from '../systems/FxController';
@@ -594,6 +594,12 @@ export default class ExploreScene extends Scene {
       get inputReady() {
         return transitionGuard.canAcceptAction();
       },
+      get motionEnabled() {
+        return shouldUseMotion(useGameStore.getState().settings.motionPreference);
+      },
+      get playerMidStep() {
+        return isPlayerMidStep();
+      },
       seed: this.expedition.seed,
       themeId: this.expedition.themeId,
       cells: this.expedition.cells.map((row) => row.map((cell) => ({
@@ -692,6 +698,8 @@ declare global {
   interface Window {
     __STARSHIP_E2E__?: Readonly<{
       readonly inputReady: boolean;
+      readonly motionEnabled: boolean;
+      readonly playerMidStep: boolean;
       seed: string;
       themeId: ThemeId;
       cells: Array<Array<{ walkable: boolean; surface: FootstepSurface; zoneId: string | null }>>;
