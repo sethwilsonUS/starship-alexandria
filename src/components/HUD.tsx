@@ -18,11 +18,17 @@ export default function HUD() {
   const explorableTileCount = useGameStore((s) => s.session.explorableTileCount);
   const currentMapId = useGameStore((s) => s.player.currentMapId);
   const contentReady = useGameStore((s) => s.session.contentReady);
+  const vaultInfo = useGameStore((s) => s.session.vaultInfo);
+  const vaultOpened = useGameStore((s) => s.session.vaultOpened);
+  const discoveredClueIds = useGameStore((s) => s.session.discoveredClueIds);
   const openHowToPlay = useGameStore((s) => s.actions.openHowToPlay);
   const openSettings = useGameStore((s) => s.actions.openSettings);
   const [areaName, setAreaName] = useState('Starship Alexandria — Library Deck');
 
   const isOnShip = currentMapId === 'ship';
+  const clueInHand = Boolean(
+    vaultInfo && !vaultOpened && discoveredClueIds.includes(vaultInfo.clueId),
+  );
 
   const discoveryPercent =
     explorableTileCount > 0
@@ -66,6 +72,11 @@ export default function HUD() {
           )}
           📚 {fragmentCount}/{totalFragments ?? '...'} total
         </span>
+        {!isOnShip && clueInHand && vaultInfo && (
+          <span className="hud__objective" aria-label="Current objective">
+            🧭 Clue in hand — seek the {vaultInfo.label.toLowerCase()} in {vaultInfo.roomName}
+          </span>
+        )}
       </div>
       <nav className="hud__utilities" aria-label="Game utilities">
         <button type="button" onClick={openHowToPlay}>

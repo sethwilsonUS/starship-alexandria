@@ -22,6 +22,7 @@ import {
 import DialogueBox from './DialogueBox';
 import BookDetail from './BookDetail';
 import InteractionPrompt from './InteractionPrompt';
+import HintBar from './HintBar';
 import DebugPanel from './DebugPanel';
 import LaunchGate from './LaunchGate';
 import MissionPicker from './MissionPicker';
@@ -328,6 +329,7 @@ export default function GameContainer() {
           <AccessibleLog />
           <LibraryShelf />
           <InteractionPrompt />
+          <HintBar />
           <DebugPanel />
         </div>
         <MissionPicker />

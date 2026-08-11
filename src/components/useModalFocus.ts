@@ -90,7 +90,13 @@ export function useModalFocus(
     return () => {
       cancelAnimationFrame(frame);
       document.removeEventListener('keydown', onKeyDown, true);
-      if (previous?.isConnected) previous.focus();
+      if (previous?.isConnected) {
+        previous.focus();
+      } else {
+        // The opener unmounted (e.g. beaming away closed the picker): keyboard
+        // control returns to the game region instead of falling to <body>.
+        document.getElementById('game-controls')?.focus();
+      }
     };
   }, [dialogRef, onEscape, open]);
 }

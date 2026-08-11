@@ -72,6 +72,7 @@ describe('save migration seam', () => {
         collectedArtifacts: [],
       },
       hasSeenHowToPlay: true,
+      hasSeenSurfaceHints: true,
       settings: {
         narrationEnabled: true,
         sfxEnabled: false,
@@ -86,6 +87,13 @@ describe('save migration seam', () => {
       ...input,
       collectedFragmentIds: ['known', 'missing'],
     });
+  });
+
+  it('shows the surface hint bar only to players who have never explored', () => {
+    expect(migratePersistedSave({}, 7).hasSeenSurfaceHints).toBe(false);
+    expect(
+      migratePersistedSave({ exploration: { visitedMaps: ['earth-1'] } }, 4).hasSeenSurfaceHints,
+    ).toBe(true);
   });
 
   it('upgrades a compact v5 save to v7 without losing identity or progress', () => {
