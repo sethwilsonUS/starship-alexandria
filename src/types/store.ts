@@ -120,7 +120,7 @@ export interface SessionState {
   activeUtility: UtilityOverlay | null;
 }
 
-export type GamePhase = 'exploring' | 'ship' | 'mission-select' | 'dialogue' | 'reading' | 'viewing-map';
+export type GamePhase = 'exploring' | 'ship' | 'mission-select' | 'departing' | 'dialogue' | 'reading' | 'viewing-map';
 export type UtilityOverlay = 'how-to' | 'settings';
 
 /** Settings state (persisted) */

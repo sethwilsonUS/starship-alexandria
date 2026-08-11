@@ -103,7 +103,8 @@ export default class ExploreScene extends Scene {
     });
     this.mapData = expeditionToTilemap(this.expedition);
 
-    if (this.shouldAnimate()) this.cameras.main.fadeIn(600, 92, 180, 255);
+    // Short, dark fade — the materialize beam carries the arrival moment.
+    if (this.shouldAnimate()) this.cameras.main.fadeIn(350, 8, 12, 24);
     this.fx = new FxController(this);
     startAmbience(this, ASSET_KEYS.audio.ambience.byTheme[themeId]);
     this.createTilemap();
@@ -150,8 +151,12 @@ export default class ExploreScene extends Scene {
     this.camera.startFollow(this.player.getSprite(), true, 0.08, 0.08);
     this.createAmbientGrade();
     this.createVignetteOverlay();
+    if (this.shouldAnimate()) this.fx.playMaterialize(this.player.getPixelPosition());
     this.showLocationCard();
     this.publishE2ESnapshot();
+    // The beam-down block is a ceiling for the animated transition; the scene
+    // is live now, so let input through immediately (materialize is decorative).
+    transitionGuard.release();
   }
 
   private createTilemap(): void {
