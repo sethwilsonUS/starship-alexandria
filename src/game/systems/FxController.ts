@@ -22,29 +22,42 @@ export class FxController {
 
   constructor(private readonly scene: Phaser.Scene) {}
 
-  playScreenBeam(color = 0x5cb3ff, duration = 600): void {
-    const { width, height } = this.scene.cameras.main;
-    const overlay = this.trackObject(this.scene.add.graphics());
-    overlay.setDepth(100);
-    overlay.setScrollFactor(0);
-    overlay.fillStyle(color, 0.3);
-    overlay.fillRect(0, 0, width, height);
+  /** Arrival: the transporter column contracts and sparks lift away as the archivist materializes. */
+  playMaterialize(origin: FxOrigin): void {
+    const beam = this.trackObject(this.scene.add.graphics());
+    beam.setDepth(20);
+
+    const sparks = Array.from({ length: 10 }, (_, index) => ({
+      x: origin.x + (((index * 53 + 17) % 33) - 16),
+      y: origin.y + (((index * 29 + 7) % 37) - 18),
+      speed: 40 + ((index * 31) % 50),
+      size: 1.5 + ((index * 13) % 10) / 5,
+    }));
 
     const tween = this.scene.tweens.addCounter({
       from: 0,
       to: 1,
-      duration,
-      ease: 'Sine.easeInOut',
+      duration: 700,
+      ease: 'Sine.easeOut',
       onUpdate: (activeTween) => {
         const t = activeTween.getValue() ?? 1;
+        const view = this.scene.cameras.main.worldView;
+        const beamWidth = 46 * (1 - t) + 6;
 
-        overlay.clear();
-        overlay.fillStyle(color, 0.3 + t * 0.7);
-        overlay.fillRect(0, 0, width, height);
+        beam.clear();
+        beam.fillStyle(0x9cd6ff, 0.5 * (1 - t));
+        beam.fillRect(origin.x - beamWidth / 2, view.y, beamWidth, view.height);
+        beam.fillStyle(0xffffff, 0.7 * (1 - t));
+        beam.fillRect(origin.x - beamWidth / 6, view.y, beamWidth / 3, view.height);
+
+        sparks.forEach((spark) => {
+          beam.fillStyle(0x9cd6ff, 0.8 * (1 - t));
+          beam.fillCircle(spark.x, spark.y - spark.speed * t * 0.5, spark.size);
+        });
       },
       onComplete: () => {
         this.activeTweens.delete(tween);
-        this.destroyObject(overlay);
+        this.destroyObject(beam);
       },
     });
     this.trackTween(tween);
@@ -142,12 +155,13 @@ export class FxController {
     const beam = this.trackObject(this.scene.add.graphics());
     beam.setDepth(100);
 
-    const particles = Array.from({ length: 20 }, () => ({
-      x: origin.x + (Math.random() - 0.5) * 30,
-      y: origin.y + Math.random() * 40 - 20,
-      speed: 50 + Math.random() * 100,
-      alpha: 0.6 + Math.random() * 0.4,
-      size: 3 + Math.random() * 2,
+    // Index-derived scatter keeps the beam identical between runs.
+    const particles = Array.from({ length: 20 }, (_, index) => ({
+      x: origin.x + (((index * 41 + 13) % 31) - 15),
+      y: origin.y + (((index * 23 + 5) % 41) - 20),
+      speed: 50 + ((index * 37) % 100),
+      alpha: 0.6 + ((index * 17) % 40) / 100,
+      size: 3 + ((index * 11) % 20) / 10,
     }));
 
     const tween = this.scene.tweens.addCounter({

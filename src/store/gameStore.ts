@@ -522,8 +522,10 @@ const createActions = (
     set((s) => ({ session: { ...s.session, gamePhase: 'ship' } })),
 
   selectExpeditionTheme: (themeId: SavedThemeId) =>
+    // 'departing' keeps the Archives shelf hidden while the transporter
+    // sequence plays; beamToSurface moves the phase on to 'exploring'.
     set((s) => ({
-      session: { ...s.session, activeThemeId: themeId, gamePhase: 'ship' },
+      session: { ...s.session, activeThemeId: themeId, gamePhase: 'departing' },
     })),
 
   discoverVaultClue: (clueId: string) =>
