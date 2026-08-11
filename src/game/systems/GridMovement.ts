@@ -47,6 +47,9 @@ export class GridMovement implements MovementController {
     if (this.boundHandler) {
       EventBridge.off('input-action', this.boundHandler);
     }
+    // A shutdown can interrupt the movement tween before its onComplete runs;
+    // don't let a stale mid-step flag leak into the next scene's snapshots.
+    playerMidStep = false;
     this.scene = null;
     this.player = null;
     this.context = null;
