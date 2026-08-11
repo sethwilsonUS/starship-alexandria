@@ -21,6 +21,7 @@ export const EXPEDITION_THEMES: Readonly<Record<ThemeId, ExpeditionTheme>> = {
     atlasKey: 'tiles-scriptorium',
     ambienceKey: 'ambience-scriptorium',
     accentColor: '#c9a35f',
+    ambientTint: '#f2e3c9',
     roomNames: [
       'the scriptorium',
       'the chained stacks',
@@ -56,6 +57,7 @@ export const EXPEDITION_THEMES: Readonly<Record<ThemeId, ExpeditionTheme>> = {
     atlasKey: 'tiles-cathedral',
     ambienceKey: 'ambience-cathedral',
     accentColor: '#9cb3c9',
+    ambientTint: '#d3deee',
     roomNames: [
       'the nave',
       'the crossing',
@@ -90,6 +92,7 @@ export const EXPEDITION_THEMES: Readonly<Record<ThemeId, ExpeditionTheme>> = {
     atlasKey: 'tiles-university',
     ambienceKey: 'ambience-university',
     accentColor: '#b98f67',
+    ambientTint: '#e8dfd2',
     roomNames: [
       'the great lecture hall',
       'the natural philosophy laboratory',
@@ -124,6 +127,7 @@ export const EXPEDITION_THEMES: Readonly<Record<ThemeId, ExpeditionTheme>> = {
     atlasKey: 'tiles-gardens',
     ambienceKey: 'ambience-gardens',
     accentColor: '#79a879',
+    ambientTint: '#d8ecd2',
     roomNames: [
       'the botanical conservatory',
       'the sculpture garden',

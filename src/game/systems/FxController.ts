@@ -39,6 +39,39 @@ export class FxController {
     this.trackTween(tween);
   }
 
+  /** Small fading puffs at the feet when a step lands. */
+  playStepDust(origin: FxOrigin, color: number): void {
+    const dust = this.trackObject(this.scene.add.graphics());
+    dust.setDepth(3.4);
+
+    const puffs = Array.from({ length: 3 }, () => ({
+      x: origin.x + (Math.random() - 0.5) * 12,
+      y: origin.y + 10 + (Math.random() - 0.5) * 4,
+      size: 1.6 + Math.random() * 1.6,
+      drift: (Math.random() - 0.5) * 8,
+    }));
+
+    const tween = this.scene.tweens.addCounter({
+      from: 0,
+      to: 1,
+      duration: 260,
+      ease: 'Quad.easeOut',
+      onUpdate: (activeTween) => {
+        const t = activeTween.getValue() ?? 1;
+        dust.clear();
+        puffs.forEach((puff) => {
+          dust.fillStyle(color, 0.26 * (1 - t));
+          dust.fillCircle(puff.x + puff.drift * t, puff.y - 5 * t, puff.size * (1 + t * 0.8));
+        });
+      },
+      onComplete: () => {
+        this.activeTweens.delete(tween);
+        this.destroyObject(dust);
+      },
+    });
+    this.trackTween(tween);
+  }
+
   playPickupBurst(origin: FxOrigin): void {
     this.scene.cameras.main.shake(200, 0.008);
 

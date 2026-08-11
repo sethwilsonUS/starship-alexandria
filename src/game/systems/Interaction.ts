@@ -149,6 +149,7 @@ export class InteractionSystem {
       EventBridge.emit('interaction-available', {
         type: found.type,
         label: found.label,
+        id: found.id,
       });
       
       // Audio announcement for accessibility

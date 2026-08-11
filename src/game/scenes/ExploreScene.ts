@@ -1,4 +1,4 @@
-import { Scene } from 'phaser';
+import { BlendModes, Scene } from 'phaser';
 import { TILE_SIZE } from '@/config/gameConfig';
 import { getBookCatalogSync } from '@/data/books';
 import { getNPCCatalogSync } from '@/data/npcs';
@@ -39,6 +39,15 @@ import { shouldUseMotion } from '@/game/motionPolicy';
 
 const BEAM_UP_INPUT_BLOCK_MS = 1100;
 
+const STEP_DUST_COLORS: Record<FootstepSurface, number> = {
+  stone: 0xb9b4a4,
+  wood: 0xa38560,
+  dirt: 0x9a7f5a,
+  grass: 0x86a06a,
+  sand: 0xc9b280,
+  water: 0x7fb6d9,
+};
+
 /** Renders and operates one pure, deterministic expedition. */
 export default class ExploreScene extends Scene {
   private tilemap!: Phaser.Tilemaps.Tilemap;
@@ -63,6 +72,8 @@ export default class ExploreScene extends Scene {
   private mapContainer: Phaser.GameObjects.Container | null = null;
   private vaultContainer: Phaser.GameObjects.Container | null = null;
   private blockedTiles = new Set<string>();
+  private interactiveContainers = new Map<string, Phaser.GameObjects.Container>();
+  private highlightedInteractiveId: string | null = null;
   private bookToRoomMap = new Map<string, string>();
   private roomContents = new Map<string, RoomContentSummary>();
   private announcedRooms = new Set<string>();
@@ -132,6 +143,7 @@ export default class ExploreScene extends Scene {
     this.camera.setBounds(0, 0, worldWidth, worldHeight);
     this.camera.setZoom(2);
     this.camera.startFollow(this.player.getSprite(), true, 0.08, 0.08);
+    this.createAmbientGrade();
     this.createVignetteOverlay();
     this.showLocationCard();
     this.publishE2ESnapshot();
@@ -173,6 +185,9 @@ export default class ExploreScene extends Scene {
       const actions = useGameStore.getState().actions;
       actions.movePlayer({ x, y });
       this.playFootstep(surface);
+      if (this.shouldAnimate()) {
+        this.fx.playStepDust(this.player.getPixelPosition(), STEP_DUST_COLORS[surface] ?? STEP_DUST_COLORS.stone);
+      }
       this.checkRoomEntry(x, y);
       this.updateFOV(x, y);
       this.publishE2ESnapshot();
@@ -224,6 +239,12 @@ export default class ExploreScene extends Scene {
     };
     EventBridge.on('debug-despawn-all-books', onDebugDespawnAllBooks);
     this.events.once('shutdown', () => EventBridge.off('debug-despawn-all-books', onDebugDespawnAllBooks));
+
+    const onInteractionAvailable = ({ id }: { type: string; label?: string; id?: string }) => {
+      this.setInteractiveHighlight(id);
+    };
+    EventBridge.on('interaction-available', onInteractionAvailable);
+    this.events.once('shutdown', () => EventBridge.off('interaction-available', onInteractionAvailable));
   }
 
   private placeGeneratedInteractives(): void {
@@ -243,8 +264,9 @@ export default class ExploreScene extends Scene {
         case 'fragment': {
           const content = fragments.get(entity.fragmentId);
           if (!content) break;
-          const container = this.addMarkedSprite(entity.position, ASSET_KEYS.sprites.book, 0xd4af37);
+          const container = this.addGroundedSprite(entity.position, ASSET_KEYS.sprites.book, 0xd4af37, 'float');
           this.bookContainers.set(entity.fragmentId, container);
+          this.interactiveContainers.set(entity.fragmentId, container);
           this.bookToRoomMap.set(entity.fragmentId, roomName);
           this.interactionSystem.register({
             id: entity.fragmentId,
@@ -259,7 +281,7 @@ export default class ExploreScene extends Scene {
         case 'npc': {
           const npc = npcs.get(entity.npcId);
           if (!npc) break;
-          this.addMarkedSprite(entity.position, ASSET_KEYS.sprites.npc, 0xe8a838);
+          this.interactiveContainers.set(npc.id, this.addGroundedSprite(entity.position, ASSET_KEYS.sprites.npc, 0xe8a838, 'breathe'));
           this.interactionSystem.register({
             id: npc.id,
             type: 'npc',
@@ -276,8 +298,9 @@ export default class ExploreScene extends Scene {
         case 'journal': {
           const journal = journals.get(entity.journalId);
           if (!journal) break;
-          const container = this.addMarkedSprite(entity.position, ASSET_KEYS.sprites.journal, 0xb8860b, 16);
+          const container = this.addGroundedSprite(entity.position, ASSET_KEYS.sprites.journal, 0xb8860b, 'float');
           this.journalContainers.set(entity.journalId, container);
+          this.interactiveContainers.set(entity.journalId, container);
           this.interactionSystem.register({
             id: entity.journalId,
             type: 'journal',
@@ -289,8 +312,9 @@ export default class ExploreScene extends Scene {
           break;
         }
         case 'clue': {
-          const container = this.addMarkedSprite(entity.position, ASSET_KEYS.sprites.journal, 0x9cb3c9, 16);
+          const container = this.addGroundedSprite(entity.position, ASSET_KEYS.sprites.journal, 0x9cb3c9, 'float');
           this.journalContainers.set(entity.clueId, container);
+          this.interactiveContainers.set(entity.clueId, container);
           this.interactionSystem.register({
             id: entity.clueId,
             type: 'journal',
@@ -302,7 +326,8 @@ export default class ExploreScene extends Scene {
           break;
         }
         case 'map': {
-          this.mapContainer = this.addMarkedSprite(entity.position, ASSET_KEYS.sprites.map, 0x00ced1);
+          this.mapContainer = this.addGroundedSprite(entity.position, ASSET_KEYS.sprites.map, 0x00ced1, 'float');
+          this.interactiveContainers.set(entity.id, this.mapContainer);
           this.interactionSystem.register({
             id: entity.id,
             type: 'map',
@@ -328,7 +353,8 @@ export default class ExploreScene extends Scene {
   }
 
   private placeTransporter(): void {
-    this.addMarkedSprite(this.expedition.extraction, ASSET_KEYS.sprites.transporter, 0x5cb3ff);
+    const container = this.addGroundedSprite(this.expedition.extraction, ASSET_KEYS.sprites.transporter, 0x5cb3ff, 'static');
+    this.interactiveContainers.set(`transporter-${this.expedition.seed}`, container);
     this.interactionSystem.register({
       id: `transporter-${this.expedition.seed}`,
       type: 'transporter',
@@ -342,7 +368,8 @@ export default class ExploreScene extends Scene {
     const vault = this.expedition.vault;
     const roomName = this.zoneName(vault.zoneId);
     this.blockedTiles.add(pointKey(vault.position));
-    this.vaultContainer = this.addMarkedSprite(vault.position, ASSET_KEYS.sprites.vault, 0x9370db);
+    this.vaultContainer = this.addGroundedSprite(vault.position, ASSET_KEYS.sprites.vault, 0x9370db, 'static');
+    this.interactiveContainers.set(vault.id, this.vaultContainer);
     this.interactionSystem.register({
       id: vault.id,
       type: 'vault',
@@ -376,36 +403,91 @@ export default class ExploreScene extends Scene {
     if (!substantial) image.setAngle(stableAngle(entity.id));
   }
 
-  private addMarkedSprite(position: Point, texture: string, ringColor: number, radius = 18): Phaser.GameObjects.Container {
+  /**
+   * Entities sit in the world: accent glow on the ground, a cast shadow, and
+   * the sprite itself. Pickups float gently, NPCs breathe, fixtures hold still.
+   * Containers render below the fog so unexplored darkness hides them and the
+   * explored-memory dim applies naturally; the map overlay keeps badge markers.
+   */
+  private addGroundedSprite(
+    position: Point,
+    texture: string,
+    accentColor: number,
+    style: 'float' | 'breathe' | 'static',
+  ): Phaser.GameObjects.Container {
     const container = this.add.container(
       position.x * TILE_SIZE + TILE_SIZE / 2,
       position.y * TILE_SIZE + TILE_SIZE / 2,
     );
-    container.setDepth(5);
+    container.setDepth(3.5);
+
+    const glow = this.add.graphics();
+    glow.fillStyle(accentColor, 0.07);
+    glow.fillCircle(0, 2, 19);
+    glow.fillStyle(accentColor, 0.14);
+    glow.fillCircle(0, 2, 13);
+    container.add(glow);
+
     const shadow = this.add.graphics();
-    shadow.fillStyle(0x090d19, 0.72);
-    shadow.fillCircle(0, 2, radius - 3);
+    shadow.fillStyle(0x05080f, 0.42);
+    shadow.fillEllipse(0, 11, 20, 7);
     container.add(shadow);
-    const outline = this.add.graphics();
-    outline.lineStyle(5, 0x090d19, 1);
-    outline.strokeCircle(0, 0, radius);
-    container.add(outline);
-    const ring = this.add.graphics();
-    ring.lineStyle(3, ringColor, 1);
-    ring.strokeCircle(0, 0, radius);
-    container.add(ring);
-    container.add(this.add.sprite(0, 0, texture));
+
+    const sprite = this.add.sprite(0, 0, texture);
+    container.add(sprite);
+
     if (this.shouldAnimate()) {
-      this.tweens.add({
-        targets: container,
-        scale: 1.06,
-        duration: 1050,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut',
-      });
+      if (style === 'float') {
+        this.tweens.add({
+          targets: sprite,
+          y: -2.5,
+          duration: 1200,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut',
+        });
+      } else if (style === 'breathe') {
+        this.tweens.add({
+          targets: sprite,
+          scaleY: 1.03,
+          duration: 1500,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut',
+        });
+      } else {
+        this.tweens.add({
+          targets: glow,
+          alpha: 0.55,
+          duration: 1600,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut',
+        });
+      }
     }
     return container;
+  }
+
+  /** Scale up the interactive the player can currently act on; settle the last one. */
+  private setInteractiveHighlight(id: string | undefined): void {
+    if (this.highlightedInteractiveId && this.highlightedInteractiveId !== id) {
+      const previous = this.interactiveContainers.get(this.highlightedInteractiveId);
+      if (previous) {
+        this.tweens.killTweensOf(previous);
+        previous.setScale(1);
+      }
+    }
+    this.highlightedInteractiveId = id ?? null;
+    if (!id) return;
+
+    const container = this.interactiveContainers.get(id);
+    if (!container) return;
+    if (this.shouldAnimate()) {
+      this.tweens.add({ targets: container, scale: 1.12, duration: 140, ease: 'Sine.easeOut' });
+    } else {
+      container.setScale(1.1);
+    }
   }
 
   private removeConsumedInteractive(type: string, id?: string): void {
@@ -423,6 +505,8 @@ export default class ExploreScene extends Scene {
       this.mapContainer.destroy();
       this.mapContainer = null;
     }
+    this.interactiveContainers.delete(id);
+    if (this.highlightedInteractiveId === id) this.highlightedInteractiveId = null;
     this.interactionSystem.unregister(id);
 
     if (type === 'book') {
@@ -478,7 +562,11 @@ export default class ExploreScene extends Scene {
     });
     const reachableVisible = [...visible].filter((coordinate) => this.mapData.reachableTiles.has(coordinate));
     useGameStore.getState().actions.addExploredTiles(reachableVisible);
-    this.fogRenderer.render(visible, new Set(useGameStore.getState().session.exploredTiles));
+    this.fogRenderer.render(
+      visible,
+      new Set(useGameStore.getState().session.exploredTiles),
+      { x: originX, y: originY },
+    );
 
     for (const coordinate of visible) {
       const [x, y] = coordinate.split(',').map(Number);
@@ -527,6 +615,20 @@ export default class ExploreScene extends Scene {
         this.tweens.add({ targets: container, alpha: 0, duration: 350, onComplete: () => container.destroy() });
       }),
     });
+  }
+
+  /**
+   * Per-destination color grade: a near-white tint multiplied over the scene
+   * (warm parchment in the scriptorium, cool moonlight in the cathedral, …).
+   * Sits above the world and fog, below the location card and vignette.
+   */
+  private createAmbientGrade(): void {
+    const { width, height } = this.cameras.main;
+    const tint = Number.parseInt(this.theme.ambientTint.slice(1), 16);
+    const grade = this.add.graphics().setDepth(450).setScrollFactor(0);
+    grade.fillStyle(tint, 1);
+    grade.fillRect(0, 0, width, height);
+    grade.setBlendMode(BlendModes.MULTIPLY);
   }
 
   private createVignetteOverlay(): void {
@@ -623,6 +725,8 @@ export default class ExploreScene extends Scene {
     this.bookContainers.clear();
     this.journalContainers.clear();
     this.blockedTiles.clear();
+    this.interactiveContainers.clear();
+    this.highlightedInteractiveId = null;
     this.bookToRoomMap.clear();
     this.roomContents.clear();
     this.announcedRooms.clear();

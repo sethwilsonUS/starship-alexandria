@@ -106,6 +106,8 @@ export interface ExpeditionTheme {
   atlasKey: string;
   ambienceKey: string;
   accentColor: string;
+  /** Near-white hex color multiplied over the whole scene for a per-destination grade. */
+  ambientTint: string;
   roomNames: readonly string[];
   npcIds: readonly string[];
   journalIds: readonly string[];
