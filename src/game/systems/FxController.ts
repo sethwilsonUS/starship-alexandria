@@ -3,11 +3,22 @@ type FxOrigin = {
   y: number;
 };
 
+/** Fixed puff shapes cycled per step keep dust deterministic for identical input sequences. */
+const DUST_PUFF_PATTERNS: ReadonlyArray<{ dx: number; dy: number; size: number; drift: number }> = [
+  { dx: -4, dy: 9, size: 2.2, drift: -3 },
+  { dx: 3, dy: 11, size: 2.8, drift: 4 },
+  { dx: 0, dy: 10, size: 1.8, drift: -2 },
+  { dx: 5, dy: 9, size: 2.4, drift: 2 },
+  { dx: -3, dy: 12, size: 2.0, drift: 3 },
+  { dx: 1, dy: 10, size: 3.0, drift: -4 },
+];
+
 export class FxController {
   private ownedObjects = new Set<Phaser.GameObjects.GameObject>();
   private activeTweens = new Set<Phaser.Tweens.Tween>();
   private activeTimers = new Set<Phaser.Time.TimerEvent>();
   private isDestroyed = false;
+  private dustCycle = 0;
 
   constructor(private readonly scene: Phaser.Scene) {}
 
@@ -34,6 +45,43 @@ export class FxController {
       onComplete: () => {
         this.activeTweens.delete(tween);
         this.destroyObject(overlay);
+      },
+    });
+    this.trackTween(tween);
+  }
+
+  /** Small fading puffs at the feet when a step lands. */
+  playStepDust(origin: FxOrigin, color: number): void {
+    const dust = this.trackObject(this.scene.add.graphics());
+    dust.setDepth(3.4);
+
+    const puffs = Array.from({ length: 3 }, () => {
+      const pattern = DUST_PUFF_PATTERNS[this.dustCycle];
+      this.dustCycle = (this.dustCycle + 1) % DUST_PUFF_PATTERNS.length;
+      return {
+        x: origin.x + pattern.dx,
+        y: origin.y + pattern.dy,
+        size: pattern.size,
+        drift: pattern.drift,
+      };
+    });
+
+    const tween = this.scene.tweens.addCounter({
+      from: 0,
+      to: 1,
+      duration: 260,
+      ease: 'Quad.easeOut',
+      onUpdate: (activeTween) => {
+        const t = activeTween.getValue() ?? 1;
+        dust.clear();
+        puffs.forEach((puff) => {
+          dust.fillStyle(color, 0.26 * (1 - t));
+          dust.fillCircle(puff.x + puff.drift * t, puff.y - 5 * t, puff.size * (1 + t * 0.8));
+        });
+      },
+      onComplete: () => {
+        this.activeTweens.delete(tween);
+        this.destroyObject(dust);
       },
     });
     this.trackTween(tween);
