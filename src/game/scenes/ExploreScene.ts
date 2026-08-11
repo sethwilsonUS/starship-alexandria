@@ -39,6 +39,10 @@ import { shouldUseMotion } from '@/game/motionPolicy';
 
 const BEAM_UP_INPUT_BLOCK_MS = 1100;
 
+/** Entities hide under the fog until first seen, then surface above it for good. */
+const UNDISCOVERED_INTERACTIVE_DEPTH = 3.5;
+const DISCOVERED_INTERACTIVE_DEPTH = 5;
+
 const STEP_DUST_COLORS: Record<FootstepSurface, number> = {
   stone: 0xb9b4a4,
   wood: 0xa38560,
@@ -73,6 +77,7 @@ export default class ExploreScene extends Scene {
   private vaultContainer: Phaser.GameObjects.Container | null = null;
   private blockedTiles = new Set<string>();
   private interactiveContainers = new Map<string, Phaser.GameObjects.Container>();
+  private containersByTile = new Map<string, Phaser.GameObjects.Container[]>();
   private highlightedInteractiveId: string | null = null;
   private bookToRoomMap = new Map<string, string>();
   private roomContents = new Map<string, RoomContentSummary>();
@@ -419,7 +424,10 @@ export default class ExploreScene extends Scene {
       position.x * TILE_SIZE + TILE_SIZE / 2,
       position.y * TILE_SIZE + TILE_SIZE / 2,
     );
-    container.setDepth(3.5);
+    container.setDepth(UNDISCOVERED_INTERACTIVE_DEPTH);
+    const tileContainers = this.containersByTile.get(pointKey(position)) ?? [];
+    tileContainers.push(container);
+    this.containersByTile.set(pointKey(position), tileContainers);
 
     const glow = this.add.graphics();
     glow.fillStyle(accentColor, 0.07);
@@ -569,6 +577,17 @@ export default class ExploreScene extends Scene {
     );
 
     for (const coordinate of visible) {
+      // Once seen, markers surface above the fog for good so discovered
+      // items stay locatable at full brightness (accessibility contract);
+      // undiscovered entities remain hidden beneath unexplored darkness.
+      const discovered = this.containersByTile.get(coordinate);
+      if (discovered) {
+        for (const container of discovered) {
+          if (container.active) container.setDepth(DISCOVERED_INTERACTIVE_DEPTH);
+        }
+        this.containersByTile.delete(coordinate);
+      }
+
       const [x, y] = coordinate.split(',').map(Number);
       const zone = this.zoneAt(x, y);
       if (zone && !this.revealedZoneIds.has(zone.id)) {
@@ -726,6 +745,7 @@ export default class ExploreScene extends Scene {
     this.journalContainers.clear();
     this.blockedTiles.clear();
     this.interactiveContainers.clear();
+    this.containersByTile.clear();
     this.highlightedInteractiveId = null;
     this.bookToRoomMap.clear();
     this.roomContents.clear();

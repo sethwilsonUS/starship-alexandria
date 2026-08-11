@@ -69,9 +69,9 @@ Walkable pickups use on-tile interaction. NPCs and vaults intentionally block th
 
 - Essential information may never exist only through canvas pixels, color, motion, or sound.
 - UI follows WCAG 2.2 AA contrast. The game world prioritizes strong floor/wall separation and high-contrast player/interactable silhouettes.
-- Retain the player highlight ring and full-brightness collectible markers through fog.
+- Retain the player highlight ring. Discovered collectible markers render above the fog at full brightness so found items stay locatable; undiscovered entities stay hidden beneath unexplored fog.
 - Wall edges use the shared light outline (`0xe8e4dc`, 4px) without per-tile grid borders.
-- ExploreScene depth order is ground 0, wall 1, decoration 2, wall outline 2.5, fog 4, interactives 5, player 10, prompt 100.
+- ExploreScene depth order is ground 0, wall 1, decoration 2, wall shadow 2.6, wall outline 2.7, props 3.1, undiscovered interactives 3.5, fog 4, discovered interactives 5, player 10, prompt 100; screen-space overlays are ambient grade 450, location card 500, vignette 1000.
 - Iterate raw semantic/map arrays for outlines and fog; avoid cross-tilemap `forEachTile`/`getTileAt` calls.
 - The textual map reports current location, discovered rooms, approximate directions/distances, and known contents.
 - `system | reduce | full` motion settings apply to both CSS and Phaser; reduced-motion paths communicate the same state.
