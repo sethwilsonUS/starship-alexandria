@@ -155,12 +155,13 @@ export class FxController {
     const beam = this.trackObject(this.scene.add.graphics());
     beam.setDepth(100);
 
-    const particles = Array.from({ length: 20 }, () => ({
-      x: origin.x + (Math.random() - 0.5) * 30,
-      y: origin.y + Math.random() * 40 - 20,
-      speed: 50 + Math.random() * 100,
-      alpha: 0.6 + Math.random() * 0.4,
-      size: 3 + Math.random() * 2,
+    // Index-derived scatter keeps the beam identical between runs.
+    const particles = Array.from({ length: 20 }, (_, index) => ({
+      x: origin.x + (((index * 41 + 13) % 31) - 15),
+      y: origin.y + (((index * 23 + 5) % 41) - 20),
+      speed: 50 + ((index * 37) % 100),
+      alpha: 0.6 + ((index * 17) % 40) / 100,
+      size: 3 + ((index * 11) % 20) / 10,
     }));
 
     const tween = this.scene.tweens.addCounter({
