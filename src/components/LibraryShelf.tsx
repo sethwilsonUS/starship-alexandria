@@ -210,6 +210,12 @@ export default function LibraryShelf() {
                         </button>
 
                         {isExpanded && (
+                          <p className="library-shelf__archivist-note">
+                            <span aria-hidden="true">✒ </span>
+                            <em>{book.archivistNote}</em>
+                          </p>
+                        )}
+                        {isExpanded && (
                           <ul
                             id={`book-fragments-${book.id}`}
                             className="library-shelf__fragments"

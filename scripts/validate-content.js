@@ -118,6 +118,7 @@ function validateNPCs() {
 
     validateLines('npcs.yaml', `${prefix}.firstMeet`, npc.firstMeet);
     validateLines('npcs.yaml', `${prefix}.return`, npc.return);
+    validateLines('npcs.yaml', `${prefix}.returnWithClue`, npc.returnWithClue);
     validateLines('npcs.yaml', `${prefix}.postVault`, npc.postVault);
   });
 
@@ -199,6 +200,9 @@ function validateBooks() {
     if (!isNonEmptyString(book.id)) addError('books.yaml', `${prefix}: Missing required field "id"`);
     if (!isNonEmptyString(book.title)) addError('books.yaml', `${prefix}: Missing required field "title"`);
     if (!isNonEmptyString(book.author)) addError('books.yaml', `${prefix}: Missing required field "author"`);
+    if (!isNonEmptyString(book.archivistNote)) {
+      addError('books.yaml', `${prefix}: Missing required field "archivistNote"`);
+    }
     if (Object.prototype.hasOwnProperty.call(book, 'totalFragments')) {
       addError(
         'books.yaml',

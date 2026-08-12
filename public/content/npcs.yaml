@@ -17,6 +17,13 @@ npcs:
         text: "Back again? Good. A library improves the moment someone returns to it."
       - speaker: Martha
         text: "The archive safe followed the old cataloguing system. Look for a card filed where no card ought to be."
+      - speaker: Martha
+        text: "Paper remembers every indignity, but it remembers kindness longer. Shelve gently, wherever you are."
+    returnWithClue:
+      - speaker: Martha
+        text: "That is my catalog card—the shelf mark that never existed. I filed the safe's figures where only a librarian would think to look."
+      - speaker: Martha
+        text: "The archive safe sits in the sealed archives. Speak the numbers gently; that lock has opinions about being rushed."
     postVault:
       - speaker: Martha
         text: "You opened the archive safe. I had almost forgotten the sound of that lock conceding an argument."
@@ -39,6 +46,13 @@ npcs:
         text: "Still hunting? Good. Check the corners; frightened people hide precious things badly."
       - speaker: Eli
         text: "If you find a catalog card with four figures, don’t toss it. Around here, paperwork opens doors."
+      - speaker: Eli
+        text: "Found a tin of pencils this morning. Trading them two-for-a-story. The exchange rate is sentiment."
+    returnWithClue:
+      - speaker: Eli
+        text: "You found the four-figure card! Told you paperwork opens doors around here."
+      - speaker: Eli
+        text: "Safe's in the sealed archives, past the west stacks. If it opens, I owe Martha half a peach. Worth it."
     postVault:
       - speaker: Eli
         text: "So the old safe finally opened. Martha owes me half a peach; I said someone stubborn would manage it."
@@ -61,6 +75,13 @@ npcs:
         text: "Listen at the side chapel. Even ruined buildings tell you where they keep their secrets."
       - speaker: Imani
         text: "The hymnal’s pencilled figures are not a page number. Brother Anselm always did prefer clues to labels."
+      - speaker: Imani
+        text: "I hum the missing verses while I work. The ruin supplies the echo, and between us we manage a duet."
+    returnWithClue:
+      - speaker: Imani
+        text: "So the hymnal surfaced. Those pencilled numerals are Anselm's hand; he never trusted labels to keep a secret."
+      - speaker: Imani
+        text: "Take them down to the crypt. The reliquary has been holding its breath since the evacuation."
     postVault:
       - speaker: Imani
         text: "The reliquary is open? Then the last note resolved after all."
@@ -83,6 +104,13 @@ npcs:
         text: "The crypt is sound enough, provided you distrust every third step."
       - speaker: Anselm
         text: "Read the memorial as a conservator would: record what remains, and never invent what is missing."
+      - speaker: Anselm
+        text: "The west window sends its regards, and also most of its weather."
+    returnWithClue:
+      - speaker: Anselm
+        text: "You carry the annotated hymnal. Then the memorial's numerals can finally finish their sentence."
+      - speaker: Anselm
+        text: "The crypt stair is sound if you distrust every third step. The reliquary opens like a binding: pressure in the right places, never force."
     postVault:
       - speaker: Anselm
         text: "You have opened what we sealed in fear. May it remain open in courage."
@@ -105,6 +133,13 @@ npcs:
         text: "Still at it. I admire that—and resent how much it resembles thesis research."
       - speaker: Cora
         text: "Try the lecture hall before the laboratory. The faculty hid answers in the place students were least likely to look: the syllabus."
+      - speaker: Cora
+        text: "If you pass the syllabus board: the final assignment was never collected. Extensions for everyone, I suppose."
+    returnWithClue:
+      - speaker: Cora
+        text: "The registrar's memo! I filed three requests for that clearance and got two rejections and a parking fine."
+      - speaker: Cora
+        text: "Special Collections is off the quadrangle. The lockbox takes the accession mark exactly—bureaucracy's one virtue is precision."
     postVault:
       - speaker: Cora
         text: "You cracked Special Collections. Somewhere, a registrar has felt a disturbance in the paperwork."
@@ -127,6 +162,13 @@ npcs:
         text: "The registrar memo contains the lock sequence. I left it outside the archive so no single frightened person held both halves."
       - speaker: Rowan
         text: "If a terminal wakes, do not accept its invitation to continue the experiment. It has always been terribly persuasive."
+      - speaker: Rowan
+        text: "The terminal blinked again on Tuesday. We do not speak, but we have reached an understanding."
+    returnWithClue:
+      - speaker: Rowan
+        text: "So the memo left the registrar's office at last. Both halves of the precaution are in one pair of hands again."
+      - speaker: Rowan
+        text: "Enter the sequence and take the books. If the terminal offers commentary, decline it."
     postVault:
       - speaker: Rowan
         text: "The lockbox is open. Good. Let the Alexandria keep the books—and let the failed proposals stay buried."
@@ -149,6 +191,13 @@ npcs:
         text: "The flooded pavilion is passable. Step slowly; water makes a poor librarian and a worse electrician."
       - speaker: Noor
         text: "Match the greenhouse log to the numbered specimen tags. The old gardeners trusted cross-references more than keys."
+      - speaker: Noor
+        text: "Something new germinated by the pavilion. I haven't told it about the world yet; let it settle in first."
+    returnWithClue:
+      - speaker: Noor
+        text: "The greenhouse log—my own handwriting from the last week. The specimen tags it cites still hang in the seed bank."
+      - speaker: Noor
+        text: "Count the figures twice before you try the cache. Seeds forgive nearly everything; that lock forgives nothing."
     postVault:
       - speaker: Noor
         text: "You opened the seed bank. Then two kinds of future survived today."
@@ -171,6 +220,13 @@ npcs:
         text: "If the path vanishes, follow the drainage channels. Water remembers the original plan better than I do."
       - speaker: Theo
         text: "Don’t let the pretty labels fool you. The poisonous specimens got the best penmanship."
+      - speaker: Theo
+        text: "The benches lost another skirmish with the vine overnight. I have begun drafting surrender terms."
+    returnWithClue:
+      - speaker: Theo
+        text: "That's Noor's log. She wrote it while I held the umbrella over the ink."
+      - speaker: Theo
+        text: "The seed bank is past the flooded pavilion. If the vine has annexed the door again, tell it Theo is willing to negotiate."
     postVault:
       - speaker: Theo
         text: "Cache is open? Excellent. I was running out of dignified ways to call it a very stubborn cupboard."

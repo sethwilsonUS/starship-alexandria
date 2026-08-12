@@ -8,13 +8,13 @@ No TypeScript change is required when editing an existing excerpt, NPC line, jou
 
 | File | Purpose |
 | --- | --- |
-| `public/content/books.yaml` | Work, edition, source, and excerpt metadata |
+| `public/content/books.yaml` | Work, edition, source, excerpt metadata, and the shelf's `archivistNote` |
 | `public/content/texts/<work-id>/*.txt` | Displayed public-domain excerpt bodies |
-| `public/content/npcs.yaml` | Destination NPC identity and dialogue states |
+| `public/content/npcs.yaml` | Destination NPC identity and dialogue states (`firstMeet`, `return`, `returnWithClue`, `postVault`) |
 | `public/content/journals.yaml` | Themed environmental writing |
 | `public/content/vaults.yaml` | One clue/vault narrative loop per destination |
 | `public/content/dialogue.yaml` | Transporter choices and dynamic hint templates |
-| `public/content/gameloop.yaml` | Collection-completion dialogue |
+| `public/content/gameloop.yaml` | Collection-completion dialogue; the final line may carry `choices` (e.g. the `epilogue-reading:<fragment-id>` action opens a recovered excerpt) |
 | `public/content/how-to-play.json` | Shared visible guide copy and spoken control phrasing |
 | `public/content/artifacts.yaml` | Persistent curiosity metadata |
 
@@ -26,7 +26,8 @@ An excerpt has two parts: plain text and catalog metadata.
 2. Copy only the intended passage into a UTF-8 `.txt` file below `public/content/texts/`. Preserve the edition's wording, spelling, capitalization, lineation, and punctuation.
 3. Remove Project Gutenberg headers, footers, transcriber boilerplate, and navigation material.
 4. Add or update the work in `public/content/books.yaml`.
-5. Run `npm run validate-content` and the catalog tests.
+5. Write the work's `archivistNote` — one or two sentences in the ship archivist's voice, shown on the library shelf once the work has a recovered fragment.
+6. Run `npm run validate-content` and the catalog tests.
 
 ```yaml
 books:
@@ -39,6 +40,7 @@ books:
       edition: Twelve-book edition prepared from the Joseph Raben etext
       url: https://www.gutenberg.org/ebooks/26
       publicDomainNote: Public domain in the USA
+    archivistNote: "Milton dictated a lost world he could not see. We carried one back to him."
     fragments:
       - id: paradise-lost-book-1
         label: Book I — The Invocation

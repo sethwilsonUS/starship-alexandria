@@ -41,6 +41,7 @@ export function getArtifactCacheSync(): Artifact[] {
 interface GameloopDialogueLine {
   text: string;
   voiceLineId?: string;
+  choices?: Array<{ label: string; key: string; action: string }>;
 }
 
 export interface GameloopContent {

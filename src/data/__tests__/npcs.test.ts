@@ -15,6 +15,9 @@ const sampleNPCYaml: NPCYaml = {
   return: [
     { speaker: 'Martha', text: 'Welcome back, dear.' },
   ],
+  returnWithClue: [
+    { speaker: 'Martha', text: 'That card is the shelf mark that never existed.' },
+  ],
   postVault: [
     { speaker: 'Martha', text: 'The archive safe opened at last.' },
   ],
@@ -54,6 +57,13 @@ describe('yamlToNPC', () => {
     ]);
   });
 
+  it('converts clue-in-hand dialogue lines', () => {
+    const npc = yamlToNPC(sampleNPCYaml);
+    expect(npc.returnWithClue).toEqual([
+      { speaker: 'Martha', text: 'That card is the shelf mark that never existed.' },
+    ]);
+  });
+
   it('handles empty dialogue arrays', () => {
     const minimal: NPCYaml = {
       id: 'ghost',
@@ -62,6 +72,7 @@ describe('yamlToNPC', () => {
       themeIds: ['cathedral'],
       firstMeet: [],
       return: [],
+      returnWithClue: [],
       postVault: [],
     };
     const npc = yamlToNPC(minimal);

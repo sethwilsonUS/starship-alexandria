@@ -23,6 +23,8 @@ export interface NPCYaml {
   themeIds: ContentThemeId[];
   firstMeet: DialogueLineYaml[];
   return: DialogueLineYaml[];
+  /** Spoken while the vault clue is in hand and the vault is still sealed. */
+  returnWithClue: DialogueLineYaml[];
   postVault: DialogueLineYaml[];
 }
 
@@ -47,6 +49,8 @@ export interface BookYaml {
   id: string;
   title: string;
   author: string;
+  /** The ship archivist's personal note, shown once the work reaches the shelf. */
+  archivistNote: string;
   source: PublicDomainSource;
   /** Derived from fragments; never stored in books.yaml. */
   includedFragmentCount: number;
@@ -88,6 +92,7 @@ export interface ArtifactYaml {
 export interface GameloopDialogueLineYaml {
   text: string;
   voiceLineId?: string;
+  choices?: DialogueChoiceYaml[];
 }
 
 export interface GameloopYaml {

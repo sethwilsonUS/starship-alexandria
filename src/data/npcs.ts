@@ -19,6 +19,8 @@ export interface NPC {
   themeIds: ContentThemeId[];
   firstMeet: DialogueLine[];
   return: DialogueLine[];
+  /** Spoken while the vault clue is in hand and the vault is still sealed. */
+  returnWithClue: DialogueLine[];
   postVault: DialogueLine[];
 }
 
@@ -33,6 +35,10 @@ export function yamlToNPC(yaml: NPCYaml): NPC {
       text: line.text,
     })),
     return: yaml.return.map((line) => ({
+      speaker: line.speaker,
+      text: line.text,
+    })),
+    returnWithClue: yaml.returnWithClue.map((line) => ({
       speaker: line.speaker,
       text: line.text,
     })),
