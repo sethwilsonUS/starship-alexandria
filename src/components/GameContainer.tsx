@@ -125,17 +125,27 @@ export default function GameContainer() {
             ...line,
             voiceLineId: `npc.${npc.id}.first-meet.${index}`,
           }));
+          const session = useGameStore.getState().session;
+          const clueInHand = Boolean(
+            session.vaultInfo
+            && !session.vaultOpened
+            && session.discoveredClueIds.includes(session.vaultInfo.clueId),
+          );
           let lines: { speaker?: string; text: string; voiceLineId?: string }[];
-          if (useGameStore.getState().session.vaultOpened) {
+          if (session.vaultOpened) {
             lines = npc.postVault;
+          } else if (!discovered) {
+            // Introductions come first, even with a clue in hand.
+            lines = npc.id === 'martha'
+              ? [...greetings, { speaker: 'Martha', text: await getMarthaBookHint(roomNames) }]
+              : greetings;
+          } else if (clueInHand && npc.returnWithClue.length > 0) {
+            lines = npc.returnWithClue;
           // Martha: contextual hint based on actual rooms with books this map
           } else if (npc.id === 'martha') {
-            const hintLine = await getMarthaBookHint(roomNames);
-            lines = discovered
-              ? [npc.return[0], { speaker: 'Martha', text: hintLine }]
-              : [...greetings, { speaker: 'Martha', text: hintLine }];
+            lines = [npc.return[0], { speaker: 'Martha', text: await getMarthaBookHint(roomNames) }];
           } else {
-            lines = discovered ? npc.return : greetings;
+            lines = npc.return;
           }
           // Substitute dynamic templates (e.g., {{martha_room}})
           lines = substituteDialogueTemplates(lines, npcRooms);
@@ -298,6 +308,11 @@ export default function GameContainer() {
           useGameStore.getState().actions.collectFragment(fragment);
           EventBridge.emit('book-found', { fragmentId, bookId: fragment.bookId });
         }
+      } else if (action.startsWith('epilogue-reading:')) {
+        // The completed library ends where it began: on the words themselves.
+        const fragmentId = action.slice('epilogue-reading:'.length);
+        const fragment = await getFragmentById(fragmentId);
+        if (fragment) useGameStore.getState().actions.openLibraryBook(fragment);
       }
       // 'stay' and 'cancel' just close dialogue (already handled)
     };
@@ -311,7 +326,7 @@ export default function GameContainer() {
   useEffect(() => {
     const onShowVictory = () => {
       const gameloop = getGameloopCacheSync();
-      const victoryLines = gameloop.victory.lines.map(line => ({ text: line.text }));
+      const victoryLines = gameloop.victory.lines.map(line => ({ text: line.text, choices: line.choices }));
       useGameStore.getState().actions.openDialogue(victoryLines);
     };
     EventBridge.on('show-victory', onShowVictory);

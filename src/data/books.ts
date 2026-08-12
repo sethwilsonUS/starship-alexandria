@@ -50,6 +50,7 @@ export async function loadBookCatalog(): Promise<Book[]> {
     id: book.id,
     title: book.title,
     author: book.author,
+    archivistNote: book.archivistNote,
     source: book.source,
     includedFragmentCount: book.fragments.length,
     fragments: allFragments

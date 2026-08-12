@@ -2,8 +2,15 @@
 
 victory:
   lines:
-    - text: "The final fragment has been recovered."
-    - text: "Against all odds, you have preserved the treasures of human civilization."
-    - text: "The Alexandria's archives are complete. Future generations will read these words and know that we endured."
-    - text: "Thank you, Librarian. Your mission is complete."
-    - text: "You may continue to explore your collection. When you're ready, start a New Game to begin again."
+    - text: "The final fragment is aboard. The transporter room is quiet in a way it has never been."
+    - text: "Twenty-one recoveries. Four ruins. Every survivor you met is still down there, keeping their corner of the dark shelved and swept."
+    - text: "The Alexandria was launched to save what people wrote. Somewhere along the way, the writing kept the people carrying it. The mission plan never mentioned that part."
+    - text: "The archive is complete, Librarian. But an archive is not a vault, and it was never meant to stay shut. It is meant to be read."
+    - text: "Begin where every library begins. With a page."
+      choices:
+        - label: Open the first page
+          key: y
+          action: epilogue-reading:dickinson-hope
+        - label: Return to the shelves
+          key: n
+          action: stay

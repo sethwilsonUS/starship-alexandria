@@ -19,6 +19,8 @@ export interface Book {
   id: string;
   title: string;
   author: string;
+  /** The ship archivist's personal note, shown once the work reaches the shelf. */
+  archivistNote: string;
   source: PublicDomainSource;
   includedFragmentCount: number;
   fragments: FragmentDef[];

@@ -160,13 +160,14 @@ export default class ShipScene extends Scene {
     bg.setDepth(-1);
   }
 
-  /** Two masked star layers drifting at different speeds behind the viewport glass. */
+  /**
+   * Two star layers drifting at different speeds behind the viewport glass.
+   * No mask: geometry masks are unsupported in Phaser 4 WebGL, so stars are
+   * placed with enough inset (14px) that the ±10px parallax drift can never
+   * carry one outside the window frame.
+   */
   private createViewportStarfield(width: number): void {
     const viewportX = width / 2 - VIEWPORT.w / 2;
-    const maskShape = this.add.graphics().setVisible(false);
-    maskShape.fillStyle(0xffffff, 1);
-    maskShape.fillRoundedRect(viewportX, VIEWPORT.y, VIEWPORT.w, VIEWPORT.h, 8);
-    const mask = maskShape.createGeometryMask();
 
     const drawStars = (count: number, salt: number, size: number, alpha: number) => {
       const layer = this.add.graphics().setDepth(-0.5);
@@ -176,7 +177,6 @@ export default class ShipScene extends Scene {
         const sy = VIEWPORT.y + 12 + unit(i, salt + 3) * (VIEWPORT.h - 24);
         layer.fillCircle(sx, sy, i % 4 === 0 ? size + 1 : size);
       }
-      layer.setMask(mask);
       return layer;
     };
 

@@ -38,6 +38,8 @@ npcs:
       - text: "Hello."
     return:
       - text: "Welcome back."
+    returnWithClue:
+      - text: "That is the clue."
     postVault:
       - text: "The safe is open."
   - id: npc-ben
@@ -46,6 +48,7 @@ npcs:
     themeIds: [scriptorium]
     firstMeet: [{ text: "Hello." }]
     return: [{ text: "Welcome back." }]
+    returnWithClue: [{ text: "That is the clue." }]
     postVault: [{ text: "The safe is open." }]
   - id: npc-cam
     name: Cam
@@ -53,6 +56,7 @@ npcs:
     themeIds: [cathedral]
     firstMeet: [{ text: "Hello." }]
     return: [{ text: "Welcome back." }]
+    returnWithClue: [{ text: "That is the clue." }]
     postVault: [{ text: "The reliquary is open." }]
   - id: npc-dev
     name: Dev
@@ -60,6 +64,7 @@ npcs:
     themeIds: [cathedral]
     firstMeet: [{ text: "Hello." }]
     return: [{ text: "Welcome back." }]
+    returnWithClue: [{ text: "That is the clue." }]
     postVault: [{ text: "The reliquary is open." }]
   - id: npc-ela
     name: Ela
@@ -67,6 +72,7 @@ npcs:
     themeIds: [university]
     firstMeet: [{ text: "Hello." }]
     return: [{ text: "Welcome back." }]
+    returnWithClue: [{ text: "That is the clue." }]
     postVault: [{ text: "The lockbox is open." }]
   - id: npc-finn
     name: Finn
@@ -74,6 +80,7 @@ npcs:
     themeIds: [university]
     firstMeet: [{ text: "Hello." }]
     return: [{ text: "Welcome back." }]
+    returnWithClue: [{ text: "That is the clue." }]
     postVault: [{ text: "The lockbox is open." }]
   - id: npc-gia
     name: Gia
@@ -81,6 +88,7 @@ npcs:
     themeIds: [gardens]
     firstMeet: [{ text: "Hello." }]
     return: [{ text: "Welcome back." }]
+    returnWithClue: [{ text: "That is the clue." }]
     postVault: [{ text: "The cache is open." }]
   - id: npc-hale
     name: Hale
@@ -88,6 +96,7 @@ npcs:
     themeIds: [gardens]
     firstMeet: [{ text: "Hello." }]
     return: [{ text: "Welcome back." }]
+    returnWithClue: [{ text: "That is the clue." }]
     postVault: [{ text: "The cache is open." }]
 `
   );
@@ -123,6 +132,7 @@ books:
   - id: book-001
     title: Sample
     author: Anonymous
+    archivistNote: \"A note for the shelf.\"
     source:
       provider: Project Gutenberg
       ebookNumber: 1
@@ -291,6 +301,7 @@ books:
   - id: book-001
     title: Sample
     author: Anonymous
+    archivistNote: \"A note for the shelf.\"
     totalFragments: 99
     source:
       provider: Project Gutenberg

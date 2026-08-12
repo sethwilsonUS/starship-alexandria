@@ -2,6 +2,7 @@ books:
   - id: inferno
     title: "The Divine Comedy: Inferno"
     author: Dante Alighieri
+    archivistNote: "Filed nearest the viewport, half in jest. Dante charted every circle of losing and still walked out to see the stars; on hard orbits I take the hint."
     source:
       provider: Project Gutenberg
       ebookNumber: 1001
@@ -25,6 +26,7 @@ books:
   - id: tempest
     title: The Tempest
     author: William Shakespeare
+    archivistNote: "A storm, an island, and mercy where revenge was expected. The deck reads it aloud when the engines sound like weather."
     source:
       provider: Project Gutenberg
       ebookNumber: 23042
@@ -48,6 +50,7 @@ books:
   - id: canterbury
     title: The Canterbury Tales
     author: Geoffrey Chaucer
+    archivistNote: "Twenty-nine travelers shortening a road with stories. This shelf is our road now, and it is shortening."
     source:
       provider: Project Gutenberg
       ebookNumber: 2383
@@ -77,6 +80,7 @@ books:
   - id: faerie-queene
     title: The Faerie Queene, Book I
     author: Edmund Spenser
+    archivistNote: "Spenser grew a forest of virtues and let his knight get honestly lost in it. I have stopped skipping the lost parts."
     source:
       provider: Project Gutenberg
       ebookNumber: 15272
@@ -106,6 +110,7 @@ books:
   - id: dickinson
     title: Poems by Emily Dickinson
     author: Emily Dickinson
+    archivistNote: "She mapped hope with feathers while rarely leaving one room—proof that a library is also a means of travel."
     source:
       provider: Project Gutenberg
       ebookNumber: 12242
@@ -123,6 +128,7 @@ books:
   - id: bible-kjv
     title: The Holy Bible (King James Version)
     author: Anonymous
+    archivistNote: "Whatever else it is, it is the book most often carried out of burning buildings. The cadences steady a shaking hand."
     source:
       provider: Project Gutenberg
       ebookNumber: 10
@@ -164,6 +170,7 @@ books:
   - id: paradise-lost
     title: Paradise Lost
     author: John Milton
+    archivistNote: "Milton dictated a lost world he could not see. We carried one back to him. The symmetry keeps me company on night watch."
     source:
       provider: Project Gutenberg
       ebookNumber: 26
@@ -187,6 +194,7 @@ books:
   - id: frankenstein
     title: Frankenstein; Or, The Modern Prometheus
     author: Mary Wollstonecraft Shelley
+    archivistNote: "A warning about making things without loving them. Required reading on a ship kept alive by machines."
     source:
       provider: Project Gutenberg
       ebookNumber: 42324
@@ -204,6 +212,7 @@ books:
   - id: vindication
     title: A Vindication of the Rights of Woman
     author: Mary Wollstonecraft
+    archivistNote: "Wollstonecraft argued that minds have no rank and education is owed to every one of them. The argument has outlived each government that ignored it."
     source:
       provider: Project Gutenberg
       ebookNumber: 3420
@@ -221,6 +230,7 @@ books:
   - id: douglass-narrative
     title: Narrative of the Life of Frederick Douglass, an American Slave
     author: Frederick Douglass
+    archivistNote: "He called reading the pathway from slavery to freedom, and proved it twice—once for himself, and once for every reader he taught."
     source:
       provider: Project Gutenberg
       ebookNumber: 23
