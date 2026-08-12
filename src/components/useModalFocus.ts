@@ -90,12 +90,18 @@ export function useModalFocus(
     return () => {
       cancelAnimationFrame(frame);
       document.removeEventListener('keydown', onKeyDown, true);
-      if (previous?.isConnected) {
+      const canRestorePrevious = previous
+        && previous.isConnected
+        && previous !== document.body
+        && !previous.closest('[inert]');
+      if (canRestorePrevious) {
         previous.focus();
       } else {
-        // The opener unmounted (e.g. beaming away closed the picker): keyboard
-        // control returns to the game region instead of falling to <body>.
-        document.getElementById('game-controls')?.focus();
+        // The opener is gone or unfocusable (unmounted by beaming away, body,
+        // or inside an inert subtree): keyboard control returns to the game
+        // region instead of falling to <body>.
+        const controls = document.getElementById('game-controls');
+        if (controls && !controls.closest('[inert]')) controls.focus();
       }
     };
   }, [dialogRef, onEscape, open]);

@@ -9,12 +9,12 @@ import {
 } from '@/game/expeditions';
 import { EventBridge } from '@/game/EventBridge';
 import { useGameStore } from '@/store/gameStore';
+import { resolveRovingTarget } from '@/utils/rovingFocus';
 import { useModalFocus } from './useModalFocus';
-
-const GRID_COLUMNS = 2;
 
 export default function MissionPicker() {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
   const cardButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const phase = useGameStore((state) => state.session.gamePhase);
   const previousThemeId = useGameStore((state) => state.previousThemeId);
@@ -30,22 +30,21 @@ export default function MissionPicker() {
     EventBridge.emit('beam-down-requested', { themeId });
   };
 
-  /** Arrow keys rove focus across the 2-column destination grid. */
+  /**
+   * Arrow keys rove focus across the destination cards. Column count is read
+   * from the rendered grid so the narrow single-column layout navigates in
+   * visual order, and focus on other controls (close, surprise) is left alone.
+   */
   const onGridKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    const offsets: Record<string, number> = {
-      ArrowLeft: -1,
-      ArrowRight: 1,
-      ArrowUp: -GRID_COLUMNS,
-      ArrowDown: GRID_COLUMNS,
-    };
-    const offset = offsets[event.key];
-    if (offset === undefined) return;
+    if (event.repeat) return;
 
     const buttons = cardButtonRefs.current.filter(Boolean) as HTMLButtonElement[];
-    if (!buttons.length) return;
     const activeIndex = buttons.findIndex((button) => button === document.activeElement);
-    const from = activeIndex === -1 ? 0 : activeIndex;
-    const to = (from + offset + buttons.length) % buttons.length;
+    const columns = gridRef.current
+      ? getComputedStyle(gridRef.current).gridTemplateColumns.split(' ').filter(Boolean).length
+      : 1;
+    const to = resolveRovingTarget(event.key, activeIndex, buttons.length, columns);
+    if (to === null) return;
 
     event.preventDefault();
     buttons[to].focus();
@@ -81,7 +80,7 @@ export default function MissionPicker() {
           </button>
         </header>
 
-        <div className="mission-picker__grid">
+        <div className="mission-picker__grid" ref={gridRef}>
           {EXPEDITION_THEME_IDS.map((themeId, index) => {
             const theme = EXPEDITION_THEMES[themeId];
             const wasPrevious = previousThemeId === themeId;
