@@ -104,6 +104,12 @@ function createLoopChannel(volumeScale: number, selectVolume: (policy: ReturnTyp
     currentKey = null;
   };
 
+  /** Fade-failure teardown: detach if live and always release the retained entry. */
+  const releaseFailedSound = (sound: VolumeSound) => {
+    detachIfCurrent(sound);
+    activeSounds.delete(sound);
+  };
+
   const destroySound = (sound: VolumeSound) => {
     cancelFade(sound);
     activeSounds.delete(sound);
@@ -161,13 +167,13 @@ function createLoopChannel(volumeScale: number, selectVolume: (policy: ReturnTyp
       currentKey = previousKey;
       return;
     }
-    fadeSound(scene, next, volume, 700, undefined, detachIfCurrent);
+    fadeSound(scene, next, volume, 700, undefined, releaseFailedSound);
     if (previous) {
       fadeSound(scene, previous, 0, 500, () => {
         if (previous !== current) {
           destroySound(previous);
         }
-      }, detachIfCurrent);
+      }, releaseFailedSound);
     }
   };
 
@@ -179,7 +185,7 @@ function createLoopChannel(volumeScale: number, selectVolume: (policy: ReturnTyp
     currentKey = null;
     fadeSound(scene, sound, 0, 350, () => {
       destroySound(sound);
-    }, detachIfCurrent);
+    }, releaseFailedSound);
   };
 
   const syncPolicy = () => {
@@ -237,8 +243,15 @@ function createLoopChannel(volumeScale: number, selectVolume: (policy: ReturnTyp
     const sound = current;
     if (hidden) {
       if (!sound) return;
-      pausedForVisibility = sound.isPlaying;
-      if (pausedForVisibility) sound.pause();
+      try {
+        pausedForVisibility = sound.isPlaying;
+        if (pausedForVisibility) sound.pause();
+      } catch {
+        // A dead backend has nothing left to pause; drop it so the other
+        // channel keeps working.
+        releaseFailedSound(sound);
+        pausedForVisibility = false;
+      }
       return;
     }
     if (requested && requested.key !== currentKey) {
@@ -251,7 +264,11 @@ function createLoopChannel(volumeScale: number, selectVolume: (policy: ReturnTyp
       syncPolicy();
       return;
     }
-    if (pausedForVisibility && targetVolume() > 0) sound.resume();
+    try {
+      if (pausedForVisibility && targetVolume() > 0) sound.resume();
+    } catch {
+      releaseFailedSound(sound);
+    }
     pausedForVisibility = false;
   };
 

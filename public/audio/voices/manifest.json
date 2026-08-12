@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-12T00:57:26.049Z",
+  "generatedAt": "2026-08-12T01:08:59.958Z",
   "clips": [
     {
       "lineId": "how-to-play.guide.01",
@@ -37,6 +37,7 @@
     {
       "lineId": "npc.anselm.first-meet.0",
       "textHash": "e7bba1be0c85a44b",
+      "generationHash": "d380b57b87aab721",
       "path": "/audio/voices/npc/npc.anselm.first-meet.0.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "onyx",
@@ -69,6 +70,7 @@
     {
       "lineId": "npc.anselm.first-meet.1",
       "textHash": "fc623d4f5c4bc85f",
+      "generationHash": "2bec2c16af25234e",
       "path": "/audio/voices/npc/npc.anselm.first-meet.1.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "onyx",
@@ -101,6 +103,7 @@
     {
       "lineId": "npc.anselm.first-meet.2",
       "textHash": "fdadf633f96865e7",
+      "generationHash": "f8fe64048958bc8a",
       "path": "/audio/voices/npc/npc.anselm.first-meet.2.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "onyx",
@@ -133,6 +136,7 @@
     {
       "lineId": "npc.cora.first-meet.0",
       "textHash": "f13774a495d72863",
+      "generationHash": "6b710f0c7dfc14ec",
       "path": "/audio/voices/npc/npc.cora.first-meet.0.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "nova",
@@ -165,6 +169,7 @@
     {
       "lineId": "npc.cora.first-meet.1",
       "textHash": "18e4e1594b232656",
+      "generationHash": "c3af35289a590776",
       "path": "/audio/voices/npc/npc.cora.first-meet.1.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "nova",
@@ -197,6 +202,7 @@
     {
       "lineId": "npc.cora.first-meet.2",
       "textHash": "55de78b19c80fe6f",
+      "generationHash": "963b9aa75571d700",
       "path": "/audio/voices/npc/npc.cora.first-meet.2.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "nova",
@@ -229,6 +235,7 @@
     {
       "lineId": "npc.eli.first-meet.0",
       "textHash": "b8ff6ab0b44aabce",
+      "generationHash": "b867ba1f3a7326b3",
       "path": "/audio/voices/npc/npc.eli.first-meet.0.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "ash",
@@ -261,6 +268,7 @@
     {
       "lineId": "npc.eli.first-meet.1",
       "textHash": "d8966a7aaac6c07a",
+      "generationHash": "7fea7ed0dd0dc2e0",
       "path": "/audio/voices/npc/npc.eli.first-meet.1.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "ash",
@@ -293,6 +301,7 @@
     {
       "lineId": "npc.eli.first-meet.2",
       "textHash": "9b8f2733c1fe2eef",
+      "generationHash": "3f208f24ae1448d4",
       "path": "/audio/voices/npc/npc.eli.first-meet.2.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "ash",
@@ -325,6 +334,7 @@
     {
       "lineId": "npc.imani.first-meet.0",
       "textHash": "5f2ce710bcf5a466",
+      "generationHash": "3740b7d85e5128c9",
       "path": "/audio/voices/npc/npc.imani.first-meet.0.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "coral",
@@ -357,6 +367,7 @@
     {
       "lineId": "npc.imani.first-meet.1",
       "textHash": "f231f4c19d53bc21",
+      "generationHash": "a10277f7cf0d6abc",
       "path": "/audio/voices/npc/npc.imani.first-meet.1.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "coral",
@@ -389,6 +400,7 @@
     {
       "lineId": "npc.imani.first-meet.2",
       "textHash": "c609b92cf26c075f",
+      "generationHash": "b32dce6d7fb74887",
       "path": "/audio/voices/npc/npc.imani.first-meet.2.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "coral",
@@ -421,6 +433,7 @@
     {
       "lineId": "npc.martha.first-meet.0",
       "textHash": "329be93b2cf14c9f",
+      "generationHash": "ff16da8d90a16c99",
       "path": "/audio/voices/npc/npc.martha.first-meet.0.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "sage",
@@ -453,6 +466,7 @@
     {
       "lineId": "npc.martha.first-meet.1",
       "textHash": "8c8d78c6208e39ae",
+      "generationHash": "484c5a086bec8716",
       "path": "/audio/voices/npc/npc.martha.first-meet.1.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "sage",
@@ -485,6 +499,7 @@
     {
       "lineId": "npc.martha.first-meet.2",
       "textHash": "391f5ceaf16bdcbd",
+      "generationHash": "83c2096cfc40686f",
       "path": "/audio/voices/npc/npc.martha.first-meet.2.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "sage",
@@ -517,6 +532,7 @@
     {
       "lineId": "npc.martha.first-meet.3",
       "textHash": "0bbde0a49e159ad5",
+      "generationHash": "4704ffd55f2159da",
       "path": "/audio/voices/npc/npc.martha.first-meet.3.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "sage",
@@ -549,6 +565,7 @@
     {
       "lineId": "npc.noor.first-meet.0",
       "textHash": "a12951a97f641c3b",
+      "generationHash": "cd4da5244f56c723",
       "path": "/audio/voices/npc/npc.noor.first-meet.0.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "shimmer",
@@ -581,6 +598,7 @@
     {
       "lineId": "npc.noor.first-meet.1",
       "textHash": "e6debba2ac4b18fb",
+      "generationHash": "6fb578218c6a493b",
       "path": "/audio/voices/npc/npc.noor.first-meet.1.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "shimmer",
@@ -613,6 +631,7 @@
     {
       "lineId": "npc.noor.first-meet.2",
       "textHash": "4da57222706e2e69",
+      "generationHash": "f1a75fa37c5b10ea",
       "path": "/audio/voices/npc/npc.noor.first-meet.2.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "shimmer",
@@ -645,6 +664,7 @@
     {
       "lineId": "npc.rowan.first-meet.0",
       "textHash": "42b659e859cfb091",
+      "generationHash": "367459ff484bbda0",
       "path": "/audio/voices/npc/npc.rowan.first-meet.0.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "verse",
@@ -677,6 +697,7 @@
     {
       "lineId": "npc.rowan.first-meet.1",
       "textHash": "80b5c91de584d453",
+      "generationHash": "d9eb30398c2caa8b",
       "path": "/audio/voices/npc/npc.rowan.first-meet.1.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "verse",
@@ -709,6 +730,7 @@
     {
       "lineId": "npc.rowan.first-meet.2",
       "textHash": "2c04ca6ca12fc937",
+      "generationHash": "8c6e74183a5e2e8b",
       "path": "/audio/voices/npc/npc.rowan.first-meet.2.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "verse",
@@ -741,6 +763,7 @@
     {
       "lineId": "npc.theo.first-meet.0",
       "textHash": "c48b070309115816",
+      "generationHash": "7aff9034ee9ccc57",
       "path": "/audio/voices/npc/npc.theo.first-meet.0.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "echo",
@@ -773,6 +796,7 @@
     {
       "lineId": "npc.theo.first-meet.1",
       "textHash": "e85d3f1bfb251500",
+      "generationHash": "c57806e5a5a1af8e",
       "path": "/audio/voices/npc/npc.theo.first-meet.1.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "echo",
@@ -805,6 +829,7 @@
     {
       "lineId": "npc.theo.first-meet.2",
       "textHash": "9029c922f4da8361",
+      "generationHash": "19822db71f5b6ab6",
       "path": "/audio/voices/npc/npc.theo.first-meet.2.mp3",
       "model": "gpt-4o-mini-tts",
       "voice": "echo",

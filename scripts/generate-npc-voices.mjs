@@ -63,10 +63,14 @@ function collectGreetingLines(document) {
       const text = line?.text;
       if (typeof text !== 'string' || !text.trim()) throw new Error(`NPC "${npc.id}" firstMeet[${index}] has no text.`);
       if (text.includes('{{')) throw new Error(`NPC "${npc.id}" firstMeet[${index}] is templated; templated lines stay on browser TTS.`);
+      const trimmed = text.trim();
       lines.push({
         lineId: `npc.${npc.id}.first-meet.${index}`,
-        text: text.trim(),
-        textHash: hashText(text.trim()),
+        text: trimmed,
+        textHash: hashText(trimmed),
+        // Full generation identity: changing only the delivery instructions
+        // must invalidate the recording, not just text/model/voice.
+        generationHash: hashText([trimmed, model, character.voice, character.instructions].join('\n')),
         ...character,
       });
     });
@@ -163,10 +167,14 @@ async function main() {
     const oggPublicPath = `/audio/voices/npc/${line.lineId}.ogg`;
     const existing = clipsById.get(line.lineId);
 
-    const canReuse = existing?.textHash === line.textHash
-      && existing.model === model
-      && existing.voice === line.voice
-      && await fileExists(mp3Path);
+    // Legacy clips predate generationHash; adopt them once when the rest of
+    // the identity matches, so the hash is stamped without re-billing.
+    const identityMatches = existing?.generationHash === line.generationHash
+      || (existing?.generationHash === undefined
+        && existing?.textHash === line.textHash
+        && existing.model === model
+        && existing.voice === line.voice);
+    const canReuse = identityMatches && await fileExists(mp3Path);
 
     if (!canReuse) {
       console.log(`Generating ${line.lineId} (${line.voice})`);
@@ -181,6 +189,7 @@ async function main() {
     clipsById.set(line.lineId, {
       lineId: line.lineId,
       textHash: line.textHash,
+      generationHash: line.generationHash,
       path: mp3PublicPath,
       model,
       voice: line.voice,
