@@ -90,7 +90,19 @@ export function useModalFocus(
     return () => {
       cancelAnimationFrame(frame);
       document.removeEventListener('keydown', onKeyDown, true);
-      if (previous?.isConnected) previous.focus();
+      const canRestorePrevious = previous
+        && previous.isConnected
+        && previous !== document.body
+        && !previous.closest('[inert]');
+      if (canRestorePrevious) {
+        previous.focus();
+      } else {
+        // The opener is gone or unfocusable (unmounted by beaming away, body,
+        // or inside an inert subtree): keyboard control returns to the game
+        // region instead of falling to <body>.
+        const controls = document.getElementById('game-controls');
+        if (controls && !controls.closest('[inert]')) controls.focus();
+      }
     };
   }, [dialogRef, onEscape, open]);
 }

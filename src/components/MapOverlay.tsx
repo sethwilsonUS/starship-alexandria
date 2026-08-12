@@ -6,6 +6,7 @@ import { speak, cancelSpeech } from '@/utils/speech';
 import { MAP_WIDTH, MAP_HEIGHT } from '@/config/gameConfig';
 import type { MapRoom } from '@/types/store';
 import { EXPEDITION_THEMES } from '@/game/expeditions';
+import { resolveExpeditionSeed } from '@/utils/expeditionSeed';
 import { useModalFocus } from './useModalFocus';
 
 function getDirectionLabel(room: MapRoom, mapWidth: number, mapHeight: number): string {
@@ -59,7 +60,9 @@ export default function MapOverlay() {
   const visitedRooms = useGameStore((s) => s.session.visitedRooms);
   const closeMap = useGameStore((s) => s.actions.closeMap);
   const activeThemeId = useGameStore((s) => s.session.activeThemeId);
-  
+  const activeExpeditionId = useGameStore((s) => s.session.activeExpeditionId);
+  const expeditionSeed = resolveExpeditionSeed(activeExpeditionId, activeThemeId);
+
   const [selectedRoomIndex, setSelectedRoomIndex] = useState<number | null>(null);
   const [isAnimatingIn, setIsAnimatingIn] = useState(false);
   const openedAtRef = useRef<number>(0);
@@ -256,6 +259,11 @@ export default function MapOverlay() {
           <div>
             <h2 id="area-map-title" className="map-overlay__title">Area Map</h2>
             <p className="map-overlay__subtitle">{theme?.title ?? 'Expedition site'}</p>
+            {expeditionSeed && (
+              <p className="map-overlay__seed">
+                Expedition seed: <code>{expeditionSeed}</code>
+              </p>
+            )}
           </div>
           <button type="button" className="modal-close map-overlay__close" onClick={close} aria-label="Close area map" data-autofocus>
             <span aria-hidden="true">×</span>

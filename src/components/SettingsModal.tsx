@@ -2,6 +2,7 @@
 
 import { useCallback, useRef } from 'react';
 import { useGameStore } from '@/store/gameStore';
+import { resolveExpeditionSeed } from '@/utils/expeditionSeed';
 import { useModalFocus } from './useModalFocus';
 
 export default function SettingsModal() {
@@ -10,7 +11,10 @@ export default function SettingsModal() {
   const settings = useGameStore((state) => state.settings);
   const actions = useGameStore((state) => state.actions);
   const close = useCallback(() => actions.closeUtility(), [actions]);
+  const activeThemeId = useGameStore((state) => state.session.activeThemeId);
+  const activeExpeditionId = useGameStore((state) => state.session.activeExpeditionId);
   const volumePercent = Math.round(settings.masterVolume * 100);
+  const expeditionSeed = resolveExpeditionSeed(activeExpeditionId, activeThemeId);
 
   useModalFocus(open, dialogRef, close);
   if (!open) return null;
@@ -108,6 +112,11 @@ export default function SettingsModal() {
         </div>
 
         <footer className="utility-modal__footer">
+          {expeditionSeed && (
+            <p className="utility-modal__seed">
+              Expedition seed: <code>{expeditionSeed}</code>
+            </p>
+          )}
           <p role="status">Options save automatically.</p>
           <button type="button" className="archive-button archive-button--primary" onClick={close}>
             Done

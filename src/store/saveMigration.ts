@@ -25,6 +25,7 @@ export interface SaveV7 {
     collectedArtifacts: string[];
   };
   hasSeenHowToPlay: boolean;
+  hasSeenSurfaceHints: boolean;
   settings: SavedSettingsV7;
   previousThemeId: SavedThemeId | null;
 }
@@ -106,6 +107,10 @@ export function migratePersistedSave(persisted: unknown, version: number): SaveV
       : typeof source.hasSeenWelcome === 'boolean'
         ? source.hasSeenWelcome
         : version < 3,
+    // Anyone who has already explored doesn't need the first-surface hint bar.
+    hasSeenSurfaceHints: typeof source.hasSeenSurfaceHints === 'boolean'
+      ? source.hasSeenSurfaceHints
+      : strings(exploration.visitedMaps).length > 0,
     settings: {
       narrationEnabled,
       sfxEnabled: typeof oldSettings.sfxEnabled === 'boolean'

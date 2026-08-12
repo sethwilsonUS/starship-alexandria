@@ -16,6 +16,7 @@ import { summarizeRoomContent, type RoomContentSummary } from '../systems/Placem
 import { createCpuTilemapLayer } from '../utils/tilemapLayers';
 import { ASSET_KEYS, THEME_TILESET_KEYS } from '@/game/assets/assetManifest';
 import { playBumpSound, speak } from '@/utils/speech';
+import { resolveExpeditionSeed } from '@/utils/expeditionSeed';
 import { transitionGuard } from '@/game/input/gameInput';
 import {
   EXPEDITION_THEMES,
@@ -94,7 +95,7 @@ export default class ExploreScene extends Scene {
     const state = useGameStore.getState();
     const themeId = state.session.activeThemeId ?? 'scriptorium';
     this.theme = EXPEDITION_THEMES[themeId];
-    const seed = getExpeditionSeed(state.session.activeExpeditionId, themeId);
+    const seed = resolveExpeditionSeed(state.session.activeExpeditionId, themeId) ?? `${themeId}-expedition`;
     this.expedition = generateExpedition({
       seed,
       themeId,
@@ -804,14 +805,6 @@ function buildRuntimeContentCatalog(): ExpeditionContentCatalog {
       journals.filter((journal) => journal.themeIds?.includes(themeId)).map((journal) => journal.id),
     ])),
   };
-}
-
-function getExpeditionSeed(activeExpeditionId: string | null, themeId: ThemeId): string {
-  if (process.env.NEXT_PUBLIC_E2E === '1' && typeof window !== 'undefined') {
-    const requestedSeed = new URLSearchParams(window.location.search).get('seed')?.trim();
-    if (requestedSeed) return requestedSeed;
-  }
-  return activeExpeditionId ?? `${themeId}-expedition`;
 }
 
 function pointKey(point: Point): string {

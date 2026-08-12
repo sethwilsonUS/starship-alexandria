@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
   EXPEDITION_THEME_IDS,
   EXPEDITION_THEMES,
@@ -9,10 +9,13 @@ import {
 } from '@/game/expeditions';
 import { EventBridge } from '@/game/EventBridge';
 import { useGameStore } from '@/store/gameStore';
+import { resolveRovingTarget } from '@/utils/rovingFocus';
 import { useModalFocus } from './useModalFocus';
 
 export default function MissionPicker() {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const cardButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const phase = useGameStore((state) => state.session.gamePhase);
   const previousThemeId = useGameStore((state) => state.previousThemeId);
   const actions = useGameStore((state) => state.actions);
@@ -25,6 +28,26 @@ export default function MissionPicker() {
   const depart = (themeId: ThemeId) => {
     actions.selectExpeditionTheme(themeId);
     EventBridge.emit('beam-down-requested', { themeId });
+  };
+
+  /**
+   * Arrow keys rove focus across the destination cards. Column count is read
+   * from the rendered grid so the narrow single-column layout navigates in
+   * visual order, and focus on other controls (close, surprise) is left alone.
+   */
+  const onGridKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.repeat) return;
+
+    const buttons = cardButtonRefs.current.filter(Boolean) as HTMLButtonElement[];
+    const activeIndex = buttons.findIndex((button) => button === document.activeElement);
+    const columns = gridRef.current
+      ? getComputedStyle(gridRef.current).gridTemplateColumns.split(' ').filter(Boolean).length
+      : 1;
+    const to = resolveRovingTarget(event.key, activeIndex, buttons.length, columns);
+    if (to === null) return;
+
+    event.preventDefault();
+    buttons[to].focus();
   };
 
   const surprise = () => {
@@ -42,6 +65,7 @@ export default function MissionPicker() {
         aria-labelledby="mission-picker-title"
         aria-describedby="mission-picker-description"
         tabIndex={-1}
+        onKeyDown={onGridKeyDown}
       >
         <header className="mission-picker__header">
           <div>
@@ -56,7 +80,7 @@ export default function MissionPicker() {
           </button>
         </header>
 
-        <div className="mission-picker__grid">
+        <div className="mission-picker__grid" ref={gridRef}>
           {EXPEDITION_THEME_IDS.map((themeId, index) => {
             const theme = EXPEDITION_THEMES[themeId];
             const wasPrevious = previousThemeId === themeId;
@@ -79,6 +103,7 @@ export default function MissionPicker() {
                   type="button"
                   className="mission-card__button"
                   onClick={() => depart(themeId)}
+                  ref={(element) => { cardButtonRefs.current[index] = element; }}
                   data-autofocus={index === 0 ? '' : undefined}
                 >
                   Lock coordinates{wasPrevious ? ' · recently visited' : ''}

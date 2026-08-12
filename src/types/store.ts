@@ -140,6 +140,7 @@ export interface GameState {
   savedFragmentIds: string[];
   exploration: ExplorationState;
   hasSeenHowToPlay: boolean;
+  hasSeenSurfaceHints: boolean;
   previousThemeId: SavedThemeId | null;
   settings: SettingsState;
   session: SessionState;
@@ -159,6 +160,8 @@ export interface GameActions {
   openLibraryBook: (fragment: BookFragment) => void;
   beamToShip: () => void;
   beamToSurface: (mapId: string, themeId?: SavedThemeId) => void;
+  /** Retire the one-time surface controls hint bar. */
+  markSurfaceHintsSeen: () => void;
   saveToLocalStorage: () => void;
   loadFromLocalStorage: () => void;
   addExploredTiles: (coords: string[]) => void;

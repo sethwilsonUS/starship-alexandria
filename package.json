@@ -59,7 +59,7 @@
     "devDependencies": {
         "@axe-core/playwright": "^4.12.1",
         "@playwright/test": "^1.61.1",
-        "@types/node": "^20.19.0",
+        "@types/node": "^25.9.1",
         "@types/react": "^19",
         "@types/react-dom": "^19",
         "@types/uuid": "^10.0.0",
@@ -67,7 +67,7 @@
         "eslint-config-next": "^16.2.11",
         "sharp": "^0.35.3",
         "ts-node": "^10.9.2",
-        "typescript": "^5",
+        "typescript": "^6.0.3",
         "vitest": "^4.1.10"
     },
     "overrides": {

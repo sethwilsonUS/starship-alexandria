@@ -211,6 +211,8 @@ const createActions = (
 
   beamToShip: () =>
     set((s) => ({
+      // Returning from a first expedition retires the surface hint bar.
+      hasSeenSurfaceHints: true,
       player: {
         ...s.player,
         currentMapId: 'ship',
@@ -362,6 +364,7 @@ const createActions = (
       savedFragmentIds: [],
       exploration: initialExploration,
       hasSeenHowToPlay: false,
+      hasSeenSurfaceHints: false,
       previousThemeId: null,
       settings,
       session: createInitialSession(),
@@ -465,6 +468,8 @@ const createActions = (
 
   setMotionPreference: (preference: MotionPreference) =>
     set((s) => ({ settings: { ...s.settings, motionPreference: preference } })),
+
+  markSurfaceHintsSeen: () => set(() => ({ hasSeenSurfaceHints: true })),
 
   acceptLaunchGate: () => {
     setAudioUnlockedGlobal(true);
@@ -586,6 +591,7 @@ export const useGameStore = create<GameStore>()(
       savedFragmentIds: [],
       exploration: initialExploration,
       hasSeenHowToPlay: false,
+      hasSeenSurfaceHints: false,
       previousThemeId: null,
       settings: initialSettings,
       session: createInitialSession(),
@@ -603,6 +609,7 @@ export const useGameStore = create<GameStore>()(
         collectedFragmentIds: state.savedFragmentIds,
         exploration: state.exploration,
         hasSeenHowToPlay: state.hasSeenHowToPlay,
+        hasSeenSurfaceHints: state.hasSeenSurfaceHints,
         settings: state.settings,
         previousThemeId: state.previousThemeId,
       }),
@@ -635,6 +642,7 @@ export const useGameStore = create<GameStore>()(
           savedFragmentIds: save.collectedFragmentIds,
           exploration: save.exploration,
           hasSeenHowToPlay: save.hasSeenHowToPlay,
+          hasSeenSurfaceHints: save.hasSeenSurfaceHints,
           previousThemeId: save.previousThemeId,
           settings: save.settings,
           session: createInitialSession(),
