@@ -54,6 +54,7 @@ books:
 
 - `id`: stable lowercase identifier; do not repurpose an existing ID for another work.
 - `title`, `author`: reader-facing catalog copy.
+- `archivistNote`: one or two sentences in the ship archivist's voice, shown on the library shelf once the work has a recovered fragment. Required.
 - `source.provider`: currently must be exactly `Project Gutenberg`.
 - `source.ebookNumber`: positive integer from the Gutenberg record.
 - `source.edition`: specific translation, editor, publication, or edition represented by the text.
@@ -93,6 +94,9 @@ npcs:
     return:
       - speaker: Imani
         text: "The hymnal's figures are not a page number."
+    returnWithClue:
+      - speaker: Imani
+        text: "So the hymnal surfaced. Take it down to the crypt."
     postVault:
       - speaker: Imani
         text: "The reliquary is open? Then the last note resolved after all."
@@ -100,6 +104,7 @@ npcs:
 
 - `firstMeet` is used before this NPC has been discovered.
 - `return` is used for later conversations before the current expedition's vault opens.
+- `returnWithClue` is used instead of `return` once the vault clue has been discovered and the vault is still sealed; it should acknowledge the clue and point toward the vault. Required.
 - `postVault` is used after the current vault opens.
 - `speaker` is optional; omit it for narration.
 
