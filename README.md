@@ -17,14 +17,23 @@ From the orbiting library ship *Alexandria*, choose a recovery signal, beam down
 
 *AI-generated “Celestial Acropolis” key art for Starship Alexandria; the same composition supplies the social-preview crop. Generation details are recorded in the [image manifest](public/images/manifest.json).*
 
+## Screenshots
+
+| Aboard the Alexandria | On the surface |
+| --- | --- |
+| ![The library deck aboard the Alexandria: side shelves filling with recovered book spines beside the Archives panel listing six works at 13 of 21 fragments.](docs/images/ship-deck.png) | ![Lantern-lit exploration of the Ruined Scriptorium: the archivist stands in warm light that fades toward remembered rooms and darkness.](docs/images/surface-scriptorium.png) |
+| ![The expanded Inferno shelf entry showing the archivist's handwritten-style note above two recovered canto fragments.](docs/images/shelf-note.png) | ![Meeting Eli Ward in the illuminators' workshop; the dialogue box reads "You with the Alexandria? Saw the beam. Hard entrance to miss."](docs/images/dialogue.png) |
+
 ## What is in the game
 
 - Four destinations with different map structures, tiles, room vocabularies, NPC pools, and vault stories.
 - Twenty-one sourced excerpts across ten public-domain works, including *Paradise Lost*, *The Canterbury Tales*, *The Faerie Queene*, *Frankenstein*, *A Vindication of the Rights of Woman*, and Frederick Douglass's *Narrative*.
-- Deterministic expeditions: a seed reproduces the layout, placements, clue, and reward.
-- A nonviolent collection loop with fog of war and a comfortable fixed field of view, journals, maps, NPC dialogue, clue-driven vaults that never require code entry, and a browsable ship library.
+- Deterministic expeditions: a seed reproduces the layout, placements, clue, and reward; the active seed is shown in Options and on the area map so runs can be shared.
+- A nonviolent collection loop with a lantern-soft fog of war, journals, maps, NPC dialogue, clue-driven vaults that never require code entry, and a browsable ship library.
+- A lived-in library deck whose shelves visibly fill with recovered book spines, plus a transporter cinematic in both directions and a generative ambient music bed with its own Options toggle.
+- Eight survivors with distinct recorded first-meeting voices, dialogue that reacts once the vault clue is in hand, an archivist's note for every recovered work, and an epilogue that ends the completed archive on the recovered words themselves.
 - Accessible HTML for first-run instructions, persistent options, dialogue, reading, maps, and mission selection around a focused Phaser game region.
-- A reusable How to Play guide with deterministic prerecorded narration, plus sound-effects, ambience, volume, and motion preferences available from both ship and surface. Audio never starts without the player's gesture.
+- A reusable How to Play guide with deterministic prerecorded narration, plus sound-effects, ambience, music, volume, and motion preferences available from both ship and surface. Audio never starts without the player's gesture.
 - Visible game-event announcements and a textual map equivalent for information that would otherwise exist only on the canvas.
 - A small versioned local save that preserves progress and preferences while safely returning every reload to the ship.
 
