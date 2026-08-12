@@ -453,6 +453,9 @@ const createActions = (
   setAmbienceEnabled: (enabled: boolean) =>
     set((s) => ({ settings: { ...s.settings, ambienceEnabled: enabled } })),
 
+  setMusicEnabled: (enabled: boolean) =>
+    set((s) => ({ settings: { ...s.settings, musicEnabled: enabled } })),
+
   setMasterVolume: (volume: number) => {
     const normalizedVolume = Number.isFinite(volume)
       ? Math.min(1, Math.max(0, volume))

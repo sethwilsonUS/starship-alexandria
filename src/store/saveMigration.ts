@@ -7,6 +7,7 @@ export interface SavedSettingsV7 {
   narrationEnabled: boolean;
   sfxEnabled: boolean;
   ambienceEnabled: boolean;
+  musicEnabled: boolean;
   masterVolume: number;
   motionPreference: MotionPreference;
 }
@@ -34,6 +35,7 @@ const DEFAULT_SETTINGS: SavedSettingsV7 = {
   narrationEnabled: true,
   sfxEnabled: true,
   ambienceEnabled: true,
+  musicEnabled: true,
   masterVolume: 0.7,
   motionPreference: 'system',
 };
@@ -119,6 +121,9 @@ export function migratePersistedSave(persisted: unknown, version: number): SaveV
       ambienceEnabled: typeof oldSettings.ambienceEnabled === 'boolean'
         ? oldSettings.ambienceEnabled
         : DEFAULT_SETTINGS.ambienceEnabled,
+      musicEnabled: typeof oldSettings.musicEnabled === 'boolean'
+        ? oldSettings.musicEnabled
+        : DEFAULT_SETTINGS.musicEnabled,
       masterVolume: finiteNumber(oldSettings.masterVolume, DEFAULT_SETTINGS.masterVolume, 0, 1),
       motionPreference: isMotionPreference(oldSettings.motionPreference)
         ? oldSettings.motionPreference

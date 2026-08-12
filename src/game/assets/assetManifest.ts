@@ -47,6 +47,9 @@ export const ASSET_KEYS = {
         gardens: 'ambience-gardens',
       },
     },
+    music: {
+      ship: 'music-ship',
+    },
   },
 } as const;
 
@@ -85,7 +88,7 @@ export const IMAGE_ASSETS: ImageAsset[] = [
   { key: ASSET_KEYS.sprites.shipTerminalProp, path: '/game-assets/sprites/ship-terminal-prop.png' },
 ];
 
-const pairedAudio = (key: string, folder: 'footsteps' | 'cues' | 'ambience', file: string): AudioAsset => ({
+const pairedAudio = (key: string, folder: 'footsteps' | 'cues' | 'ambience' | 'music', file: string): AudioAsset => ({
   key,
   paths: [`/game-assets/audio/${folder}/${file}.ogg`, `/game-assets/audio/${folder}/${file}.mp3`],
 });
@@ -110,6 +113,7 @@ export const AUDIO_ASSETS: AudioAsset[] = [
   pairedAudio(ASSET_KEYS.audio.cues.uiClose, 'cues', 'ui-close'),
   pairedAudio(ASSET_KEYS.audio.cues.transporter, 'cues', 'transporter'),
   pairedAudio(ASSET_KEYS.audio.ambience.ship, 'ambience', 'ship-engine'),
+  pairedAudio(ASSET_KEYS.audio.music.ship, 'music', 'music-ship'),
   pairedAudio(ASSET_KEYS.audio.ambience.ruins, 'ambience', 'ambience-ruins'),
   pairedAudio(ASSET_KEYS.audio.ambience.gardens, 'ambience', 'ambience-gardens'),
 ];

@@ -44,6 +44,7 @@ describe('utility overlay actions', () => {
       narrationEnabled: false,
       sfxEnabled: false,
       ambienceEnabled: true,
+      musicEnabled: true,
       masterVolume: 0.35,
       motionPreference: 'reduce' as const,
     };
