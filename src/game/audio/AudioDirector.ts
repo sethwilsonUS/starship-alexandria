@@ -1,23 +1,27 @@
 import type { FootstepSurface } from '@/game/expeditions';
 import { ASSET_KEYS } from '@/game/assets/assetManifest';
 import { useGameStore } from '@/store/gameStore';
+import { onNarrationActivity } from '@/utils/speech';
 
 export interface AudioPolicyInput {
   audioUnlocked: boolean;
   sfxEnabled: boolean;
   ambienceEnabled: boolean;
+  musicEnabled: boolean;
   masterVolume: number;
 }
 
 export function resolveAudioPolicy(input: AudioPolicyInput): {
   sfxVolume: number;
   ambienceVolume: number;
+  musicVolume: number;
 } {
   const master = Math.min(1, Math.max(0, input.masterVolume));
-  if (!input.audioUnlocked) return { sfxVolume: 0, ambienceVolume: 0 };
+  if (!input.audioUnlocked) return { sfxVolume: 0, ambienceVolume: 0, musicVolume: 0 };
   return {
     sfxVolume: input.sfxEnabled ? master : 0,
     ambienceVolume: input.ambienceEnabled ? master : 0,
+    musicVolume: input.musicEnabled ? master : 0,
   };
 }
 
@@ -31,26 +35,26 @@ type SoundBackendState = {
   volumeNode?: { gain: unknown } | null;
 };
 
-let currentAmbience: VolumeSound | null = null;
-let currentAmbienceKey: string | null = null;
 let visibilityListenerInstalled = false;
 let policyListenerInstalled = false;
-let pausedForVisibility = false;
 const fadeGenerations = new WeakMap<VolumeSound, number>();
-const activeAmbienceSounds = new Set<VolumeSound>();
-let requestedAmbience: { scene: Phaser.Scene; key: string } | null = null;
+
+/** While narration speaks, the loop channels sit back at this fraction. */
+const NARRATION_DUCK_FACTOR = 0.35;
+let narrationDucked = false;
 
 function currentPolicy() {
   // E2E exercises audio policy and asset requests without sending output to
   // the workstation's speakers. Production bundles inline this as false.
   if (process.env.NEXT_PUBLIC_E2E === '1') {
-    return { sfxVolume: 0, ambienceVolume: 0 };
+    return { sfxVolume: 0, ambienceVolume: 0, musicVolume: 0 };
   }
   const state = useGameStore.getState();
   return resolveAudioPolicy({
     audioUnlocked: state.session.audioUnlocked,
     sfxEnabled: state.settings.sfxEnabled,
     ambienceEnabled: state.settings.ambienceEnabled,
+    musicEnabled: state.settings.musicEnabled,
     masterVolume: state.settings.masterVolume,
   });
 }
@@ -73,68 +77,232 @@ export function playFootstep(
   return sequenceIndex + 1;
 }
 
-export function startAmbience(scene: Phaser.Scene, key: string): void {
-  requestedAmbience = { scene, key };
-  installVisibilityListener();
-  installPolicyListener();
-  const targetVolume = currentPolicy().ambienceVolume * 0.18;
-  if (targetVolume <= 0 || (typeof document !== 'undefined' && document.hidden)) return;
+/**
+ * A persistent looping channel (ambience bed or music pad) with crossfade,
+ * tab-visibility pause, and live policy tracking.
+ */
+interface LoopChannel {
+  start(scene: Phaser.Scene, key: string): void;
+  stop(scene: Phaser.Scene): void;
+  syncPolicy(): void;
+  handleVisibility(hidden: boolean): void;
+}
 
-  if (currentAmbience && currentAmbienceKey === key) {
-    if (!safeSetVolume(currentAmbience, targetVolume)) {
-      safelyDestroy(currentAmbience);
-      currentAmbience = null;
-      currentAmbienceKey = null;
-      return;
-    }
-    if (currentAmbience.isPaused) currentAmbience.resume();
-    return;
-  }
+function createLoopChannel(volumeScale: number, selectVolume: (policy: ReturnType<typeof currentPolicy>) => number): LoopChannel {
+  let current: VolumeSound | null = null;
+  let currentKey: string | null = null;
+  let requested: { scene: Phaser.Scene; key: string } | null = null;
+  let pausedForVisibility = false;
+  const activeSounds = new Set<VolumeSound>();
 
-  const previous = currentAmbience;
-  const previousKey = currentAmbienceKey;
-  let next: VolumeSound;
-  try {
-    next = scene.sound.add(key, { loop: true, volume: 0 }) as VolumeSound;
-  } catch {
-    return;
-  }
-  currentAmbience = next;
-  currentAmbienceKey = key;
-  activeAmbienceSounds.add(next);
-  try {
-    if (!next.play()) {
-      safelyDestroy(next);
-      currentAmbience = previous;
-      currentAmbienceKey = previousKey;
-      return;
+  const targetVolume = () =>
+    selectVolume(currentPolicy()) * volumeScale * (narrationDucked ? NARRATION_DUCK_FACTOR : 1);
+
+  const detachIfCurrent = (sound: VolumeSound) => {
+    if (sound !== current) return;
+    current = null;
+    currentKey = null;
+  };
+
+  /** Fade-failure teardown: detach if live and always release the retained entry. */
+  const releaseFailedSound = (sound: VolumeSound) => {
+    detachIfCurrent(sound);
+    activeSounds.delete(sound);
+  };
+
+  const destroySound = (sound: VolumeSound) => {
+    cancelFade(sound);
+    activeSounds.delete(sound);
+    try {
+      sound.stop();
+    } catch {
+      // The backend was never fully initialized.
     }
-  } catch {
-    safelyDestroy(next);
-    currentAmbience = previous;
-    currentAmbienceKey = previousKey;
-    return;
-  }
-  fadeSound(scene, next, targetVolume, 700);
-  if (previous) {
-    fadeSound(scene, previous, 0, 500, () => {
-      if (previous !== currentAmbience) {
-        safelyDestroy(previous);
+    try {
+      sound.destroy();
+    } catch {
+      // Nothing further to release.
+    }
+  };
+
+  const start = (scene: Phaser.Scene, key: string) => {
+    requested = { scene, key };
+    installVisibilityListener();
+    installPolicyListener();
+    const volume = targetVolume();
+    if (volume <= 0 || (typeof document !== 'undefined' && document.hidden)) return;
+
+    if (current && currentKey === key) {
+      if (!safeSetVolume(current, volume)) {
+        destroySound(current);
+        current = null;
+        currentKey = null;
+        return;
       }
-    });
-  }
+      if (current.isPaused) current.resume();
+      return;
+    }
+
+    const previous = current;
+    const previousKey = currentKey;
+    let next: VolumeSound;
+    try {
+      next = scene.sound.add(key, { loop: true, volume: 0 }) as VolumeSound;
+    } catch {
+      return;
+    }
+    current = next;
+    currentKey = key;
+    activeSounds.add(next);
+    try {
+      if (!next.play()) {
+        destroySound(next);
+        current = previous;
+        currentKey = previousKey;
+        return;
+      }
+    } catch {
+      destroySound(next);
+      current = previous;
+      currentKey = previousKey;
+      return;
+    }
+    fadeSound(scene, next, volume, 700, undefined, releaseFailedSound);
+    if (previous) {
+      fadeSound(scene, previous, 0, 500, () => {
+        if (previous !== current) {
+          destroySound(previous);
+        }
+      }, releaseFailedSound);
+    }
+  };
+
+  const stop = (scene: Phaser.Scene) => {
+    requested = null;
+    const sound = current;
+    if (!sound) return;
+    current = null;
+    currentKey = null;
+    fadeSound(scene, sound, 0, 350, () => {
+      destroySound(sound);
+    }, releaseFailedSound);
+  };
+
+  const syncPolicy = () => {
+    const sound = current;
+    const volume = targetVolume();
+    const hidden = typeof document !== 'undefined' && document.hidden;
+    if (!sound) {
+      if (volume > 0 && !hidden && requested) {
+        const { scene, key } = requested;
+        start(scene, key);
+      }
+      return;
+    }
+    for (const outgoing of activeSounds) {
+      if (outgoing === sound) continue;
+      cancelFade(outgoing);
+      safeSetVolume(outgoing, 0);
+      try {
+        if (outgoing.isPlaying) outgoing.pause();
+      } catch {
+        // A destroyed outgoing backend needs no further policy work.
+      }
+      destroySound(outgoing);
+    }
+    cancelFade(sound);
+    if (volume <= 0 || hidden) {
+      if (!safeSetVolume(sound, 0)) {
+        destroySound(sound);
+        current = null;
+        currentKey = null;
+        return;
+      }
+      try {
+        if (sound.isPlaying) sound.pause();
+      } catch {
+        // A scene can disappear while a persisted preference is being applied.
+      }
+      return;
+    }
+
+    if (!safeSetVolume(sound, volume)) {
+      destroySound(sound);
+      current = null;
+      currentKey = null;
+      return;
+    }
+    try {
+      if (sound.isPaused) sound.resume();
+    } catch {
+      // A destroyed backend is treated as silence.
+    }
+  };
+
+  const handleVisibility = (hidden: boolean) => {
+    const sound = current;
+    if (hidden) {
+      if (!sound) return;
+      try {
+        pausedForVisibility = sound.isPlaying;
+        if (pausedForVisibility) sound.pause();
+      } catch {
+        // A dead backend has nothing left to pause; drop it so the other
+        // channel keeps working.
+        releaseFailedSound(sound);
+        pausedForVisibility = false;
+      }
+      return;
+    }
+    if (requested && requested.key !== currentKey) {
+      pausedForVisibility = false;
+      const { scene, key } = requested;
+      start(scene, key);
+      return;
+    }
+    if (!sound) {
+      syncPolicy();
+      return;
+    }
+    try {
+      if (pausedForVisibility && targetVolume() > 0) sound.resume();
+    } catch {
+      releaseFailedSound(sound);
+    }
+    pausedForVisibility = false;
+  };
+
+  return { start, stop, syncPolicy, handleVisibility };
+}
+
+const ambienceChannel = createLoopChannel(0.18, (policy) => policy.ambienceVolume);
+const musicChannel = createLoopChannel(0.14, (policy) => policy.musicVolume);
+const loopChannels = [ambienceChannel, musicChannel];
+
+export function startAmbience(scene: Phaser.Scene, key: string): void {
+  ambienceChannel.start(scene, key);
 }
 
 export function stopAmbience(scene: Phaser.Scene): void {
-  requestedAmbience = null;
-  const sound = currentAmbience;
-  if (!sound) return;
-  currentAmbience = null;
-  currentAmbienceKey = null;
-  fadeSound(scene, sound, 0, 350, () => {
-    safelyDestroy(sound);
-  });
+  ambienceChannel.stop(scene);
 }
+
+export function startMusic(scene: Phaser.Scene, key: string): void {
+  musicChannel.start(scene, key);
+}
+
+export function stopMusic(scene: Phaser.Scene): void {
+  musicChannel.stop(scene);
+}
+
+/** Narration ducking: the beds sit back while a voice speaks, then recover. */
+export function setNarrationDucking(active: boolean): void {
+  if (narrationDucked === active) return;
+  narrationDucked = active;
+  for (const channel of loopChannels) channel.syncPolicy();
+}
+
+onNarrationActivity(setNarrationDucking);
 
 function footstepKeys(surface: FootstepSurface): readonly string[] {
   switch (surface) {
@@ -153,10 +321,11 @@ function fadeSound(
   target: number,
   durationMs: number,
   onComplete?: () => void,
+  onBackendFailure?: (sound: VolumeSound) => void,
 ): void {
   if (!hasUsableVolumeBackend(sound)) {
-    detachFailedSound(sound);
-    safelyDestroy(sound);
+    onBackendFailure?.(sound);
+    safelyDestroySound(sound);
     onComplete?.();
     return;
   }
@@ -164,8 +333,8 @@ function fadeSound(
   try {
     start = Number.isFinite(sound.volume) ? sound.volume : 0;
   } catch {
-    detachFailedSound(sound);
-    safelyDestroy(sound);
+    onBackendFailure?.(sound);
+    safelyDestroySound(sound);
     onComplete?.();
     return;
   }
@@ -181,8 +350,8 @@ function fadeSound(
       if (failed || fadeGenerations.get(sound) !== generation) return;
       if (!hasUsableVolumeBackend(sound)) {
         failed = true;
-        detachFailedSound(sound);
-        safelyDestroy(sound);
+        onBackendFailure?.(sound);
+        safelyDestroySound(sound);
         onComplete?.();
         return;
       }
@@ -190,8 +359,8 @@ function fadeSound(
       const progress = step / steps;
       if (!safeSetVolume(sound, start + (target - start) * progress)) {
         failed = true;
-        detachFailedSound(sound);
-        safelyDestroy(sound);
+        onBackendFailure?.(sound);
+        safelyDestroySound(sound);
         onComplete?.();
         return;
       }
@@ -218,15 +387,9 @@ function hasUsableVolumeBackend(sound: VolumeSound): boolean {
   return !('volumeNode' in backend) || backend.volumeNode !== null;
 }
 
-function detachFailedSound(sound: VolumeSound): void {
-  if (sound !== currentAmbience) return;
-  currentAmbience = null;
-  currentAmbienceKey = null;
-}
-
-function safelyDestroy(sound: VolumeSound): void {
+/** Fade-path teardown for sounds whose backend failed mid-flight. */
+function safelyDestroySound(sound: VolumeSound): void {
   cancelFade(sound);
-  activeAmbienceSounds.delete(sound);
   try {
     sound.stop();
   } catch {
@@ -250,84 +413,18 @@ function installPolicyListener(): void {
     const policyChanged =
       state.session.audioUnlocked !== previousState.session.audioUnlocked
       || state.settings.ambienceEnabled !== previousState.settings.ambienceEnabled
+      || state.settings.musicEnabled !== previousState.settings.musicEnabled
       || state.settings.masterVolume !== previousState.settings.masterVolume;
-    if (policyChanged) syncCurrentAmbiencePolicy();
+    if (policyChanged) {
+      for (const channel of loopChannels) channel.syncPolicy();
+    }
   });
-}
-
-function syncCurrentAmbiencePolicy(): void {
-  const sound = currentAmbience;
-  const targetVolume = currentPolicy().ambienceVolume * 0.18;
-  const hidden = typeof document !== 'undefined' && document.hidden;
-  if (!sound) {
-    if (targetVolume > 0 && !hidden && requestedAmbience) {
-      const { scene, key } = requestedAmbience;
-      startAmbience(scene, key);
-    }
-    return;
-  }
-  for (const outgoing of activeAmbienceSounds) {
-    if (outgoing === sound) continue;
-    cancelFade(outgoing);
-    safeSetVolume(outgoing, 0);
-    try {
-      if (outgoing.isPlaying) outgoing.pause();
-    } catch {
-      // A destroyed outgoing backend needs no further policy work.
-    }
-    safelyDestroy(outgoing);
-  }
-  cancelFade(sound);
-  if (targetVolume <= 0 || hidden) {
-    if (!safeSetVolume(sound, 0)) {
-      safelyDestroy(sound);
-      currentAmbience = null;
-      currentAmbienceKey = null;
-      return;
-    }
-    try {
-      if (sound.isPlaying) sound.pause();
-    } catch {
-      // A scene can disappear while a persisted preference is being applied.
-    }
-    return;
-  }
-
-  if (!safeSetVolume(sound, targetVolume)) {
-    safelyDestroy(sound);
-    currentAmbience = null;
-    currentAmbienceKey = null;
-    return;
-  }
-  try {
-    if (sound.isPaused) sound.resume();
-  } catch {
-    // A destroyed backend is treated as silence.
-  }
 }
 
 function installVisibilityListener(): void {
   if (visibilityListenerInstalled || typeof document === 'undefined') return;
   visibilityListenerInstalled = true;
   document.addEventListener('visibilitychange', () => {
-    const sound = currentAmbience;
-    if (document.hidden) {
-      if (!sound) return;
-      pausedForVisibility = sound.isPlaying;
-      if (pausedForVisibility) sound.pause();
-      return;
-    }
-    if (requestedAmbience && requestedAmbience.key !== currentAmbienceKey) {
-      pausedForVisibility = false;
-      const { scene, key } = requestedAmbience;
-      startAmbience(scene, key);
-      return;
-    }
-    if (!sound) {
-      syncCurrentAmbiencePolicy();
-      return;
-    }
-    if (pausedForVisibility && currentPolicy().ambienceVolume > 0) sound.resume();
-    pausedForVisibility = false;
+    for (const channel of loopChannels) channel.handleVisibility(document.hidden);
   });
 }

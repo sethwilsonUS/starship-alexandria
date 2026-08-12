@@ -705,6 +705,30 @@
       "sha256": "deecf58bc851e89a348f3060cacaccb8fc969c3a666dfed563c14c45488badaa"
     },
     {
+      "path": "game-assets/audio/music/music-ship.mp3",
+      "kind": "audio",
+      "mediaType": "audio/mpeg",
+      "sourceIds": [
+        "project"
+      ],
+      "logicalName": "music-ship",
+      "transformation": "Project-generated seamless 48s ambient pad (warm A-major hum for the library deck): detuned sine voice pairs on loop-periodic frequencies with independent tremolo cycles, lowpass 700 Hz, synthesized and encoded with the pinned ffmpeg (bitexact, no metadata)",
+      "bytes": 191694,
+      "sha256": "645ba0966ed66108543b3d520118d71d5e04bba31893af091eacfe5af86c66c8"
+    },
+    {
+      "path": "game-assets/audio/music/music-ship.ogg",
+      "kind": "audio",
+      "mediaType": "audio/ogg",
+      "sourceIds": [
+        "project"
+      ],
+      "logicalName": "music-ship",
+      "transformation": "Project-generated seamless 48s ambient pad (warm A-major hum for the library deck): detuned sine voice pairs on loop-periodic frequencies with independent tremolo cycles, lowpass 700 Hz, synthesized and encoded with the pinned ffmpeg (bitexact, no metadata)",
+      "bytes": 157654,
+      "sha256": "21510e8962f06911d3aee263e1e427e4bf3cc30fb403d095b485e2ded37f8763"
+    },
+    {
       "path": "game-assets/sprites/book-pickup.png",
       "kind": "sprite",
       "mediaType": "image/png",

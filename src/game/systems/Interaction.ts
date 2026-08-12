@@ -171,9 +171,9 @@ export class InteractionSystem {
     if (interactive.id === this.lastAnnouncedId) return;
     this.lastAnnouncedId = interactive.id;
     
-    // Play discovery chime for items (not transporter)
-    if (['book', 'journal', 'map'].includes(interactive.type)) {
-      playDiscoveryChime();
+    // Play discovery chime for items (not transporter); each kind has a motif
+    if (interactive.type === 'book' || interactive.type === 'journal' || interactive.type === 'map') {
+      playDiscoveryChime(interactive.type);
     }
     
     // Build announcement based on type

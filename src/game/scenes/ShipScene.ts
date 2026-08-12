@@ -6,7 +6,7 @@ import { transitionGuard } from '@/game/input/gameInput';
 import { FxController } from '../systems/FxController';
 import { ASSET_KEYS } from '@/game/assets/assetManifest';
 import type { SavedThemeId } from '@/store/saveMigration';
-import { playCue, startAmbience } from '@/game/audio/AudioDirector';
+import { playCue, startAmbience, startMusic } from '@/game/audio/AudioDirector';
 import { shouldUseMotion } from '@/game/motionPolicy';
 
 /** Covers the full animated departure (beam column 1000ms) plus a small margin. */
@@ -79,6 +79,7 @@ export default class ShipScene extends Scene {
 
   private beginShipExperience(): void {
     startAmbience(this, ASSET_KEYS.audio.ambience.ship);
+    startMusic(this, ASSET_KEYS.audio.music.ship);
     this.showCompletionDialogue();
   }
 

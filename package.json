@@ -44,6 +44,7 @@
         "generate:game-assets": "node scripts/generate-game-assets.mjs",
         "generate:social-preview": "node scripts/generate-social-preview.mjs",
         "generate-voices:how-to-play": "node --env-file-if-exists=.env.local scripts/generate-how-to-play-voice.mjs",
+        "generate-voices:npcs": "node --env-file-if-exists=.env.local scripts/generate-npc-voices.mjs",
         "import-external-assets": "node scripts/import-external-game-assets.mjs"
     },
     "dependencies": {

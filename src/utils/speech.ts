@@ -65,6 +65,26 @@ export interface SpeakOptions {
   onError?: () => void;
 }
 
+/**
+ * Narration activity broadcast: AudioDirector ducks its loop channels while a
+ * voice (recorded clip or browser TTS) is speaking. Kept as a subscription so
+ * this module never imports the audio layer (avoids an import cycle).
+ */
+type NarrationListener = (active: boolean) => void;
+const narrationListeners = new Set<NarrationListener>();
+let narrationActive = false;
+
+export function onNarrationActivity(listener: NarrationListener): () => void {
+  narrationListeners.add(listener);
+  return () => narrationListeners.delete(listener);
+}
+
+function setNarrationActive(active: boolean): void {
+  if (narrationActive === active) return;
+  narrationActive = active;
+  narrationListeners.forEach((listener) => listener(active));
+}
+
 function getSynth(): SpeechSynthesis | null {
   if (typeof window === 'undefined') return null;
   return window.speechSynthesis;
@@ -130,6 +150,7 @@ async function speakLocalVoiceLine(
       () => {
         if (activeVoiceAudio === audio) {
           activeVoiceAudio = null;
+          setNarrationActive(false);
           lifecycle.onEnd?.();
         }
       },
@@ -140,6 +161,7 @@ async function speakLocalVoiceLine(
       audio.pause();
       return;
     }
+    setNarrationActive(true);
     lifecycle.onStart?.();
   } catch (error) {
     if (requestId !== speechRequestId) return;
@@ -163,6 +185,9 @@ function speakWithBrowserTts(text: string): void {
   utterance.rate = 0.95;
   utterance.pitch = 1;
   utterance.volume = masterVolume;
+  utterance.onstart = () => setNarrationActive(true);
+  utterance.onend = () => setNarrationActive(false);
+  utterance.onerror = () => setNarrationActive(false);
   synth.speak(utterance);
 }
 
@@ -178,6 +203,7 @@ function cancelCurrentPlayback(): void {
     activeVoiceAudio.currentTime = 0;
     activeVoiceAudio = null;
   }
+  setNarrationActive(false);
 }
 
 // Audio context for sound effects
@@ -232,10 +258,20 @@ export function playBumpSound(): void {
   oscillator.stop(ctx.currentTime + 0.1);
 }
 
+export type DiscoveryKind = 'book' | 'journal' | 'map' | 'generic';
+
+/** Each discoverable gets its own small motif so the ear learns the difference. */
+const DISCOVERY_MOTIFS: Record<DiscoveryKind, readonly number[]> = {
+  book: [440, 554, 659],
+  journal: [392, 494, 587],
+  map: [523, 659],
+  generic: [440, 554, 659],
+};
+
 /**
  * Play a gentle chime when discovering something.
  */
-export function playDiscoveryChime(): void {
+export function playDiscoveryChime(kind: DiscoveryKind = 'generic'): void {
   const ctx = getAudioContext();
   if (!ctx) return;
   
@@ -249,17 +285,51 @@ export function playDiscoveryChime(): void {
   oscillator.connect(gainNode);
   gainNode.connect(ctx.destination);
   
-  // Pleasant ascending chime
+  // Pleasant ascending motif, one note every 100ms
+  const motif = DISCOVERY_MOTIFS[kind];
   oscillator.type = 'sine';
-  oscillator.frequency.setValueAtTime(440, ctx.currentTime);
-  oscillator.frequency.setValueAtTime(554, ctx.currentTime + 0.1);
-  oscillator.frequency.setValueAtTime(659, ctx.currentTime + 0.2);
+  motif.forEach((frequency, index) => {
+    oscillator.frequency.setValueAtTime(frequency, ctx.currentTime + index * 0.1);
+  });
+  const sustainEnd = motif.length * 0.1 + 0.1;
   
   gainNode.gain.cancelScheduledValues(ctx.currentTime);
   gainNode.gain.setValueAtTime(0.2 * masterVolume, ctx.currentTime);
-  gainNode.gain.setValueAtTime(0.2 * masterVolume, ctx.currentTime + 0.2);
-  gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4);
+  gainNode.gain.setValueAtTime(0.2 * masterVolume, ctx.currentTime + sustainEnd - 0.2);
+  gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + sustainEnd);
   
   oscillator.start(ctx.currentTime);
-  oscillator.stop(ctx.currentTime + 0.4);
+  oscillator.stop(ctx.currentTime + sustainEnd);
+}
+
+type UiCueName = 'confirm' | 'select' | 'close' | 'page-turn-1' | 'page-turn-2' | 'book-open';
+
+const UI_CUE_FILES: Record<UiCueName, string> = {
+  confirm: 'ui-confirm',
+  select: 'ui-select',
+  close: 'ui-close',
+  'page-turn-1': 'page-turn-1',
+  'page-turn-2': 'page-turn-2',
+  'book-open': 'book-open',
+};
+
+let uiCuePreferredExtension: 'ogg' | 'mp3' | null = null;
+
+/**
+ * Small interface cues for the HTML overlays, which live outside Phaser's
+ * sound system. Follows the same policy as the synthesized chimes: silent
+ * until the launch gesture, gated by the sound-effects preference.
+ */
+export function playUiCue(name: UiCueName, volume = 0.4): void {
+  if (e2eAudioMuted || !audioUnlocked || !sfxEnabled) return;
+  if (typeof Audio === 'undefined') return;
+  if (!uiCuePreferredExtension) {
+    const probe = new Audio();
+    uiCuePreferredExtension = probe.canPlayType('audio/ogg; codecs="vorbis"') ? 'ogg' : 'mp3';
+  }
+  const audio = new Audio(`/game-assets/audio/cues/${UI_CUE_FILES[name]}.${uiCuePreferredExtension}`);
+  audio.volume = Math.min(1, masterVolume * volume);
+  void audio.play().catch(() => {
+    // UI cues are decoration; a blocked or missing clip stays silent.
+  });
 }

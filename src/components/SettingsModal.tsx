@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { resolveExpeditionSeed } from '@/utils/expeditionSeed';
+import { playUiCue } from '@/utils/speech';
 import { useModalFocus } from './useModalFocus';
 
 export default function SettingsModal() {
@@ -10,13 +11,19 @@ export default function SettingsModal() {
   const open = useGameStore((state) => state.session.activeUtility === 'settings');
   const settings = useGameStore((state) => state.settings);
   const actions = useGameStore((state) => state.actions);
-  const close = useCallback(() => actions.closeUtility(), [actions]);
+  const close = useCallback(() => {
+    playUiCue('close');
+    actions.closeUtility();
+  }, [actions]);
   const activeThemeId = useGameStore((state) => state.session.activeThemeId);
   const activeExpeditionId = useGameStore((state) => state.session.activeExpeditionId);
   const volumePercent = Math.round(settings.masterVolume * 100);
   const expeditionSeed = resolveExpeditionSeed(activeExpeditionId, activeThemeId);
 
   useModalFocus(open, dialogRef, close);
+  useEffect(() => {
+    if (open) playUiCue('select');
+  }, [open]);
   if (!open) return null;
 
   return (
@@ -71,6 +78,14 @@ export default function SettingsModal() {
                 />
                 <span><strong>Ambience</strong><small>Quiet environmental sound beds</small></span>
               </label>
+              <label className="launch-toggle">
+                <input
+                  type="checkbox"
+                  checked={settings.musicEnabled}
+                  onChange={(event) => actions.setMusicEnabled(event.target.checked)}
+                />
+                <span><strong>Music</strong><small>A warm generative pad aboard the ship</small></span>
+              </label>
             </div>
 
             <div className="settings-form__volume">
@@ -89,7 +104,7 @@ export default function SettingsModal() {
                 aria-describedby="master-volume-help"
                 onChange={(event) => actions.setMasterVolume(Number(event.target.value))}
               />
-              <p id="master-volume-help">Controls narration, sound effects, and ambience together.</p>
+              <p id="master-volume-help">Controls narration, sound effects, ambience, and music together.</p>
             </div>
           </fieldset>
 

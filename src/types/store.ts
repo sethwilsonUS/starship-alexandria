@@ -129,6 +129,7 @@ export interface SettingsState {
   narrationEnabled: boolean;
   sfxEnabled: boolean;
   ambienceEnabled: boolean;
+  musicEnabled: boolean;
   masterVolume: number;
   motionPreference: MotionPreference;
 }
@@ -193,6 +194,7 @@ export interface GameActions {
   setTTSEnabled: (enabled: boolean) => void;
   setSfxEnabled: (enabled: boolean) => void;
   setAmbienceEnabled: (enabled: boolean) => void;
+  setMusicEnabled: (enabled: boolean) => void;
   setMasterVolume: (volume: number) => void;
   setMotionPreference: (preference: MotionPreference) => void;
   acceptLaunchGate: () => void;

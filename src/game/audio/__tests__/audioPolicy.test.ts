@@ -88,8 +88,9 @@ describe('resolveAudioPolicy', () => {
       audioUnlocked: false,
       sfxEnabled: true,
       ambienceEnabled: true,
+      musicEnabled: true,
       masterVolume: 1,
-    })).toEqual({ sfxVolume: 0, ambienceVolume: 0 });
+    })).toEqual({ sfxVolume: 0, ambienceVolume: 0, musicVolume: 0 });
   });
 
   it('applies the shared master level and channel preferences', () => {
@@ -97,8 +98,9 @@ describe('resolveAudioPolicy', () => {
       audioUnlocked: true,
       sfxEnabled: true,
       ambienceEnabled: false,
+      musicEnabled: true,
       masterVolume: 0.5,
-    })).toEqual({ sfxVolume: 0.5, ambienceVolume: 0 });
+    })).toEqual({ sfxVolume: 0.5, ambienceVolume: 0, musicVolume: 0.5 });
   });
 });
 

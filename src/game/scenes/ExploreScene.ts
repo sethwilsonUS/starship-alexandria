@@ -35,6 +35,7 @@ import {
   playCue,
   playFootstep as playFootstepSound,
   startAmbience,
+  stopMusic,
 } from '@/game/audio/AudioDirector';
 import { shouldUseMotion } from '@/game/motionPolicy';
 
@@ -108,6 +109,8 @@ export default class ExploreScene extends Scene {
     if (this.shouldAnimate()) this.cameras.main.fadeIn(350, 8, 12, 24);
     this.fx = new FxController(this);
     startAmbience(this, ASSET_KEYS.audio.ambience.byTheme[themeId]);
+    // The ship pad stays home; surface soundscapes carry their own musicality.
+    stopMusic(this);
     this.createTilemap();
     this.fogRenderer = new FogRenderer(this, this.mapData.walls);
 

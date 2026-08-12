@@ -77,6 +77,7 @@ describe('save migration seam', () => {
         narrationEnabled: true,
         sfxEnabled: false,
         ambienceEnabled: false,
+        musicEnabled: false,
         masterVolume: 0.35,
         motionPreference: 'reduce',
       },

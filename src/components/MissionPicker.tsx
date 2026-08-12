@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useCallback, useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
   EXPEDITION_THEME_IDS,
   EXPEDITION_THEMES,
@@ -9,6 +9,7 @@ import {
 } from '@/game/expeditions';
 import { EventBridge } from '@/game/EventBridge';
 import { useGameStore } from '@/store/gameStore';
+import { playUiCue } from '@/utils/speech';
 import { resolveRovingTarget } from '@/utils/rovingFocus';
 import { useModalFocus } from './useModalFocus';
 
@@ -23,9 +24,13 @@ export default function MissionPicker() {
   const close = useCallback(() => actions.closeMissionPicker(), [actions]);
 
   useModalFocus(open, dialogRef, close);
+  useEffect(() => {
+    if (open) playUiCue('select');
+  }, [open]);
   if (!open) return null;
 
   const depart = (themeId: ThemeId) => {
+    playUiCue('confirm');
     actions.selectExpeditionTheme(themeId);
     EventBridge.emit('beam-down-requested', { themeId });
   };
