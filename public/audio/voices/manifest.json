@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-26T04:26:23.930Z",
+  "generatedAt": "2026-08-12T00:57:26.049Z",
   "clips": [
     {
       "lineId": "how-to-play.guide.01",
@@ -28,6 +28,806 @@
           "sha256": "0691f5486342b56aeced586215d6dd9b81fb86ec6f9632769eb0e0f9fa9a593f",
           "provenance": {
             "encoder": "ffmpeg",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.anselm.first-meet.0",
+      "textHash": "e7bba1be0c85a44b",
+      "path": "/audio/voices/npc/npc.anselm.first-meet.0.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "onyx",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.anselm.first-meet.0.mp3",
+          "bytes": 122496,
+          "sha256": "8729cdbe019b60ba3072ca31c9a4dfe366e8d18c3a34e3a439442989c94a32cf",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.anselm.first-meet.0.ogg",
+          "bytes": 50853,
+          "sha256": "a0b661a908a5082208b36fa6accca3db7bdf29b235e1f9acefc9e9a6f9194137",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.anselm.first-meet.1",
+      "textHash": "fc623d4f5c4bc85f",
+      "path": "/audio/voices/npc/npc.anselm.first-meet.1.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "onyx",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.anselm.first-meet.1.mp3",
+          "bytes": 105600,
+          "sha256": "1d70490f84d70b3983ceb23e52e0d2461299e87b912016022adb866acb139e7e",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.anselm.first-meet.1.ogg",
+          "bytes": 46441,
+          "sha256": "f7d112fdef4c04973a8c397a6c6e9b8685c3c4dab3584fa688183463ad94ba13",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.anselm.first-meet.2",
+      "textHash": "fdadf633f96865e7",
+      "path": "/audio/voices/npc/npc.anselm.first-meet.2.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "onyx",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.anselm.first-meet.2.mp3",
+          "bytes": 117888,
+          "sha256": "650e932f690e3e66293bd43586f4a3f732743d622d6e11baa17e6bc93607646b",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.anselm.first-meet.2.ogg",
+          "bytes": 52417,
+          "sha256": "08be08485e626de14646ed9c980811165cef1740b2b50797baf71da5bb873811",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.cora.first-meet.0",
+      "textHash": "f13774a495d72863",
+      "path": "/audio/voices/npc/npc.cora.first-meet.0.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "nova",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.cora.first-meet.0.mp3",
+          "bytes": 89088,
+          "sha256": "27c33b6b6364a5eddb2e2eb0869f070a9d5759757646f8d26ca99696f2951d6a",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.cora.first-meet.0.ogg",
+          "bytes": 39827,
+          "sha256": "eae252c4bfcfa3731425a4ec56700ea5c274f3cdfd7f16830cb43929c930a534",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.cora.first-meet.1",
+      "textHash": "18e4e1594b232656",
+      "path": "/audio/voices/npc/npc.cora.first-meet.1.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "nova",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.cora.first-meet.1.mp3",
+          "bytes": 133632,
+          "sha256": "16af79c36c6070ee3f9f16f141e0f23675ed3f3e39e8c08bf091e471fbe16ae0",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.cora.first-meet.1.ogg",
+          "bytes": 72949,
+          "sha256": "b4248f1a17469f4383905ffd96627ffa5b3b35f7f0a41d4c01973632d09f679f",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.cora.first-meet.2",
+      "textHash": "55de78b19c80fe6f",
+      "path": "/audio/voices/npc/npc.cora.first-meet.2.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "nova",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.cora.first-meet.2.mp3",
+          "bytes": 123264,
+          "sha256": "690778c345d9874947c16e91507ab951a31a103a5662a1c66238f1d8965666a7",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.cora.first-meet.2.ogg",
+          "bytes": 73569,
+          "sha256": "c6e8396646980112d9d3e570743243e9c44b454e6acc94e7009e689e98a43fd0",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.eli.first-meet.0",
+      "textHash": "b8ff6ab0b44aabce",
+      "path": "/audio/voices/npc/npc.eli.first-meet.0.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "ash",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.eli.first-meet.0.mp3",
+          "bytes": 89856,
+          "sha256": "0e0ed89e96452c9a3fb4a9aec47e0e91d4c9db88783350171b8f27e840fa1464",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.eli.first-meet.0.ogg",
+          "bytes": 53457,
+          "sha256": "d929f709fb51bc9f2ecd21ca4247f8a274468a7eb9ff077868dbe42009bd28bc",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.eli.first-meet.1",
+      "textHash": "d8966a7aaac6c07a",
+      "path": "/audio/voices/npc/npc.eli.first-meet.1.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "ash",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.eli.first-meet.1.mp3",
+          "bytes": 132096,
+          "sha256": "92363ab5bf4dd02fabb3aa57895bec28a3936f94aebd2d456645946e08f782c7",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.eli.first-meet.1.ogg",
+          "bytes": 79258,
+          "sha256": "7576ba172b2cd405bca4de653ebf79d65329c0f48d0a4996b1d71b1a030b9482",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.eli.first-meet.2",
+      "textHash": "9b8f2733c1fe2eef",
+      "path": "/audio/voices/npc/npc.eli.first-meet.2.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "ash",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.eli.first-meet.2.mp3",
+          "bytes": 111360,
+          "sha256": "3846de51049891995a544ea1c9906744a07f8fc8bc24a9ee08980b5cf2d25ade",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.eli.first-meet.2.ogg",
+          "bytes": 65281,
+          "sha256": "d17b5aa1949d3d88fbd7f4aa1a4e0d5805d320c1c618ee3e9a0e52b5a05a91f6",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.imani.first-meet.0",
+      "textHash": "5f2ce710bcf5a466",
+      "path": "/audio/voices/npc/npc.imani.first-meet.0.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "coral",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.imani.first-meet.0.mp3",
+          "bytes": 110592,
+          "sha256": "b60362f197e7a6953f1f1bbb7c992609f9138d09ff65841cd850fea5926c2b55",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.imani.first-meet.0.ogg",
+          "bytes": 54457,
+          "sha256": "eb12dfeed92078c93f8990136420501d38981f1817dfa05989d84d2a7a27e204",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.imani.first-meet.1",
+      "textHash": "f231f4c19d53bc21",
+      "path": "/audio/voices/npc/npc.imani.first-meet.1.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "coral",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.imani.first-meet.1.mp3",
+          "bytes": 132096,
+          "sha256": "d86a73ed1e67b18177a20a752368ac455a50ec2d3f76799883e042a95b2828ba",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.imani.first-meet.1.ogg",
+          "bytes": 71422,
+          "sha256": "7f60aaa6a99f44d0f681a14d36e419109bc8b39247bb9f587c007346a5b84539",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.imani.first-meet.2",
+      "textHash": "c609b92cf26c075f",
+      "path": "/audio/voices/npc/npc.imani.first-meet.2.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "coral",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.imani.first-meet.2.mp3",
+          "bytes": 152064,
+          "sha256": "8b1d9a7d2a20f263ce45717056d4e91cbb786140b09f01fb049191f08e1d2677",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.imani.first-meet.2.ogg",
+          "bytes": 79389,
+          "sha256": "083ac0925c4e6fde0550d97728d0f20fa2157de7e376170ccf858b69d5eb7905",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.martha.first-meet.0",
+      "textHash": "329be93b2cf14c9f",
+      "path": "/audio/voices/npc/npc.martha.first-meet.0.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "sage",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.martha.first-meet.0.mp3",
+          "bytes": 81024,
+          "sha256": "31a3a642f174ca619f55b576ab94f2d02dfb883138ff9f09c3fbdd8cac65afb7",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.martha.first-meet.0.ogg",
+          "bytes": 46133,
+          "sha256": "9646ad5dc067da5314d4d7d8f4031550e4a0df170d7bf146929582ec69c73669",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.martha.first-meet.1",
+      "textHash": "8c8d78c6208e39ae",
+      "path": "/audio/voices/npc/npc.martha.first-meet.1.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "sage",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.martha.first-meet.1.mp3",
+          "bytes": 84096,
+          "sha256": "b86cb07ea255154f6702c6e265b95db3defe887fa463928c61220243cb2d21d3",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.martha.first-meet.1.ogg",
+          "bytes": 47115,
+          "sha256": "7bcd284eabaf972e6f33f07070ccfe1141e59f47aadd42d95952b355024c229d",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.martha.first-meet.2",
+      "textHash": "391f5ceaf16bdcbd",
+      "path": "/audio/voices/npc/npc.martha.first-meet.2.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "sage",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.martha.first-meet.2.mp3",
+          "bytes": 134400,
+          "sha256": "08adf591bb18a40bb48ef5d86ed94ecfc2d83383176c8a8c964f126d24d91fe3",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.martha.first-meet.2.ogg",
+          "bytes": 84648,
+          "sha256": "99695056df783b541f799673fe960e4524f9f0fe1741188201622e59fac9aabd",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.martha.first-meet.3",
+      "textHash": "0bbde0a49e159ad5",
+      "path": "/audio/voices/npc/npc.martha.first-meet.3.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "sage",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.martha.first-meet.3.mp3",
+          "bytes": 140160,
+          "sha256": "4d8a949a0066f94106091558ffa43bbcc54448e26770ed19d225ed960900210a",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.martha.first-meet.3.ogg",
+          "bytes": 73898,
+          "sha256": "c2c84485285e21321739b8b285ed3d646939c86be5a61474b5eec30e8d1fe067",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.noor.first-meet.0",
+      "textHash": "a12951a97f641c3b",
+      "path": "/audio/voices/npc/npc.noor.first-meet.0.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "shimmer",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.noor.first-meet.0.mp3",
+          "bytes": 79488,
+          "sha256": "4b20ed5823e8dae4f244ba3494472671bad14844265fd88a106717d273c0aedf",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.noor.first-meet.0.ogg",
+          "bytes": 43592,
+          "sha256": "c070147953246abadf494263a07e7c532a50c2ff08bcc3ca978e2d8c4a95aca5",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.noor.first-meet.1",
+      "textHash": "e6debba2ac4b18fb",
+      "path": "/audio/voices/npc/npc.noor.first-meet.1.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "shimmer",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.noor.first-meet.1.mp3",
+          "bytes": 121728,
+          "sha256": "c332279a0a2bd3f37dbaa14905babbb426615a1d1b58c8cf90567b9eb71f285f",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.noor.first-meet.1.ogg",
+          "bytes": 71274,
+          "sha256": "ce15226eb9c70cebd5d1e9f8f0257a9c4cd981d768a66aa44d6873c18861fb09",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.noor.first-meet.2",
+      "textHash": "4da57222706e2e69",
+      "path": "/audio/voices/npc/npc.noor.first-meet.2.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "shimmer",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.noor.first-meet.2.mp3",
+          "bytes": 144000,
+          "sha256": "44bfc0f2060d6030af6e1dee5f5e8f0ee868ebbe77ca2add82f22c71f0436508",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.noor.first-meet.2.ogg",
+          "bytes": 79297,
+          "sha256": "5a18b030672df6c5af2be6680510f283a82e474c7509666e7fbae425f7e33b91",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.rowan.first-meet.0",
+      "textHash": "42b659e859cfb091",
+      "path": "/audio/voices/npc/npc.rowan.first-meet.0.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "verse",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.rowan.first-meet.0.mp3",
+          "bytes": 93696,
+          "sha256": "2a12b37d8c2c1283017b5abbf27bc2ab061f9420d71dc25622a8a710f7060ac5",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.rowan.first-meet.0.ogg",
+          "bytes": 52996,
+          "sha256": "d224df4e2c991fa0c73c80c4e76b96b8ccc84925b7fa012d8935201f3f239958",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.rowan.first-meet.1",
+      "textHash": "80b5c91de584d453",
+      "path": "/audio/voices/npc/npc.rowan.first-meet.1.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "verse",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.rowan.first-meet.1.mp3",
+          "bytes": 177024,
+          "sha256": "959adae8e6f42219c8441e25c201864a2516700037a75c7e00129ed464303bd0",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.rowan.first-meet.1.ogg",
+          "bytes": 95285,
+          "sha256": "4007ec2b2f2862bc4ab48c83bfeb29ec3417c0c6722d1f9f0d067e1bb54c394b",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.rowan.first-meet.2",
+      "textHash": "2c04ca6ca12fc937",
+      "path": "/audio/voices/npc/npc.rowan.first-meet.2.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "verse",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.rowan.first-meet.2.mp3",
+          "bytes": 170496,
+          "sha256": "096d6bf41f2027a1d87b83ce6a90d45864f778750d8253b85774e0449bd7faf0",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.rowan.first-meet.2.ogg",
+          "bytes": 84511,
+          "sha256": "887d90c4ea070be0f8afcb48934179c5397f087b0bfa9192db486ec1c4f1734e",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.theo.first-meet.0",
+      "textHash": "c48b070309115816",
+      "path": "/audio/voices/npc/npc.theo.first-meet.0.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "echo",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.theo.first-meet.0.mp3",
+          "bytes": 81792,
+          "sha256": "b0279901263d7893e7aa15e35918c559dbfe32299fb13b6de09523161bed38c4",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.theo.first-meet.0.ogg",
+          "bytes": 44656,
+          "sha256": "21d106e2d3fad549bb1e5f4a5ddd2ac3f6ed9a976d33b64c5dd5ab2961be424a",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.theo.first-meet.1",
+      "textHash": "e85d3f1bfb251500",
+      "path": "/audio/voices/npc/npc.theo.first-meet.1.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "echo",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.theo.first-meet.1.mp3",
+          "bytes": 130560,
+          "sha256": "4ef5b480c6b877e570bbe0daf91bc58f117fddd4ccc0e4875a7fe6c24c4010ef",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.theo.first-meet.1.ogg",
+          "bytes": 61720,
+          "sha256": "da3b210f8ca1c6322b7d2464bf4f362fad830046742bab41f7b32d3ae67ae856",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
+            "encoderVersion": "8.1",
+            "sourceFormat": "mp3"
+          }
+        }
+      ]
+    },
+    {
+      "lineId": "npc.theo.first-meet.2",
+      "textHash": "9029c922f4da8361",
+      "path": "/audio/voices/npc/npc.theo.first-meet.2.mp3",
+      "model": "gpt-4o-mini-tts",
+      "voice": "echo",
+      "durationMs": null,
+      "formats": [
+        {
+          "format": "mp3",
+          "path": "/audio/voices/npc/npc.theo.first-meet.2.mp3",
+          "bytes": 129792,
+          "sha256": "86c6008c940c2960bbd26bdebad8f0ef2fb813b4ebb4f91ccc269ad89c923250",
+          "provenance": {
+            "encoder": "openai-audio-speech",
+            "encoderVersion": "gpt-4o-mini-tts",
+            "sourceFormat": "text"
+          }
+        },
+        {
+          "format": "ogg",
+          "path": "/audio/voices/npc/npc.theo.first-meet.2.ogg",
+          "bytes": 64331,
+          "sha256": "387112e3fe7318941e86b6cae18331056b25cf2b9a5c7d987d15fadd46e10f15",
+          "provenance": {
+            "encoder": "ffmpeg-8.1",
             "encoderVersion": "8.1",
             "sourceFormat": "mp3"
           }
