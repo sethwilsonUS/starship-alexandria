@@ -19,10 +19,10 @@ From the orbiting library ship *Alexandria*, choose a recovery signal, beam down
 
 ## Screenshots
 
-| | |
+| Aboard the Alexandria | On the surface |
 | --- | --- |
-| ![The library deck aboard the Alexandria: side shelves filling with recovered book spines beside the Archives panel listing six works at 13 of 21 fragments.](docs/images/ship-deck.png) | ![The expanded Inferno shelf entry showing the archivist's handwritten-style note above two recovered canto fragments.](docs/images/shelf-note.png) |
-| ![Lantern-lit exploration of the Ruined Scriptorium: the archivist stands in warm light that fades toward remembered rooms and darkness.](docs/images/surface-scriptorium.png) | ![Meeting Eli Ward in the illuminators' workshop; the dialogue box reads "You with the Alexandria? Saw the beam. Hard entrance to miss."](docs/images/dialogue.png) |
+| ![The library deck aboard the Alexandria: side shelves filling with recovered book spines beside the Archives panel listing six works at 13 of 21 fragments.](docs/images/ship-deck.png) | ![Lantern-lit exploration of the Ruined Scriptorium: the archivist stands in warm light that fades toward remembered rooms and darkness.](docs/images/surface-scriptorium.png) |
+| ![The expanded Inferno shelf entry showing the archivist's handwritten-style note above two recovered canto fragments.](docs/images/shelf-note.png) | ![Meeting Eli Ward in the illuminators' workshop; the dialogue box reads "You with the Alexandria? Saw the beam. Hard entrance to miss."](docs/images/dialogue.png) |
 
 ## What is in the game
 
