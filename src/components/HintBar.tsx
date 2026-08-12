@@ -1,6 +1,7 @@
 'use client';
 
 import { useGameStore } from '@/store/gameStore';
+import { playUiCue } from '@/utils/speech';
 
 /**
  * One-time surface controls reminder for the first expedition.
@@ -23,7 +24,10 @@ export default function HintBar() {
       <button
         type="button"
         className="hint-bar__dismiss"
-        onClick={markSurfaceHintsSeen}
+        onClick={() => {
+          playUiCue('select');
+          markSurfaceHintsSeen();
+        }}
       >
         Got it
       </button>

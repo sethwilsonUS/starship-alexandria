@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { speak, cancelSpeech } from '@/utils/speech';
+import { speak, cancelSpeech, playUiCue } from '@/utils/speech';
 import { MAP_WIDTH, MAP_HEIGHT } from '@/config/gameConfig';
 import type { MapRoom } from '@/types/store';
 import { EXPEDITION_THEMES } from '@/game/expeditions';
@@ -69,6 +69,7 @@ export default function MapOverlay() {
   const dialogRef = useRef<HTMLDivElement>(null);
   const isOpen = gamePhase === 'viewing-map';
   const close = useCallback(() => {
+    playUiCue('close');
     setIsAnimatingIn(false);
     cancelSpeech();
     closeMap();
@@ -98,6 +99,10 @@ export default function MapOverlay() {
   
   // Animate in when opening. Closing unmounts synchronously with the modal
   // phase so the background never becomes interactive beneath a stale dialog.
+  useEffect(() => {
+    if (isOpen) playUiCue('page-turn-2');
+  }, [isOpen]);
+
   useEffect(() => {
     if (!isOpen) return;
 

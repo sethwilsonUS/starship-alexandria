@@ -1,9 +1,10 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { cancelSpeech } from '@/utils/speech';
 import HowToPlayContent from './HowToPlayContent';
+import { playUiCue } from '@/utils/speech';
 import { useModalFocus } from './useModalFocus';
 
 export default function HowToPlayModal() {
@@ -16,6 +17,9 @@ export default function HowToPlayModal() {
   }, [closeUtility]);
 
   useModalFocus(open, dialogRef, close);
+  useEffect(() => {
+    if (open) playUiCue('select');
+  }, [open]);
   if (!open) return null;
 
   return (

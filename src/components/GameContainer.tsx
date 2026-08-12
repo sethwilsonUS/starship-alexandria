@@ -119,7 +119,13 @@ export default function GameContainer() {
           const discovered = useGameStore.getState().exploration.discoveredNPCs.includes(id);
           const roomNames = useGameStore.getState().session.roomsWithBooksOnMap;
           const npcRooms = useGameStore.getState().session.npcRoomsOnMap;
-          let lines: { speaker?: string; text: string }[];
+          // First-meet greetings have committed recordings; templated or
+          // dynamically assembled lines stay on browser speech synthesis.
+          const greetings = npc.firstMeet.map((line, index) => ({
+            ...line,
+            voiceLineId: `npc.${npc.id}.first-meet.${index}`,
+          }));
+          let lines: { speaker?: string; text: string; voiceLineId?: string }[];
           if (useGameStore.getState().session.vaultOpened) {
             lines = npc.postVault;
           // Martha: contextual hint based on actual rooms with books this map
@@ -127,9 +133,9 @@ export default function GameContainer() {
             const hintLine = await getMarthaBookHint(roomNames);
             lines = discovered
               ? [npc.return[0], { speaker: 'Martha', text: hintLine }]
-              : [...npc.firstMeet, { speaker: 'Martha', text: hintLine }];
+              : [...greetings, { speaker: 'Martha', text: hintLine }];
           } else {
-            lines = discovered ? npc.return : npc.firstMeet;
+            lines = discovered ? npc.return : greetings;
           }
           // Substitute dynamic templates (e.g., {{martha_room}})
           lines = substituteDialogueTemplates(lines, npcRooms);

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { getBookCatalogSync } from '@/data/books';
 import type { Book } from '@/types/books';
-import { speak, cancelSpeech } from '@/utils/speech';
+import { speak, cancelSpeech, playUiCue } from '@/utils/speech';
 import { unlockInteractions } from '@/game/systems/Interaction';
 import { isNativeInteractiveTarget } from '@/utils/domEvents';
 import { useModalFocus } from './useModalFocus';
@@ -23,6 +23,7 @@ export default function BookDetail() {
   const dialogRef = useRef<HTMLElement>(null);
 
   const close = useCallback(() => {
+    playUiCue('page-turn-1');
     cancelSpeech();
     closeBook();
     unlockInteractions();
@@ -31,6 +32,10 @@ export default function BookDetail() {
   useModalFocus(isOpen, dialogRef, close);
 
   // Track when the book opens
+  useEffect(() => {
+    if (isOpen) playUiCue('book-open');
+  }, [isOpen]);
+
   useEffect(() => {
     if (!isOpen) return;
     openedAtRef.current = Date.now();
