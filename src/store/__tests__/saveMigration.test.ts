@@ -94,6 +94,14 @@ describe('save migration seam', () => {
     expect(
       migratePersistedSave({ exploration: { visitedMaps: ['earth-1'] } }, 4).hasSeenSurfaceHints,
     ).toBe(true);
+    // An explicit false (saved mid-first-expedition) survives even with
+    // visited maps — inference never overrides a persisted value.
+    expect(
+      migratePersistedSave(
+        { hasSeenSurfaceHints: false, exploration: { visitedMaps: ['earth-1'] } },
+        7,
+      ).hasSeenSurfaceHints,
+    ).toBe(false);
   });
 
   it('upgrades a compact v5 save to v7 without losing identity or progress', () => {

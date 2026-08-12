@@ -6,6 +6,7 @@ import { speak, cancelSpeech } from '@/utils/speech';
 import { MAP_WIDTH, MAP_HEIGHT } from '@/config/gameConfig';
 import type { MapRoom } from '@/types/store';
 import { EXPEDITION_THEMES } from '@/game/expeditions';
+import { resolveExpeditionSeed } from '@/utils/expeditionSeed';
 import { useModalFocus } from './useModalFocus';
 
 function getDirectionLabel(room: MapRoom, mapWidth: number, mapHeight: number): string {
@@ -60,8 +61,7 @@ export default function MapOverlay() {
   const closeMap = useGameStore((s) => s.actions.closeMap);
   const activeThemeId = useGameStore((s) => s.session.activeThemeId);
   const activeExpeditionId = useGameStore((s) => s.session.activeExpeditionId);
-  // Mirrors ExploreScene's seed fallback: deterministic runs are shareable.
-  const expeditionSeed = activeExpeditionId ?? (activeThemeId ? `${activeThemeId}-expedition` : null);
+  const expeditionSeed = resolveExpeditionSeed(activeExpeditionId, activeThemeId);
 
   const [selectedRoomIndex, setSelectedRoomIndex] = useState<number | null>(null);
   const [isAnimatingIn, setIsAnimatingIn] = useState(false);

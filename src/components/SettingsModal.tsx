@@ -2,6 +2,7 @@
 
 import { useCallback, useRef } from 'react';
 import { useGameStore } from '@/store/gameStore';
+import { resolveExpeditionSeed } from '@/utils/expeditionSeed';
 import { useModalFocus } from './useModalFocus';
 
 export default function SettingsModal() {
@@ -13,8 +14,7 @@ export default function SettingsModal() {
   const activeThemeId = useGameStore((state) => state.session.activeThemeId);
   const activeExpeditionId = useGameStore((state) => state.session.activeExpeditionId);
   const volumePercent = Math.round(settings.masterVolume * 100);
-  // Deterministic expeditions are shareable; mirror ExploreScene's seed fallback.
-  const expeditionSeed = activeExpeditionId ?? (activeThemeId ? `${activeThemeId}-expedition` : null);
+  const expeditionSeed = resolveExpeditionSeed(activeExpeditionId, activeThemeId);
 
   useModalFocus(open, dialogRef, close);
   if (!open) return null;
